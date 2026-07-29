@@ -1,0 +1,627 @@
+import React, { useState, useEffect } from 'react';
+import { useDatabase } from '../../hooks/useDatabase';
+import { useToast } from '../../components/Toast';
+import Modal from '../../components/Modal';
+import { formatCurrency } from '../../utils/format';
+import { api } from '../../services/api';
+
+export default function Salary() {
+  const { accounts, salaryHistory, addSalaryRecord, deleteSalaryRecord, settings } = useDatabase();
+  const { showToast } = useToast();
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedSalary, setSelectedSalary] = useState(null);
+
+  // Form Fields
+  const [employerId, setEmployerId] = useState('');
+  const [position, setPosition] = useState('Software Engineer');
+  const [year, setYear] = useState(new Date().getFullYear().toString());
+  const [month, setMonth] = useState(new Date().toLocaleString('default', { month: 'long' }));
+  const [company, setCompany] = useState('');
+  const [basicSalary, setBasicSalary] = useState('');
+  const [fixedAllowance, setFixedAllowance] = useState('');
+  const [otherAllowances, setOtherAllowances] = useState('');
+  const [bonus, setBonus] = useState('');
+  const [overtime, setOvertime] = useState('');
+  const [epfEmployee, setEpfEmployee] = useState('');
+  const [epfCompany, setEpfCompany] = useState('');
+  const [etfCompany, setEtfCompany] = useState('');
+  const [tax, setTax] = useState('');
+  const [taxType, setTaxType] = useState('APIT');
+  const [loanDeduction, setLoanDeduction] = useState('');
+  const [otherDeduction, setOtherDeduction] = useState('');
+  const [paymentDate, setPaymentDate] = useState(new Date().toISOString().split('T')[0]);
+  const [bankAccountId, setBankAccountId] = useState('');
+  const [payslipPath, setPayslipPath] = useState('');
+  const [payslipName, setPayslipName] = useState('');
+
+  // Dropdown options
+  const developerPositions = [
+    'Intern Software Developer',
+    'Junior Software Engineer',
+    'Associate Software Engineer',
+    'Software Engineer',
+    'Senior Software Engineer',
+    'Tech Lead',
+    'Tech Architect',
+    'Project Manager',
+    'Engineering Manager'
+  ];
+
+  const monthsList = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ];
+
+  // Statutory suggestion math based on Basic Salary
+  const handleBasicSalaryChange = (val) => {
+    setBasicSalary(val);
+    const basic = parseFloat(val) || 0;
+    if (basic > 0) {
+      setEpfEmployee((basic * 0.08).toFixed(2));
+      setEpfCompany((basic * 0.12).toFixed(2));
+      setEtfCompany((basic * 0.03).toFixed(2));
+    } else {
+      setEpfEmployee('');
+      setEpfCompany('');
+      setEtfCompany('');
+    }
+  };
+
+  // Select File PDF Dialog
+  const handleSelectPayslip = async () => {
+    try {
+      const fileRes = await api.selectFile();
+      if (!fileRes.canceled && fileRes.filePath) {
+        setPayslipPath(fileRes.filePath);
+        // Get name of file from path
+        const split = fileRes.filePath.split(/[\\/]/);
+        setPayslipName(split[split.length - 1]);
+        showToast('Payslip document selected. It will be copied locally on submission.');
+      }
+    } catch (err) {
+      console.error(err);
+      showToast('Failed to select file.', 'error');
+    }
+  };
+
+  // Open Payslip file
+  const handleOpenPayslip = async (path) => {
+    if (!path) return;
+    try {
+      const res = await api.openFile(path);
+      if (res.success) {
+        showToast('Opening payslip document attachment...');
+      } else {
+        showToast(`Failed to open payslip: ${res.error}`, 'error');
+      }
+    } catch (err) {
+      console.error(err);
+      showToast('Error launching document viewer.', 'error');
+    }
+  };
+
+  // Submit form
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!bankAccountId) {
+      showToast('Please select the deposit bank account.', 'error');
+      return;
+    }
+
+    const basic = parseFloat(basicSalary) || 0;
+    const fixedAllow = parseFloat(fixedAllowance) || 0;
+    const otherAllow = parseFloat(otherAllowances) || 0;
+    const bonusVal = parseFloat(bonus) || 0;
+    const otVal = parseFloat(overtime) || 0;
+    
+    const epfEmpVal = parseFloat(epfEmployee) || 0;
+    const epfCompVal = parseFloat(epfCompany) || 0;
+    const etfCompVal = parseFloat(etfCompany) || 0;
+    const taxVal = parseFloat(tax) || 0;
+    const loanVal = parseFloat(loanDeduction) || 0;
+    const otherDedVal = parseFloat(otherDeduction) || 0;
+
+    // Auto calculations
+    const grossEarnings = basic + fixedAllow + otherAllow + bonusVal + otVal;
+    const totalDeductions = epfEmpVal + taxVal + loanVal + otherDedVal;
+    const netSalary = grossEarnings - totalDeductions;
+    const netAllowance = fixedAllow + otherAllow;
+
+    // Secure local copying of payslip if selected
+    let finalPayslipPath = '';
+    if (payslipPath) {
+      const copyRes = await api.savePayslip(payslipPath);
+      if (copyRes.success) {
+        finalPayslipPath = copyRes.filePath;
+      } else {
+        showToast(`Failed to archive payslip attachment: ${copyRes.error}`, 'error');
+        return;
+      }
+    }
+
+    const acc = accounts.find(a => a.id === bankAccountId);
+    const bankName = acc ? acc.bankName : 'Unknown';
+
+    const payload = {
+      employerId: employerId.trim(),
+      position,
+      year,
+      month,
+      company: company.trim(),
+      basicSalary: basic,
+      fixedAllowance: fixedAllow,
+      otherAllowances: otherAllow,
+      bonus: bonusVal,
+      overtime: otVal,
+      epfEmployee: epfEmpVal,
+      epfCompany: epfCompVal,
+      etfCompany: etfCompVal,
+      tax: taxVal,
+      taxType,
+      loanDeduction: loanVal,
+      otherDeduction: otherDedVal,
+      netSalary,
+      netAllowance,
+      paymentDate,
+      bankName,
+      bankAccount: bankAccountId,
+      payslipPath: finalPayslipPath
+    };
+
+    addSalaryRecord(payload);
+    setIsModalOpen(false);
+    showToast('Monthly salary details recorded.');
+  };
+
+  const handleDelete = (id, month, year) => {
+    if (confirm(`Delete salary record for ${month} ${year}?`)) {
+      deleteSalaryRecord(id);
+      if (selectedSalary?.id === id) setSelectedSalary(null);
+      showToast('Salary record deleted.');
+    }
+  };
+
+  // --- STATS CALCULATIONS ---
+  const count = salaryHistory.length;
+  const netSalaries = salaryHistory.map(s => s.netSalary || 0);
+
+  const averageSalary = count > 0 ? netSalaries.reduce((a, b) => a + b, 0) / count : 0;
+  const highestSalary = count > 0 ? Math.max(...netSalaries) : 0;
+  const lowestSalary = count > 0 ? Math.min(...netSalaries) : 0;
+  const totalEarnings = netSalaries.reduce((a, b) => a + b, 0);
+
+  const bonusEarned = salaryHistory.reduce((sum, s) => sum + (s.bonus || 0), 0);
+  const overtimeEarned = salaryHistory.reduce((sum, s) => sum + (s.overtime || 0), 0);
+  const totalEPF = salaryHistory.reduce((sum, s) => sum + (s.epfEmployee || 0) + (s.epfCompany || 0), 0);
+  const totalETF = salaryHistory.reduce((sum, s) => sum + (s.etfCompany || 0), 0);
+
+  // Set default selected salary as the most recent record on mount
+  useEffect(() => {
+    if (salaryHistory.length > 0 && !selectedSalary) {
+      // Sort chronologically and set most recent
+      const sorted = [...salaryHistory].sort((a, b) => new Date(b.paymentDate) - new Date(a.paymentDate));
+      setSelectedSalary(sorted[0]);
+    }
+  }, [salaryHistory, selectedSalary]);
+
+  return (
+    <div className="page active">
+      <div className="page-header">
+        <div className="header-title">
+          <h1>Salary Management</h1>
+          <p>Monitor paystubs history, position progression, and EPF/ETF contributions.</p>
+        </div>
+        <div className="header-actions">
+          <button className="btn btn-primary" onClick={() => {
+            setEmployerId('');
+            setCompany('');
+            setBasicSalary('');
+            setFixedAllowance('');
+            setOtherAllowances('');
+            setBonus('');
+            setOvertime('');
+            setEpfEmployee('');
+            setEpfCompany('');
+            setEtfCompany('');
+            setTax('');
+            setLoanDeduction('');
+            setOtherDeduction('');
+            setPayslipPath('');
+            setPayslipName('');
+            setBankAccountId(accounts[0]?.id || '');
+            setIsModalOpen(true);
+          }}>
+            Log Salary Record
+          </button>
+        </div>
+      </div>
+
+      {/* Salary Statistics Dashboard */}
+      <div className="grid-3" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}>
+        <div className="panel stat-card" style={{ display: 'block', padding: '16px 20px' }}>
+          <div className="stat-label" style={{ fontSize: '0.75rem' }}>Average Net Pay</div>
+          <div className="stat-value" style={{ fontSize: '1.4rem', color: '#6366f1', marginTop: '4px' }}>
+            {formatCurrency(averageSalary, settings.currency)}
+          </div>
+        </div>
+        
+        <div className="panel stat-card" style={{ display: 'block', padding: '16px 20px' }}>
+          <div className="stat-label" style={{ fontSize: '0.75rem' }}>Highest Net Salary</div>
+          <div className="stat-value" style={{ fontSize: '1.4rem', color: '#10b981', marginTop: '4px' }}>
+            {formatCurrency(highestSalary, settings.currency)}
+          </div>
+        </div>
+
+        <div className="panel stat-card" style={{ display: 'block', padding: '16px 20px' }}>
+          <div className="stat-label" style={{ fontSize: '0.75rem' }}>Lowest Net Salary</div>
+          <div className="stat-value" style={{ fontSize: '1.4rem', color: '#f43f5e', marginTop: '4px' }}>
+            {formatCurrency(lowestSalary, settings.currency)}
+          </div>
+        </div>
+
+        <div className="panel stat-card" style={{ display: 'block', padding: '16px 20px' }}>
+          <div className="stat-label" style={{ fontSize: '0.75rem' }}>Total Earnings</div>
+          <div className="stat-value" style={{ fontSize: '1.4rem', marginTop: '4px' }}>
+            {formatCurrency(totalEarnings, settings.currency)}
+          </div>
+        </div>
+      </div>
+
+      <div className="grid-3" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
+        <div className="panel" style={{ padding: '14px 20px' }}>
+          <div style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: 600 }}>Bonus Earned</div>
+          <div style={{ fontSize: '1.2rem', fontWeight: 700, color: '#eab308', marginTop: '2px' }}>{formatCurrency(bonusEarned, settings.currency)}</div>
+        </div>
+        <div className="panel" style={{ padding: '14px 20px' }}>
+          <div style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: 600 }}>Overtime Earned</div>
+          <div style={{ fontSize: '1.2rem', fontWeight: 700, color: '#3b82f6', marginTop: '2px' }}>{formatCurrency(overtimeEarned, settings.currency)}</div>
+        </div>
+        <div className="panel" style={{ padding: '14px 20px' }}>
+          <div style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: 600 }}>Total EPF (Emp + Comp)</div>
+          <div style={{ fontSize: '1.2rem', fontWeight: 700, color: '#10b981', marginTop: '2px' }}>{formatCurrency(totalEPF, settings.currency)}</div>
+        </div>
+        <div className="panel" style={{ padding: '14px 20px' }}>
+          <div style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: 600 }}>Total ETF (Comp)</div>
+          <div style={{ fontSize: '1.2rem', fontWeight: 700, color: '#14b8a6', marginTop: '2px' }}>{formatCurrency(totalETF, settings.currency)}</div>
+        </div>
+      </div>
+
+      {/* Split view: list of records on left, detailed pay stub on right */}
+      <div className="salary-dashboard">
+        {/* Left Column: timeline history list */}
+        <div className="panel">
+          <h2 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '20px' }}>Salary Records Timeline</h2>
+          <div className="salary-timeline">
+            {salaryHistory.map(pay => (
+              <div 
+                key={pay.id} 
+                className={`salary-event-card ${selectedSalary?.id === pay.id ? 'active' : ''}`}
+                onClick={() => setSelectedSalary(pay)}
+                style={{ cursor: 'pointer', borderLeft: selectedSalary?.id === pay.id ? '4px solid var(--border-focus)' : '4px solid #10b981' }}
+              >
+                <div className="salary-info-main">
+                  <div className="salary-date">{pay.month} {pay.year}</div>
+                  <div className="salary-details-text">{pay.company} • {pay.position}</div>
+                </div>
+                <div className="salary-amount-block">
+                  <div className="salary-amount" style={{ color: '#10b981' }}>
+                    {formatCurrency(pay.netSalary, settings.currency)}
+                  </div>
+                  <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Paid: {pay.paymentDate}</div>
+                </div>
+              </div>
+            ))}
+
+            {salaryHistory.length === 0 && (
+              <div className="empty-state">
+                <svg viewBox="0 0 24 24" width="48" height="48" stroke="currentColor" fill="none" strokeWidth="1.5"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+                <div className="empty-state-text">No salary records saved. Log one above.</div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Right Column: Payslip inspector details */}
+        <div className="panel">
+          <h2 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '4px' }}>Paystub Analyzer</h2>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '20px' }}>Detailed earnings breakdown and attachment links.</p>
+
+          {selectedSalary ? (
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px', marginBottom: '16px' }}>
+                <div>
+                  <div style={{ fontSize: '1.25rem', fontWeight: 700 }}>{selectedSalary.month} {selectedSalary.year}</div>
+                  <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{selectedSalary.company} • {selectedSalary.position}</div>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Employer ID</div>
+                  <div style={{ fontWeight: 600 }}>{selectedSalary.employerId || 'N/A'}</div>
+                </div>
+              </div>
+
+              {/* Earnings */}
+              <div style={{ marginBottom: '16px' }}>
+                <h3 style={{ fontSize: '0.85rem', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px' }}>Earnings</h3>
+                <div className="deduction-item">
+                  <span className="deduction-label">Basic Salary</span>
+                  <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{formatCurrency(selectedSalary.basicSalary, settings.currency)}</span>
+                </div>
+                <div className="deduction-item">
+                  <span className="deduction-label">Fixed Allowance</span>
+                  <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{formatCurrency(selectedSalary.fixedAllowance, settings.currency)}</span>
+                </div>
+                <div className="deduction-item">
+                  <span className="deduction-label">Other Expense Allowances</span>
+                  <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{formatCurrency(selectedSalary.otherAllowances || 0, settings.currency)}</span>
+                </div>
+                <div className="deduction-item">
+                  <span className="deduction-label">Bonus</span>
+                  <span style={{ color: '#10b981', fontWeight: 600 }}>{formatCurrency(selectedSalary.bonus || 0, settings.currency)}</span>
+                </div>
+                <div className="deduction-item">
+                  <span className="deduction-label">Overtime Pay</span>
+                  <span style={{ color: '#3b82f6', fontWeight: 600 }}>{formatCurrency(selectedSalary.overtime || 0, settings.currency)}</span>
+                </div>
+                <div className="deduction-item" style={{ borderBottom: 'none', borderTop: '1px solid var(--border-color)', marginTop: '4px', paddingTop: '6px' }}>
+                  <span className="deduction-label" style={{ fontWeight: 700, color: 'var(--text-primary)' }}>Gross Earnings</span>
+                  <span style={{ color: 'var(--text-primary)', fontWeight: 700 }}>
+                    {formatCurrency(
+                      selectedSalary.basicSalary + 
+                      selectedSalary.fixedAllowance + 
+                      (selectedSalary.otherAllowances || 0) + 
+                      (selectedSalary.bonus || 0) + 
+                      (selectedSalary.overtime || 0), 
+                      settings.currency
+                    )}
+                  </span>
+                </div>
+              </div>
+
+              {/* Deductions */}
+              <div style={{ marginBottom: '16px' }}>
+                <h3 style={{ fontSize: '0.85rem', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px' }}>Deductions</h3>
+                <div className="deduction-item">
+                  <span className="deduction-label">EPF Employee Contribution (8%)</span>
+                  <span className="deduction-val">{formatCurrency(selectedSalary.epfEmployee || 0, settings.currency)}</span>
+                </div>
+                <div className="deduction-item">
+                  <span className="deduction-label">Tax ({selectedSalary.taxType})</span>
+                  <span className="deduction-val">{formatCurrency(selectedSalary.tax || 0, settings.currency)}</span>
+                </div>
+                <div className="deduction-item">
+                  <span className="deduction-label">Loan Deductions</span>
+                  <span className="deduction-val">{formatCurrency(selectedSalary.loanDeduction || 0, settings.currency)}</span>
+                </div>
+                <div className="deduction-item">
+                  <span className="deduction-label">Other Miscellaneous Deductions</span>
+                  <span className="deduction-val">{formatCurrency(selectedSalary.otherDeduction || 0, settings.currency)}</span>
+                </div>
+              </div>
+
+              {/* Company statutory contributions (informational) */}
+              <div style={{ background: 'rgba(255, 255, 255, 0.02)', border: '1px dashed var(--border-color)', borderRadius: '8px', padding: '12px', marginBottom: '16px' }}>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', marginBottom: '6px' }}>Company Statutory Contributions</div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem' }}>
+                  <span>Employer EPF (12%): <strong>{formatCurrency(selectedSalary.epfCompany || 0, settings.currency)}</strong></span>
+                  <span>Employer ETF (3%): <strong>{formatCurrency(selectedSalary.etfCompany || 0, settings.currency)}</strong></span>
+                </div>
+              </div>
+
+              {/* Summary net pay */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid var(--border-color)', paddingTop: '12px', marginBottom: '20px' }}>
+                <div>
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Net Allowance (Auto calculated)</div>
+                  <div style={{ fontSize: '1.1rem', fontWeight: 700 }}>{formatCurrency(selectedSalary.netAllowance, settings.currency)}</div>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Net Disbursed Salary (Auto calculated)</div>
+                  <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#10b981' }}>{formatCurrency(selectedSalary.netSalary, settings.currency)}</div>
+                </div>
+              </div>
+
+              {/* Actions & attachment viewer */}
+              <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', borderTop: '1px solid var(--border-color)', paddingTop: '16px' }}>
+                <button className="btn btn-danger" style={{ background: 'rgba(244, 63, 94, 0.15)', color: '#f43f5e' }} onClick={() => handleDelete(selectedSalary.id, selectedSalary.month, selectedSalary.year)}>
+                  Delete Slip
+                </button>
+                {selectedSalary.payslipPath ? (
+                  <button className="btn btn-primary" onClick={() => handleOpenPayslip(selectedSalary.payslipPath)}>
+                    View Payslip Attachment (PDF)
+                  </button>
+                ) : (
+                  <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', alignSelf: 'center' }}>No PDF attachment linked.</span>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="empty-state">
+              <svg viewBox="0 0 24 24" width="48" height="48" stroke="currentColor" fill="none" strokeWidth="1.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+              <div className="empty-state-text">Select a month record to view detailed salary slip diagnostics.</div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* MODAL: LOG SALARY HISTORY */}
+      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Log Monthly Salary Slip">
+        <form onSubmit={handleSubmit}>
+          <div className="modal-body" style={{ maxHeight: '65vh', overflowY: 'auto' }}>
+            <div className="form-row-2">
+              <div className="form-group">
+                <label>Company Name</label>
+                <input 
+                  type="text" 
+                  className="input-ctrl" 
+                  value={company} 
+                  onChange={e => setCompany(e.target.value)} 
+                  placeholder="e.g. WSO2, Virtusa" 
+                  required 
+                />
+              </div>
+              <div className="form-group">
+                <label>My Employer ID</label>
+                <input 
+                  type="text" 
+                  className="input-ctrl" 
+                  value={employerId} 
+                  onChange={e => setEmployerId(e.target.value)} 
+                  placeholder="e.g. EMP-2234" 
+                  required 
+                />
+              </div>
+            </div>
+
+            <div className="form-row-2">
+              <div className="form-group">
+                <label>Position / Title</label>
+                <select className="input-ctrl" value={position} onChange={e => setPosition(e.target.value)}>
+                  {developerPositions.map(p => (
+                    <option key={p} value={p}>{p}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label>Deposit Bank Account</label>
+                <select className="input-ctrl" value={bankAccountId} onChange={e => setBankAccountId(e.target.value)} required>
+                  <option value="">Select account...</option>
+                  {accounts.map(a => (
+                    <option key={a.id} value={a.id}>{a.bankName} - {a.accountName}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="form-row-2">
+              <div className="form-group">
+                <label>Year</label>
+                <input 
+                  type="number" 
+                  className="input-ctrl" 
+                  value={year} 
+                  onChange={e => setYear(e.target.value)} 
+                  required 
+                />
+              </div>
+              <div className="form-group">
+                <label>Month</label>
+                <select className="input-ctrl" value={month} onChange={e => setMonth(e.target.value)}>
+                  {monthsList.map(m => (
+                    <option key={m} value={m}>{m}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="form-row-2">
+              <div className="form-group">
+                <label>Basic Salary (Rs.)</label>
+                <input 
+                  type="number" 
+                  className="input-ctrl" 
+                  value={basicSalary} 
+                  onChange={e => handleBasicSalaryChange(e.target.value)} 
+                  placeholder="0.00" 
+                  min="0"
+                  required 
+                />
+              </div>
+              <div className="form-group">
+                <label>Fixed Allowance (Rs.)</label>
+                <input 
+                  type="number" 
+                  className="input-ctrl" 
+                  value={fixedAllowance} 
+                  onChange={e => setFixedAllowance(e.target.value)} 
+                  placeholder="0.00" 
+                  min="0"
+                  required 
+                />
+              </div>
+            </div>
+
+            <div className="form-row-3" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
+              <div className="form-group">
+                <label>Other Allowances</label>
+                <input type="number" className="input-ctrl" value={otherAllowances} onChange={e => setOtherAllowances(e.target.value)} placeholder="0.00" min="0" />
+              </div>
+              <div className="form-group">
+                <label>Bonus (Rs.)</label>
+                <input type="number" className="input-ctrl" value={bonus} onChange={e => setBonus(e.target.value)} placeholder="0.00" min="0" />
+              </div>
+              <div className="form-group">
+                <label>Overtime Pay (Rs.)</label>
+                <input type="number" className="input-ctrl" value={overtime} onChange={e => setOvertime(e.target.value)} placeholder="0.00" min="0" />
+              </div>
+            </div>
+
+            <div style={{ margin: '14px 0', borderTop: '1px solid var(--border-color)', paddingTop: '14px' }}>
+              <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>Statutory Details (Auto Suggested)</span>
+            </div>
+
+            <div className="form-row-3" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
+              <div className="form-group">
+                <label>Employee EPF (8% Deduct)</label>
+                <input type="number" className="input-ctrl" value={epfEmployee} onChange={e => setEpfEmployee(e.target.value)} placeholder="0.00" min="0" />
+              </div>
+              <div className="form-group">
+                <label>Company EPF (12%)</label>
+                <input type="number" className="input-ctrl" value={epfCompany} onChange={e => setEpfCompany(e.target.value)} placeholder="0.00" min="0" />
+              </div>
+              <div className="form-group">
+                <label>Company ETF (3%)</label>
+                <input type="number" className="input-ctrl" value={etfCompany} onChange={e => setEtfCompany(e.target.value)} placeholder="0.00" min="0" />
+              </div>
+            </div>
+
+            <div className="form-row-3" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', marginTop: '10px' }}>
+              <div className="form-group">
+                <label>Tax Deducted (Rs.)</label>
+                <input type="number" className="input-ctrl" value={tax} onChange={e => setTax(e.target.value)} placeholder="0.00" min="0" />
+              </div>
+              <div className="form-group">
+                <label>Tax Type</label>
+                <select className="input-ctrl" value={taxType} onChange={e => setTaxType(e.target.value)}>
+                  <option value="APIT">APIT (PAYE)</option>
+                  <option value="WHT">WHT</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+              <div className="form-group">
+                <label>Loan Deductions (Rs.)</label>
+                <input type="number" className="input-ctrl" value={loanDeduction} onChange={e => setLoanDeduction(e.target.value)} placeholder="0.00" min="0" />
+              </div>
+            </div>
+
+            <div className="form-group" style={{ marginTop: '10px' }}>
+              <label>Other Deductions (Rs.)</label>
+              <input type="number" className="input-ctrl" value={otherDeduction} onChange={e => setOtherDeduction(e.target.value)} placeholder="0.00" min="0" />
+            </div>
+
+            <div className="form-row-2" style={{ marginTop: '14px', borderTop: '1px solid var(--border-color)', paddingTop: '14px' }}>
+              <div className="form-group">
+                <label>Payment Received Date</label>
+                <input type="date" className="input-ctrl" value={paymentDate} onChange={e => setPaymentDate(e.target.value)} required />
+              </div>
+
+              <div className="form-group">
+                <label>Payslip PDF Attachment</label>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button type="button" className="btn btn-secondary" style={{ flexGrow: 1 }} onClick={handleSelectPayslip}>
+                    {payslipName ? payslipName : 'Browse File...'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="modal-footer">
+            <button type="button" className="btn btn-secondary" onClick={() => setIsModalOpen(false)}>Cancel</button>
+            <button type="submit" className="btn btn-primary">Archive Record</button>
+          </div>
+        </form>
+      </Modal>
+    </div>
+  );
+}
