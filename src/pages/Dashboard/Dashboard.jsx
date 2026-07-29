@@ -1,51 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useDatabase } from '../../hooks/useDatabase';
-import { useToast } from '../../components/Toast';
 import { formatCurrency } from '../../utils/format';
 
 export default function Dashboard({ onNavigate }) {
-  const { accounts, transactions, salaryHistory, addTransaction, addSalaryRecord, settings, profile } = useDatabase();
-  const { showToast } = useToast();
-  
-  const [bankAccountId, setBankAccountId] = useState('');
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
-  const [company, setCompany] = useState('');
-  const [employerId, setEmployerId] = useState('');
-  const [position, setPosition] = useState('Software Engineer');
-  const [basicSalary, setBasicSalary] = useState('');
-  const [fixedAllowance, setFixedAllowance] = useState('');
+  const { accounts, transactions, settings } = useDatabase();
   const [dashboardPeriod, setDashboardPeriod] = useState('monthly'); // 'overall', 'yearly', 'monthly'
-
-  const developerPositions = [
-    'Intern Software Developer',
-    'Junior Software Engineer',
-    'Associate Software Engineer',
-    'Software Engineer',
-    'Senior Software Engineer',
-    'Tech Lead',
-    'Tech Architect',
-    'Project Manager',
-    'Engineering Manager'
-  ];
-
-  // Prefill states when profile/accounts change
-  useEffect(() => {
-    if (profile) {
-      if (profile.company && !company) setCompany(profile.company);
-      if (profile.employeeId && !employerId) setEmployerId(profile.employeeId);
-      if (profile.designation && (!position || position === 'Software Engineer')) setPosition(profile.designation);
-      
-      if (profile.bankName && accounts.length > 0 && !bankAccountId) {
-        const matchingAcc = accounts.find(a => 
-          a.bankName.toLowerCase() === profile.bankName.toLowerCase() &&
-          (!profile.accountNumber || (a.accountNumber && a.accountNumber.endsWith(profile.accountNumber)))
-        );
-        if (matchingAcc) {
-          setBankAccountId(matchingAcc.id);
-        }
-      }
-    }
-  }, [profile, accounts]);
 
   // 1. Calculations
   // Current Total Balance (sum of all active account balances)
@@ -79,9 +38,9 @@ export default function Dashboard({ onNavigate }) {
     }
 
     if (match) {
-      if (tx.type === 'Income' || tx.type === 'Deposit') {
+      if (['Income', 'Deposit', 'Refund'].includes(tx.type)) {
         displayedIncome += tx.amount;
-      } else if (tx.type === 'Expense' || tx.type === 'Withdrawal' || tx.type === 'online payment') {
+      } else if (['Expense', 'Withdrawal', 'online payment', 'Online Transfer'].includes(tx.type) && tx.bankId) {
         displayedExpense += tx.amount;
       }
     }
@@ -122,80 +81,6 @@ export default function Dashboard({ onNavigate }) {
   const sortedTx = [...transactions].sort((a, b) => new Date(b.date) - new Date(a.date));
   const recentTx = sortedTx.slice(0, 5);
 
-  // Handle Quick Add Salary Received Submit
-  const handleQuickSalarySubmit = (e) => {
-    e.preventDefault();
-    if (!bankAccountId) {
-      showToast('Please select a target deposit bank account.', 'error');
-      return;
-    }
-
-    const basic = parseFloat(basicSalary) || 0;
-    const allowance = parseFloat(fixedAllowance) || 0;
-    const gross = basic + allowance;
-
-    if (gross <= 0) {
-      showToast('Please enter a valid salary amount.', 'error');
-      return;
-    }
-
-    const acc = accounts.find(a => a.id === bankAccountId);
-    const bankName = acc ? acc.bankName : 'Unknown';
-
-    const epfEmpVal = basic * 0.08;
-    const epfCompVal = basic * 0.12;
-    const etfCompVal = basic * 0.03;
-    const totalDeductions = epfEmpVal + epfCompVal + etfCompVal;
-    const netSalary = gross - totalDeductions;
-
-    // Create a detailed salary history record
-    const salaryRecord = {
-      employerId: employerId || 'EMP-TEMP',
-      position: position || 'Software Developer',
-      year: date.split('-')[0],
-      month: new Date(date).toLocaleString('default', { month: 'long' }),
-      company: company || 'My Employer',
-      basicSalary: basic,
-      fixedAllowance: allowance,
-      otherAllowances: 0,
-      bonus: 0,
-      overtime: 0,
-      epfEmployee: epfEmpVal,
-      epfCompany: epfCompVal,
-      etfCompany: etfCompVal,
-      tax: 0,
-      taxType: 'APIT',
-      loanDeduction: 0,
-      otherDeduction: 0,
-      netSalary: netSalary,
-      netAllowance: allowance,
-      paymentDate: date,
-      bankName: bankName,
-      bankAccount: bankAccountId,
-      payslipPath: '' // no attachment via quick form
-    };
-
-    addSalaryRecord(salaryRecord);
-
-    // Also record it as an Income transaction in the ledger
-    addTransaction({
-      date,
-      bankId: bankAccountId,
-      type: 'Income',
-      category: 'Salary',
-      payee: company || 'Employer',
-      amount: salaryRecord.netSalary,
-      description: `Salary Received - Basic: ${formatCurrency(basic, settings.currency)} + Allow: ${formatCurrency(allowance, settings.currency)} (EPF 8%+12% + ETF 3% deducted)`
-    });
-
-    showToast('Salary payment recorded and account balance adjusted.');
-    
-    // Clear inputs
-    setCompany('');
-    setBasicSalary('');
-    setFixedAllowance('');
-  };
-
   return (
     <div className="page active">
       <div className="page-header">
@@ -220,7 +105,7 @@ export default function Dashboard({ onNavigate }) {
         </div>
       </div>
 
-      {/* KPI statistics grid */}
+      {/* 3. Cards representing key balances */}
       <div className="grid-3">
         <div className="panel stat-card">
           <div className="stat-info">
@@ -286,9 +171,8 @@ export default function Dashboard({ onNavigate }) {
         </div>
       </div>
 
-      {/* Two columns: recent transactions and quick salary adder */}
-      <div className="grid-2-1">
-        {/* Left: Recent transactions */}
+      {/* Recent transactions panel */}
+      <div style={{ width: '100%' }}>
         <div className="panel">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
             <h2 style={{ fontSize: '1.1rem', fontWeight: 700 }}>Recent Ledger Transactions</h2>
@@ -350,110 +234,6 @@ export default function Dashboard({ onNavigate }) {
               </div>
             )}
           </div>
-        </div>
-
-        {/* Right: Quick Salary form */}
-        <div className="panel">
-          <h2 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '6px' }}>Salary Received Form</h2>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '20px' }}>Log monthly base salaries and allowances.</p>
-
-          <form onSubmit={handleQuickSalarySubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-            <div className="form-group">
-              <label>Target Bank Account</label>
-              <select 
-                className="input-ctrl" 
-                value={bankAccountId} 
-                onChange={(e) => setBankAccountId(e.target.value)}
-                required
-              >
-                <option value="">Select account...</option>
-                {accounts.filter(a => a.status === 'Active').map(a => (
-                  <option key={a.id} value={a.id}>{a.bankName} - {a.accountName}</option>
-                ))}
-              </select>
-            </div>
-
-             <div className="form-group">
-              <label>Company / Employer</label>
-              <input 
-                type="text" 
-                className="input-ctrl" 
-                value={company}
-                onChange={(e) => setCompany(e.target.value)}
-                placeholder="e.g. WSO2, Virtusa"
-                required
-              />
-            </div>
-
-            <div className="form-row-2">
-              <div className="form-group">
-                <label>Employer ID</label>
-                <input 
-                  type="text" 
-                  className="input-ctrl" 
-                  value={employerId}
-                  onChange={(e) => setEmployeeId ? setEmployerId(e.target.value) : setEmployerId(e.target.value)}
-                  placeholder="e.g. EMP-103"
-                  required
-                />
-              </div>
-              <div className="form-group">
-                <label>Position / Designation</label>
-                <select 
-                  className="input-ctrl" 
-                  value={position}
-                  onChange={(e) => setPosition(e.target.value)}
-                  required
-                >
-                  {developerPositions.map(p => (
-                    <option key={p} value={p}>{p}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div className="form-row-2">
-              <div className="form-group">
-                <label>Basic Salary (Rs.)</label>
-                <input 
-                  type="number" 
-                  className="input-ctrl" 
-                  value={basicSalary}
-                  onChange={(e) => setBasicSalary(e.target.value)}
-                  placeholder="0.00"
-                  min="0"
-                  required
-                />
-              </div>
-              <div className="form-group">
-                <label>Fixed Allowance (Rs.)</label>
-                <input 
-                  type="number" 
-                  className="input-ctrl" 
-                  value={fixedAllowance}
-                  onChange={(e) => setFixedAllowance(e.target.value)}
-                  placeholder="0.00"
-                  min="0"
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="form-group">
-              <label>Payment Date</label>
-              <input 
-                type="date" 
-                className="input-ctrl" 
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                required
-              />
-            </div>
-
-            <button type="submit" className="btn btn-primary" style={{ marginTop: '8px' }}>
-              Add Salary Received
-            </button>
-          </form>
         </div>
       </div>
     </div>
