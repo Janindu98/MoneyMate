@@ -118,6 +118,12 @@ export default function Settings() {
     showToast(`Currency symbol config updated to: ${val}`);
   };
 
+  const handleThemeChange = (e) => {
+    const val = e.target.value;
+    updateSettings({ theme: val });
+    showToast(`App theme set to: ${val === 'light' ? 'Light Theme' : 'Dark Theme'}`);
+  };
+
   const handleExportBackup = async () => {
     try {
       const res = await api.exportBackup();
@@ -200,6 +206,24 @@ export default function Settings() {
                 <option value="CAD">CAD (C$)</option>
                 <option value="AUD">AUD (A$)</option>
                 <option value="JPY">JPY (¥)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        {/* Theme Options */}
+        <div className="settings-section">
+          <div className="settings-section-title">Theme Personalization</div>
+          <div className="settings-section-desc">Toggle between a clean light background layout or a comfortable dark mode layout.</div>
+          <div className="settings-row">
+            <div className="settings-row-info">
+              <div className="settings-row-title">Active App Theme</div>
+              <div className="settings-row-desc">Currently active layout mode: <strong>{settings.theme === 'light' ? 'Light Theme' : 'Dark Theme'}</strong></div>
+            </div>
+            <div>
+              <select className="input-ctrl" value={settings.theme || 'dark'} onChange={handleThemeChange} style={{ width: '150px' }}>
+                <option value="dark">Dark Theme</option>
+                <option value="light">Light Theme</option>
               </select>
             </div>
           </div>
