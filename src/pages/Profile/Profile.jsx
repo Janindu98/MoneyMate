@@ -150,7 +150,7 @@ export default function Profile() {
               >
                 <option value="">Select bank account...</option>
                 {accounts.map(a => (
-                  <option key={a.id} value={a.id}>{a.bankName} - {a.accountName} ({a.accountNumber ? `•• ${a.accountNumber}` : 'No No.'})</option>
+                  <option key={a.id} value={a.id}>{a.bankName} - {a.accountName} ({a.accountNumber ? `No: ${a.accountNumber}` : 'No No.'})</option>
                 ))}
               </select>
               {accounts.length === 0 && (

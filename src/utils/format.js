@@ -19,8 +19,8 @@ export function formatCurrency(amount, currencyCode = 'LKR') {
 }
 
 // Calculate card balance dynamically based on ledger history:
-// Inflows: Income, Deposit, or Online Transfer (if destination)
-// Outflows: Expense, Withdrawal, online payment, or Online Transfer (if source)
+// Inflows: Income, Deposit, or Online/Account cash transfer (if destination)
+// Outflows: Expense, Withdrawal, online payment, or Online/Account cash transfer (if source)
 export function calculateAccountBalances(accounts, transactions) {
   return accounts.map(acc => {
     let balance = 0;
@@ -31,13 +31,13 @@ export function calculateAccountBalances(accounts, transactions) {
         const type = tx.type;
         if (type === 'Income' || type === 'Deposit') {
           balance += tx.amount;
-        } else if (type === 'Expense' || type === 'Withdrawal' || type === 'online payment' || type === 'Online Transfer') {
+        } else if (type === 'Expense' || type === 'Withdrawal' || type === 'online payment' || type === 'Online/Account cash transfer') {
           balance -= tx.amount;
         }
       }
 
-      // Target account balance adjustments (for Online Transfers)
-      if (tx.type === 'Online Transfer' && tx.targetBankId === acc.id) {
+      // Target account balance adjustments (for Online/Account cash transfers)
+      if (tx.type === 'Online/Account cash transfer' && tx.targetBankId === acc.id) {
         balance += tx.amount;
       }
     });

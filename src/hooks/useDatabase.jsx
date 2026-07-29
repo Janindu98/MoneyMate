@@ -28,8 +28,21 @@ export function DatabaseProvider({ children }) {
       try {
         const data = await api.loadData();
         if (data) {
+          // Migrate Online Transfer type to Online/Account cash transfer and force Category as Money Transfer
+          const migratedTransactions = (data.transactions || []).map(tx => {
+            if (tx.type === 'Online Transfer') {
+              return {
+                ...tx,
+                type: 'Online/Account cash transfer',
+                category: 'Money Transfer'
+              };
+            }
+            return tx;
+          });
+
           const mergedData = {
             ...data,
+            transactions: migratedTransactions,
             profile: data.profile || {
               name: '',
               employeeId: '',
@@ -57,9 +70,26 @@ export function DatabaseProvider({ children }) {
   };
 
   // Accounts CRUD
-  const addAccount = (acc) => {
-    const newAccounts = [...dbState.accounts, { id: `acc_${Date.now()}`, ...acc }];
-    syncState({ ...dbState, accounts: newAccounts });
+  const addAccount = (acc, initialBalance = 0) => {
+    const accountId = acc.id || `acc_${Date.now()}`;
+    const newAccount = { id: accountId, ...acc };
+    const newAccounts = [...dbState.accounts, newAccount];
+    
+    let newTx = dbState.transactions;
+    if (initialBalance > 0) {
+      newTx = [...dbState.transactions, {
+        id: `tx_${Date.now()}`,
+        date: new Date().toISOString().split('T')[0],
+        bankId: accountId,
+        type: 'Deposit',
+        category: 'Other',
+        payee: 'Self',
+        amount: initialBalance,
+        description: 'Opening balance'
+      }];
+    }
+    
+    syncState({ ...dbState, accounts: newAccounts, transactions: newTx });
   };
 
   const editAccount = (id, updated) => {

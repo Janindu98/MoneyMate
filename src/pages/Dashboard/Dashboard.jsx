@@ -40,7 +40,7 @@ export default function Dashboard({ onNavigate }) {
     if (match) {
       if (['Income', 'Deposit', 'Refund'].includes(tx.type)) {
         displayedIncome += tx.amount;
-      } else if (['Expense', 'Withdrawal', 'online payment', 'Online Transfer'].includes(tx.type) && tx.bankId) {
+      } else if (['Expense', 'Withdrawal', 'online payment', 'Online/Account cash transfer'].includes(tx.type) && tx.bankId) {
         displayedExpense += tx.amount;
       }
     }
@@ -194,7 +194,7 @@ export default function Dashboard({ onNavigate }) {
               <tbody>
                 {recentTx.map(tx => {
                   const acc = accounts.find(a => a.id === tx.bankId);
-                  const isOutflow = ['Expense', 'Withdrawal', 'online payment', 'Online Transfer'].includes(tx.type) && tx.bankId === acc?.id;
+                  const isOutflow = ['Expense', 'Withdrawal', 'online payment', 'Online/Account cash transfer'].includes(tx.type) && tx.bankId === acc?.id;
                   return (
                     <tr key={tx.id}>
                       <td>

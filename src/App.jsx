@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { DatabaseProvider } from './hooks/useDatabase';
+import { DatabaseProvider, useDatabase } from './hooks/useDatabase';
 import { ToastProvider } from './components/Toast';
 import Sidebar from './components/Sidebar';
 import Dashboard from './pages/Dashboard/Dashboard';
@@ -10,9 +10,22 @@ import Budgets from './pages/Budgets/Budgets';
 import Reports from './pages/Reports/Reports';
 import Settings from './pages/Settings/Settings';
 import Profile from './pages/Profile/Profile';
+import LockScreen from './components/LockScreen';
 
 export default function App() {
+  return (
+    <ToastProvider>
+      <DatabaseProvider>
+        <AppContent />
+      </DatabaseProvider>
+    </ToastProvider>
+  );
+}
+
+function AppContent() {
   const [activeTab, setActiveTab] = useState('dashboard');
+  const { settings, loading } = useDatabase();
+  const [unlocked, setUnlocked] = useState(false);
 
   const renderActivePage = () => {
     switch (activeTab) {
@@ -37,16 +50,52 @@ export default function App() {
     }
   };
 
-  return (
-    <ToastProvider>
-      <DatabaseProvider>
-        <div id="app-container">
-          <Sidebar activeTab={activeTab} onTabChange={setActiveTab} />
-          <main className="main-content">
-            {renderActivePage()}
-          </main>
+  if (loading) {
+    return (
+      <div style={{
+        height: '100vh',
+        width: '100vw',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: '#070a13',
+        color: '#94a3b8',
+        fontFamily: 'var(--font-sans)',
+      }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{
+            width: '48px',
+            height: '48px',
+            borderRadius: '12px',
+            background: 'var(--accent-gradient)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '1.25rem',
+            fontWeight: 800,
+            color: '#fff',
+            margin: '0 auto 16px auto',
+            boxShadow: '0 8px 24px rgba(99, 102, 241, 0.3)'
+          }}>MM</div>
+          <div style={{ fontSize: '1.2rem', fontWeight: 600, marginBottom: '6px', color: '#fff' }}>MoneyMate</div>
+          <div style={{ fontSize: '0.85rem', opacity: 0.8 }}>Loading secure profile database...</div>
         </div>
-      </DatabaseProvider>
-    </ToastProvider>
+      </div>
+    );
+  }
+
+  const isLocked = settings && (settings.securityType === 'pin' || settings.securityType === 'password') && !unlocked;
+
+  if (isLocked) {
+    return <LockScreen settings={settings} onUnlock={() => setUnlocked(true)} />;
+  }
+
+  return (
+    <div id="app-container">
+      <Sidebar activeTab={activeTab} onTabChange={setActiveTab} />
+      <main className="main-content">
+        {renderActivePage()}
+      </main>
+    </div>
   );
 }

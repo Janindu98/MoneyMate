@@ -64,11 +64,11 @@ export default function Reports() {
       // Sheet 1: Accounts Summary
       const accountsRows = accounts.map(a => ({
         'Bank Name': a.bankName,
-        'Account Name': a.accountName,
+        'Account Holder Name': a.accountName,
         'Type': a.accountType,
         'LKR Balance': a.balance,
         'Branch': a.branch || 'N/A',
-        'Account number last 4': a.accountNumber || 'N/A',
+        'Account Number': a.accountNumber || 'N/A',
         'Status': a.status
       }));
       const wsAcc = XLSX.utils.json_to_sheet(accountsRows);
@@ -184,7 +184,7 @@ export default function Reports() {
       const txRows = targetTx.map(t => {
         const sourceAcc = accounts.find(a => a.id === t.bankId);
         const targetAcc = accounts.find(a => a.id === t.targetBankId);
-        const bankName = t.type === 'Online Transfer' 
+        const bankName = t.type === 'Online/Account cash transfer' 
           ? `${sourceAcc?.bankName} -> ${targetAcc?.bankName}`
           : (sourceAcc?.bankName || 'Unknown');
         
