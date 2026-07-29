@@ -21,6 +21,18 @@ export default function BankAccounts() {
   const [cardColor, setCardColor] = useState('#4f46e5');
   const [initialDeposit, setInitialDeposit] = useState('0.00');
 
+  // Debit Card Fields
+  const [cardNo, setCardNo] = useState('');
+  const [cardExpiry, setCardExpiry] = useState('');
+  const [cardCvv, setCardCvv] = useState('');
+  const [cardPin, setCardPin] = useState('');
+
+  // Secure Card Vault Modal States
+  const [isCardVaultOpen, setIsCardVaultOpen] = useState(false);
+  const [selectedVaultAccount, setSelectedVaultAccount] = useState(null);
+  const [revealVaultPin, setRevealVaultPin] = useState(false);
+  const [revealVaultNumber, setRevealVaultNumber] = useState(false);
+
   // ePassbook state variables
   const [selectedAccountId, setSelectedAccountId] = useState(null);
   const [filterType, setFilterType] = useState('all'); // 'all', 'monthly', 'yearly', 'dates'
@@ -130,6 +142,10 @@ export default function BankAccounts() {
     setStatus('Active');
     setCardColor('#4f46e5');
     setInitialDeposit('0.00');
+    setCardNo('');
+    setCardExpiry('');
+    setCardCvv('');
+    setCardPin('');
     setIsModalOpen(true);
   };
 
@@ -143,6 +159,10 @@ export default function BankAccounts() {
     setStatus(acc.status || 'Active');
     setCardColor(acc.color || '#4f46e5');
     setInitialDeposit('0.00'); // Disabled or ignored during edit
+    setCardNo(acc.cardNo || '');
+    setCardExpiry(acc.cardExpiry || '');
+    setCardCvv(acc.cardCvv || '');
+    setCardPin(acc.cardPin || '');
     setIsModalOpen(true);
   };
 
@@ -162,7 +182,11 @@ export default function BankAccounts() {
       accountType,
       currency: 'LKR',
       status,
-      color: cardColor
+      color: cardColor,
+      cardNo: cardNo.trim(),
+      cardExpiry: cardExpiry.trim(),
+      cardCvv: cardCvv.trim(),
+      cardPin: cardPin.trim()
     };
 
     if (editId) {
@@ -237,6 +261,11 @@ export default function BankAccounts() {
                 {acc.accountNumber ? `A/C: ${acc.accountNumber}` : 'A/C: N/A'}
               </span>
               <div className="card-actions" onClick={e => e.stopPropagation()}>
+                {(acc.cardPin || acc.cardNo) && (
+                  <button className="btn-card-action" onClick={() => { setSelectedVaultAccount(acc); setRevealVaultPin(false); setRevealVaultNumber(false); setIsCardVaultOpen(true); }} style={{ background: 'rgba(99, 102, 241, 0.25)' }} title="Reveal Debit Card PIN & Info">
+                    <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                  </button>
+                )}
                 <button className="btn-card-action" onClick={() => handleOpenEditModal(acc)} title="Edit Details">
                   <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" strokeWidth="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
                 </button>
@@ -510,7 +539,68 @@ export default function BankAccounts() {
                     min="0"
                   />
                 </div>
-              )}
+            )}
+            </div>
+
+            {/* Debit Card Details Section (Optional) */}
+            <div style={{ marginTop: '20px', borderTop: '1px solid var(--border-color)', paddingTop: '20px' }}>
+              <h3 style={{ fontSize: '0.95rem', fontWeight: 700, marginBottom: '12px', color: '#6366f1', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
+                Debit Card Information (Optional)
+              </h3>
+              <div className="form-row-2">
+                <div className="form-group">
+                  <label>Card Number (16 Digits)</label>
+                  <input
+                    type="text"
+                    className="input-ctrl"
+                    value={cardNo}
+                    onChange={e => setCardNo(e.target.value.replace(/\D/g, '').slice(0, 16))}
+                    placeholder="e.g. 4000 1234 5678 9012"
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Expiry Date (MM/YY)</label>
+                  <input
+                    type="text"
+                    className="input-ctrl"
+                    value={cardExpiry}
+                    onChange={e => {
+                      let val = e.target.value.replace(/\D/g, '').slice(0, 4);
+                      if (val.length > 2) {
+                        val = val.slice(0, 2) + '/' + val.slice(2);
+                      }
+                      setCardExpiry(val);
+                    }}
+                    placeholder="MM/YY"
+                    maxLength="5"
+                  />
+                </div>
+              </div>
+              <div className="form-row-2" style={{ marginTop: '12px' }}>
+                <div className="form-group">
+                  <label>Card CVV (3 Digits)</label>
+                  <input
+                    type="password"
+                    className="input-ctrl"
+                    value={cardCvv}
+                    onChange={e => setCardCvv(e.target.value.replace(/\D/g, '').slice(0, 3))}
+                    placeholder="e.g. 123"
+                    maxLength="3"
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Card PIN Number (4 Digits)</label>
+                  <input
+                    type="password"
+                    className="input-ctrl"
+                    value={cardPin}
+                    onChange={e => setCardPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
+                    placeholder="e.g. 9876"
+                    maxLength="4"
+                  />
+                </div>
+              </div>
             </div>
           </div>
 
@@ -519,6 +609,129 @@ export default function BankAccounts() {
             <button type="submit" className="btn btn-primary">Save Account</button>
           </div>
         </form>
+      </Modal>
+
+      {/* DEBIT CARD VAULT MODAL */}
+      <Modal isOpen={isCardVaultOpen} onClose={() => setIsCardVaultOpen(false)} title="Secure Debit Card Vault">
+        {selectedVaultAccount && (
+          <div className="modal-body" style={{ padding: '24px 32px' }}>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '20px', lineHeight: '1.5' }}>
+              🔒 This vault displays stored details offline for <strong>{selectedVaultAccount.bankName}</strong> to help you memorize the PIN.
+            </p>
+
+            {/* Premium Physical Debit Card Render */}
+            <div style={{
+              background: selectedVaultAccount.color || 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
+              borderRadius: '20px',
+              padding: '28px',
+              width: '100%',
+              height: '210px',
+              color: '#fff',
+              position: 'relative',
+              boxShadow: '0 15px 35px rgba(0,0,0,0.4)',
+              border: '1px solid rgba(255,255,255,0.08)',
+              overflow: 'hidden',
+              marginBottom: '24px'
+            }}>
+              {/* Card background glowing highlights */}
+              <div style={{
+                position: 'absolute',
+                top: '-30%',
+                right: '-20%',
+                width: '150px',
+                height: '150px',
+                borderRadius: '50%',
+                background: 'rgba(255,255,255,0.04)',
+                filter: 'blur(30px)'
+              }}></div>
+
+              {/* Top Row: Bank Name and chip */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontWeight: 800, fontSize: '1.15rem', letterSpacing: '-0.5px' }}>{selectedVaultAccount.bankName}</span>
+                <span style={{ fontSize: '0.85rem', opacity: 0.8, textTransform: 'uppercase', fontWeight: 600 }}>Debit Card</span>
+              </div>
+
+              {/* Physical Chip Icon */}
+              <div style={{
+                width: '42px',
+                height: '32px',
+                borderRadius: '6px',
+                background: 'linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%)',
+                marginTop: '16px',
+                position: 'relative',
+                boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.2)'
+              }}>
+                <div style={{ position: 'absolute', top: '5px', left: '8px', width: '26px', height: '22px', border: '1px solid rgba(0,0,0,0.15)', borderRadius: '3px' }}></div>
+              </div>
+
+              {/* Card Number */}
+              <div style={{ marginTop: '24px', fontSize: '1.35rem', fontFamily: 'monospace', letterSpacing: '2.5px', textShadow: '0 2px 4px rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                {revealVaultNumber ? (
+                  selectedVaultAccount.cardNo ? selectedVaultAccount.cardNo.replace(/(\d{4})/g, '$1 ').trim() : 'N/A'
+                ) : (
+                  selectedVaultAccount.cardNo ? `•••• •••• •••• ${selectedVaultAccount.cardNo.slice(-4)}` : 'N/A'
+                )}
+                {selectedVaultAccount.cardNo && (
+                  <button onClick={() => setRevealVaultNumber(!revealVaultNumber)} style={{ background: 'none', border: 'none', color: '#ffffff', cursor: 'pointer', padding: '0 4px', display: 'flex', alignItems: 'center', opacity: 0.6 }} title="Reveal Card Number">
+                    {revealVaultNumber ? (
+                      <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" strokeWidth="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" /><line x1="1" y1="1" x2="23" y2="23" /></svg>
+                    ) : (
+                      <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
+                    )}
+                  </button>
+                )}
+              </div>
+
+              {/* Card Bottom: Holder Name, Expiry, CVV */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: '16px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <span style={{ fontSize: '0.65rem', textTransform: 'uppercase', opacity: 0.6, letterSpacing: '0.5px' }}>Cardholder</span>
+                  <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>{selectedVaultAccount.accountName}</span>
+                </div>
+                <div style={{ display: 'flex', gap: '20px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                    <span style={{ fontSize: '0.65rem', textTransform: 'uppercase', opacity: 0.6 }}>Expires</span>
+                    <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>{selectedVaultAccount.cardExpiry || 'MM/YY'}</span>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                    <span style={{ fontSize: '0.65rem', textTransform: 'uppercase', opacity: 0.6 }}>CVV</span>
+                    <span style={{ fontSize: '0.85rem', fontWeight: 600, fontFamily: 'monospace' }}>{selectedVaultAccount.cardCvv || '•••'}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Secure PIN Vault Segment */}
+            <div style={{
+              background: 'rgba(255, 255, 255, 0.02)',
+              border: '1px solid var(--border-color)',
+              borderRadius: '16px',
+              padding: '16px 20px',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginTop: '16px'
+            }}>
+              <div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.5px' }}>Debit Card PIN</div>
+                <div style={{ fontSize: '1.5rem', fontWeight: 800, fontFamily: 'monospace', letterSpacing: '4px', color: '#f59e0b', marginTop: '4px', display: 'flex', alignItems: 'center' }}>
+                  {revealVaultPin ? selectedVaultAccount.cardPin : '••••'}
+                </div>
+              </div>
+              <button 
+                type="button" 
+                className="btn btn-secondary"
+                style={{ fontSize: '0.8rem', padding: '8px 14px' }}
+                onClick={() => setRevealVaultPin(!revealVaultPin)}
+              >
+                {revealVaultPin ? 'Hide PIN Code' : 'Reveal PIN Code'}
+              </button>
+            </div>
+          </div>
+        )}
+        <div className="modal-footer">
+          <button type="button" className="btn btn-primary" onClick={() => setIsCardVaultOpen(false)}>Done</button>
+        </div>
       </Modal>
     </div>
   );

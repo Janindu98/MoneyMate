@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { DatabaseProvider, useDatabase } from './hooks/useDatabase';
 import { ToastProvider } from './components/Toast';
 import Sidebar from './components/Sidebar';
@@ -26,6 +26,14 @@ function AppContent() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const { settings, loading } = useDatabase();
   const [unlocked, setUnlocked] = useState(false);
+
+  useEffect(() => {
+    if (settings && settings.theme === 'light') {
+      document.body.classList.add('light-theme');
+    } else {
+      document.body.classList.remove('light-theme');
+    }
+  }, [settings?.theme]);
 
   const renderActivePage = () => {
     switch (activeTab) {

@@ -40,7 +40,7 @@ export default function Dashboard({ onNavigate }) {
     if (match) {
       if (['Income', 'Deposit', 'Refund'].includes(tx.type)) {
         displayedIncome += tx.amount;
-      } else if (['Expense', 'Withdrawal', 'online payment', 'Online/Account cash transfer'].includes(tx.type) && tx.bankId) {
+      } else if (['Expense', 'Withdrawal', 'online payment'].includes(tx.type) && tx.bankId) {
         displayedExpense += tx.amount;
       }
     }

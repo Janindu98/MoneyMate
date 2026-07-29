@@ -749,7 +749,7 @@ label {
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-select option {
+select option, select optgroup {
   background-color: #0f1322;
   color: #f8fafc;
 }
@@ -1333,5 +1333,99 @@ textarea {
   20%, 80% { transform: translate3d(4px, 0, 0); }
   30%, 50%, 70% { transform: translate3d(-6px, 0, 0); }
   40%, 60% { transform: translate3d(6px, 0, 0); }
+}
+
+/* Light Theme System Overrides */
+body.light-theme {
+  --bg-primary: #f1f5f9;
+  --bg-secondary: #ffffff;
+  --bg-panel: rgba(255, 255, 255, 0.85);
+  --border-color: rgba(15, 23, 42, 0.08);
+  --border-focus: #4f46e5;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #64748b;
+  --card-shadow: 0 10px 30px rgba(15, 23, 42, 0.04);
+}
+
+body.light-theme .brand-name {
+  background: linear-gradient(to right, #0f172a, #475569);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+body.light-theme .nav-item {
+  color: var(--text-secondary);
+}
+
+body.light-theme .nav-item:hover {
+  background-color: rgba(15, 23, 42, 0.04);
+  color: var(--text-primary);
+}
+
+body.light-theme .nav-item:hover svg {
+  stroke: var(--text-primary);
+}
+
+body.light-theme .nav-item.active {
+  color: #ffffff;
+  background: var(--accent-gradient);
+}
+
+body.light-theme .nav-item.active svg {
+  stroke: #ffffff;
+}
+
+body.light-theme .sidebar-footer {
+  border-top-color: var(--border-color);
+}
+
+body.light-theme .input-ctrl,
+body.light-theme select,
+body.light-theme textarea {
+  background-color: #f8fafc;
+  border-color: rgba(15, 23, 42, 0.12);
+  color: #0f172a;
+}
+
+body.light-theme select option,
+body.light-theme select optgroup {
+  background-color: #ffffff;
+  color: #0f172a;
+}
+
+body.light-theme .modal {
+  background: #ffffff;
+  border-color: rgba(15, 23, 42, 0.1);
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.12);
+}
+
+body.light-theme .modal-header,
+body.light-theme .modal-footer {
+  border-color: var(--border-color);
+}
+
+body.light-theme .modal-footer {
+  background-color: #f8fafc;
+}
+
+body.light-theme tr:hover td {
+  background-color: rgba(15, 23, 42, 0.015);
+}
+
+body.light-theme .category-icon {
+  background-color: rgba(15, 23, 42, 0.03);
+}
+
+body.light-theme .panel:hover {
+  border-color: rgba(15, 23, 42, 0.15);
+}
+
+body.light-theme .salary-event-card {
+  background: rgba(15, 23, 42, 0.02);
+}
+
+body.light-theme .salary-event-card:hover {
+  background: rgba(15, 23, 42, 0.04);
 }
 

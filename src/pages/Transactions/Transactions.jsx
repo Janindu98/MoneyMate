@@ -149,7 +149,7 @@ export default function Transactions() {
         ? (accounts.find(a => a.id === txTargetBankId)?.accountName || 'Self') 
         : txPayee.trim(),
       amount: amountVal,
-      description: txDesc.trim()
+      description: txDesc.trim() || `${txType} - ${txCategory}`
     };
 
     if (editId) {
@@ -442,14 +442,13 @@ export default function Transactions() {
             </div>
 
             <div className="form-group">
-              <label>Description</label>
+              <label>Description (Optional)</label>
               <input
                 type="text"
                 className="input-ctrl"
                 value={txDesc}
                 onChange={e => setTxDesc(e.target.value)}
-                placeholder="Details of the payment"
-                required
+                placeholder="Details of the payment (e.g. Weekly Groceries)"
               />
             </div>
           </div>
