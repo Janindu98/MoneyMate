@@ -51,7 +51,7 @@ export default function BankAccounts() {
     // Get all transactions for this account
     const accTx = transactions.filter(t => 
       t.bankId === selectedAccountId || 
-      (t.type === 'Online Transfer' && t.targetBankId === selectedAccountId)
+      (t.type === 'Online/Account cash transfer' && t.targetBankId === selectedAccountId)
     );
     
     // Sort chronologically (date ascending) to compute running balance correctly
@@ -66,11 +66,11 @@ export default function BankAccounts() {
         if (['Income', 'Deposit', 'Refund'].includes(tx.type)) {
           isInflow = true;
           running += tx.amount;
-        } else if (['Expense', 'Withdrawal', 'online payment', 'Online Transfer'].includes(tx.type)) {
+        } else if (['Expense', 'Withdrawal', 'online payment', 'Online/Account cash transfer'].includes(tx.type)) {
           isOutflow = true;
           running -= tx.amount;
         }
-      } else if (tx.type === 'Online Transfer' && tx.targetBankId === selectedAccountId) {
+      } else if (tx.type === 'Online/Account cash transfer' && tx.targetBankId === selectedAccountId) {
         isInflow = true;
         running += tx.amount;
       }
@@ -169,50 +169,9 @@ export default function BankAccounts() {
       editAccount(editId, payload);
       showToast(`Account "${accountName}" updated.`);
     } else {
-      // For initial balance, we trigger the addAccount which internally handles creation.
-      // Wait, we also want to record an initial deposit transaction in ledger to adjust balance!
-      // Since useDatabase handles balance aggregations, we'll append the account,
-      // and if starting balance > 0, we can add a deposit transaction.
       const initialDepositVal = parseFloat(initialDeposit) || 0;
-      addAccount(payload);
-      
-      // Wait! Because useDatabase runs sequentially, we need the new account ID to record a transaction.
-      // Let's add the transaction inside hook, or we can handle it inside useDatabase.
-      // In useDatabase addAccount function, we generate acc_Date.now().
-      // Let's pass the deposit amount if needed, or we can log it here if we know the ID or we can just append a transaction with the same timestamp ID.
-      if (initialDepositVal > 0) {
-        // Let's find the new account ID or we can just let useDatabase do it.
-        // Actually, our hook addAccount takes the account object.
-        // Let's modify our useDatabase hook or we can add it in the transaction ledger directly.
-        // Wait, in our hook useDatabase.js:
-        // `const newAccounts = [...dbState.accounts, { id: newId, ...acc }]`
-        // We can check if `initialDeposit` was provided or just create a deposit transaction using the same timestamp!
-        // Yes, let's create a custom action inside useDatabase, or since we know it creates `acc_${timestamp}`, we can run:
-        // `addTransaction({ date: date, bankId: newId, ... })`
-        // Wait! Let's verify: `addAccount` uses `Date.now()`. If we do:
-        const tempTimestamp = Date.now();
-        const accountWithId = {
-          id: `acc_${tempTimestamp}`,
-          ...payload
-        };
-        
-        addAccount(accountWithId);
-        
-        if (initialDepositVal > 0) {
-          // Add initial deposit
-          // We can call useDatabase's addTransaction or save it
-          // Wait! In useDatabase useDatabase.js line 42:
-          // `addAccount` does: `const newAccounts = [...dbState.accounts, { id: `acc_${Date.now()}`, ...acc }]`
-          // Since it adds the id dynamically, we can update useDatabase to accept an `id` if it already exists, or handle it cleanly.
-          // Let's look at `useDatabase.js` addAccount:
-          // `const addAccount = (acc) => { const newAccounts = [...dbState.accounts, { id: acc.id || `acc_${Date.now()}`, ...acc }]; ... }`
-          // Ah! Our useDatabase implementation does support `id` if passed or creates a new one!
-          // So passing `id` explicitly works perfectly!
-          // Let's trigger both:
-          // 1. `addAccount(accountWithId)`
-          // 2. `addTransaction({ date, bankId: accountWithId.id, type: 'Deposit', category: 'Other', payee: 'Self', amount: initialDepositVal, description: 'Opening balance' })`
-        }
-      }
+      addAccount(payload, initialDepositVal);
+      showToast(`Account "${accountName}" created.`);
     }
 
     setIsModalOpen(false);
@@ -275,7 +234,7 @@ export default function BankAccounts() {
 
             <div className="card-bottom">
               <span className="card-number">
-                {acc.accountNumber ? `•••• •••• •••• ${acc.accountNumber}` : '•••• •••• •••• N/A'}
+                {acc.accountNumber ? `A/C: ${acc.accountNumber}` : 'A/C: N/A'}
               </span>
               <div className="card-actions" onClick={e => e.stopPropagation()}>
                 <button className="btn-card-action" onClick={() => handleOpenEditModal(acc)} title="Edit Details">
@@ -460,13 +419,13 @@ export default function BankAccounts() {
             </div>
 
             <div className="form-group">
-              <label>Account Name / Holder</label>
+              <label>Account Holder Name</label>
               <input 
                 type="text" 
                 className="input-ctrl" 
                 value={accountName}
                 onChange={e => setAccountName(e.target.value)}
-                placeholder="e.g. Personal Savings, Salary Account"
+                placeholder="e.g. John Doe, A. B. Perera"
                 required
               />
             </div>
@@ -513,14 +472,14 @@ export default function BankAccounts() {
               </div>
 
               <div className="form-group">
-                <label>Last 4 Digits (Optional)</label>
+                <label>Account Number</label>
                 <input 
                   type="text" 
                   className="input-ctrl" 
                   value={accountNumber}
                   onChange={e => setAccountNumber(e.target.value)}
-                  placeholder="e.g. 5678"
-                  maxLength="4"
+                  placeholder="e.g. 8012345678"
+                  required
                 />
               </div>
             </div>

@@ -5,15 +5,15 @@ import Modal from '../../components/Modal';
 import { formatCurrency } from '../../utils/format';
 
 export default function Transactions() {
-  const { 
-    accounts, 
-    transactions, 
-    categories, 
-    addTransaction, 
-    editTransaction, 
-    deleteTransaction, 
-    addCategory, 
-    settings 
+  const {
+    accounts,
+    transactions,
+    categories,
+    addTransaction,
+    editTransaction,
+    deleteTransaction,
+    addCategory,
+    settings
   } = useDatabase();
   const { showToast } = useToast();
 
@@ -33,8 +33,8 @@ export default function Transactions() {
   // Transaction Form Fields
   const [txDate, setTxDate] = useState(new Date().toISOString().split('T')[0]);
   const [txBankId, setTxBankId] = useState('');
-  const [txTargetBankId, setTxTargetBankId] = useState(''); // Only used for Online Transfer
-  const [txType, setTxType] = useState('Expense'); // Income, Expense, Online Transfer, Deposit, Withdrawal, online payment
+  const [txTargetBankId, setTxTargetBankId] = useState(''); // Only used for Online/Account cash transfer
+  const [txType, setTxType] = useState('Expense'); // Income, Expense, Online/Account cash transfer, Deposit, Withdrawal, online payment
   const [txCategory, setTxCategory] = useState('');
   const [txPayee, setTxPayee] = useState('');
   const [txAmount, setTxAmount] = useState('');
@@ -48,10 +48,10 @@ export default function Transactions() {
   const paymentTypes = [
     'Income',
     'Expense',
-    'Online Transfer',
+    'Online/Account cash transfer',
     'Deposit',
     'Withdrawal',
-    'online payment'
+    'Online Payment'
   ];
 
   // 2. Fetch Category options dynamically based on transaction type selection
@@ -65,7 +65,28 @@ export default function Transactions() {
   const handleTxTypeChange = (type) => {
     setTxType(type);
     const opts = getCategoryOptions(type);
-    setTxCategory(opts[0] || 'Other');
+    
+    if (type === 'Online/Account cash transfer') {
+      setTxCategory('Money Transfer');
+      const defaultTarget = txTargetBankId || (accounts.find(a => a.id !== txBankId)?.id || '');
+      setTxTargetBankId(defaultTarget);
+      const targetAcc = accounts.find(a => a.id === defaultTarget);
+      if (targetAcc) {
+        setTxPayee(targetAcc.accountName);
+      }
+    } else {
+      setTxCategory(opts[0] || 'Other');
+    }
+  };
+
+  const handleTargetBankChange = (targetId) => {
+    setTxTargetBankId(targetId);
+    if (txType === 'Online/Account cash transfer') {
+      const targetAcc = accounts.find(a => a.id === targetId);
+      if (targetAcc) {
+        setTxPayee(targetAcc.accountName);
+      }
+    }
   };
 
   // Open transaction modals
@@ -113,7 +134,7 @@ export default function Transactions() {
       showToast('Please select a bank account.', 'error');
       return;
     }
-    if (txType === 'Online Transfer' && txBankId === txTargetBankId) {
+    if (txType === 'Online/Account cash transfer' && txBankId === txTargetBankId) {
       showToast('Source and Destination accounts must be different for transfers.', 'error');
       return;
     }
@@ -121,10 +142,12 @@ export default function Transactions() {
     const payload = {
       date: txDate,
       bankId: txBankId,
-      targetBankId: txType === 'Online Transfer' ? txTargetBankId : '',
+      targetBankId: txType === 'Online/Account cash transfer' ? txTargetBankId : '',
       type: txType,
-      category: txCategory,
-      payee: txPayee.trim(),
+      category: txType === 'Online/Account cash transfer' ? 'Money Transfer' : txCategory,
+      payee: txType === 'Online/Account cash transfer' 
+        ? (accounts.find(a => a.id === txTargetBankId)?.accountName || 'Self') 
+        : txPayee.trim(),
       amount: amountVal,
       description: txDesc.trim()
     };
@@ -169,8 +192,8 @@ export default function Transactions() {
     const matchesType = filterType === 'all' || tx.type === filterType;
     const matchesCat = filterCategory === 'all' || tx.category === filterCategory;
     const search = searchQuery.toLowerCase();
-    const matchesSearch = tx.description.toLowerCase().includes(search) || 
-      tx.category.toLowerCase().includes(search) || 
+    const matchesSearch = tx.description.toLowerCase().includes(search) ||
+      tx.category.toLowerCase().includes(search) ||
       (tx.payee && tx.payee.toLowerCase().includes(search));
 
     return matchesAcc && matchesType && matchesCat && matchesSearch;
@@ -198,7 +221,7 @@ export default function Transactions() {
             Manage Categories
           </button>
           <button className="btn btn-primary" onClick={handleOpenAddTxModal}>
-            <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
             Record Transaction
           </button>
         </div>
@@ -223,6 +246,7 @@ export default function Transactions() {
 
           <select className="input-ctrl filter-select" value={filterCategory} onChange={e => { setPage(1); setFilterCategory(e.target.value); }}>
             <option value="all">All Categories</option>
+            <option value="Money Transfer">Money Transfer</option>
             <optgroup label="Income">
               {categories.income.map(c => (
                 <option key={c} value={c}>{c}</option>
@@ -236,9 +260,9 @@ export default function Transactions() {
           </select>
         </div>
 
-        <input 
-          type="text" 
-          className="input-ctrl search-input" 
+        <input
+          type="text"
+          className="input-ctrl search-input"
           value={searchQuery}
           onChange={e => { setPage(1); setSearchQuery(e.target.value); }}
           placeholder="Search descriptions, categories, payees..."
@@ -265,13 +289,13 @@ export default function Transactions() {
               {paginatedTx.map(tx => {
                 const sourceAcc = accounts.find(a => a.id === tx.bankId);
                 const targetAcc = accounts.find(a => a.id === tx.targetBankId);
-                const isOutflow = ['Expense', 'Withdrawal', 'online payment', 'Online Transfer'].includes(tx.type) && tx.bankId === sourceAcc?.id;
-                
+                const isOutflow = ['Expense', 'Withdrawal', 'online payment', 'Online/Account cash transfer'].includes(tx.type) && tx.bankId === sourceAcc?.id;
+
                 return (
                   <tr key={tx.id}>
                     <td>{tx.date}</td>
                     <td>
-                      {tx.type === 'Online Transfer' ? (
+                      {tx.type === 'Online/Account cash transfer' ? (
                         <div style={{ fontSize: '0.85rem' }}>
                           <div>From: {sourceAcc ? sourceAcc.bankName : 'Unknown'}</div>
                           <div style={{ color: 'var(--text-muted)' }}>To: {targetAcc ? targetAcc.bankName : 'Unknown'}</div>
@@ -292,10 +316,10 @@ export default function Transactions() {
                     <td>
                       <div style={{ display: 'flex', gap: '8px' }}>
                         <button className="btn btn-secondary btn-icon-only" style={{ width: '28px', height: '28px' }} onClick={() => handleOpenEditTxModal(tx)} title="Edit">
-                          <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" strokeWidth="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                          <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" strokeWidth="2"><path d="M12 20h9" /><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg>
                         </button>
                         <button className="btn btn-danger btn-icon-only" style={{ width: '28px', height: '28px', background: 'rgba(244, 63, 94, 0.15)', color: '#f43f5e' }} onClick={() => handleDeleteTx(tx.id, tx.description)} title="Delete">
-                          <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" strokeWidth="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                          <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" strokeWidth="2"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /></svg>
                         </button>
                       </div>
                     </td>
@@ -307,7 +331,7 @@ export default function Transactions() {
 
           {paginatedTx.length === 0 && (
             <div className="empty-state">
-              <svg viewBox="0 0 24 24" width="48" height="48" stroke="currentColor" fill="none" strokeWidth="1.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              <svg viewBox="0 0 24 24" width="48" height="48" stroke="currentColor" fill="none" strokeWidth="1.5"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
               <div className="empty-state-text">No matching transactions in ledger.</div>
             </div>
           )}
@@ -344,7 +368,7 @@ export default function Transactions() {
               </div>
 
               <div className="form-group">
-                <label>{txType === 'Online Transfer' ? 'Source Account' : 'Bank Account'}</label>
+                <label>{txType === 'Online/Account cash transfer' ? 'Source Account' : 'Bank Account'}</label>
                 <select className="input-ctrl" value={txBankId} onChange={e => setTxBankId(e.target.value)} required>
                   {accounts.map(a => (
                     <option key={a.id} value={a.id}>{a.bankName} - {a.accountName}</option>
@@ -353,10 +377,10 @@ export default function Transactions() {
               </div>
             </div>
 
-            {txType === 'Online Transfer' && (
+            {txType === 'Online/Account cash transfer' && (
               <div className="form-group">
                 <label>Destination Account</label>
-                <select className="input-ctrl" value={txTargetBankId} onChange={e => setTxTargetBankId(e.target.value)} required>
+                <select className="input-ctrl" value={txTargetBankId} onChange={e => handleTargetBankChange(e.target.value)} required>
                   <option value="">Select target account...</option>
                   {accounts.map(a => (
                     <option key={a.id} value={a.id}>{a.bankName} - {a.accountName}</option>
@@ -368,25 +392,25 @@ export default function Transactions() {
             <div className="form-row-2">
               <div className="form-group">
                 <label>Amount (Rs.)</label>
-                <input 
-                  type="number" 
-                  step="0.01" 
-                  min="0.01" 
-                  className="input-ctrl" 
-                  value={txAmount} 
-                  onChange={e => setTxAmount(e.target.value)} 
-                  placeholder="0.00" 
-                  required 
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0.01"
+                  className="input-ctrl"
+                  value={txAmount}
+                  onChange={e => setTxAmount(e.target.value)}
+                  placeholder="0.00"
+                  required
                 />
               </div>
               <div className="form-group">
                 <label>Date</label>
-                <input 
-                  type="date" 
-                  className="input-ctrl" 
-                  value={txDate} 
-                  onChange={e => setTxDate(e.target.value)} 
-                  required 
+                <input
+                  type="date"
+                  className="input-ctrl"
+                  value={txDate}
+                  onChange={e => setTxDate(e.target.value)}
+                  required
                 />
               </div>
             </div>
@@ -394,33 +418,38 @@ export default function Transactions() {
             <div className="form-row-2">
               <div className="form-group">
                 <label>Category</label>
-                <select className="input-ctrl" value={txCategory} onChange={e => setTxCategory(e.target.value)} required>
-                  {getCategoryOptions(txType).map(c => (
-                    <option key={c} value={c}>{c}</option>
-                  ))}
-                </select>
+                {txType === 'Online/Account cash transfer' ? (
+                  <input type="text" className="input-ctrl" value="Money Transfer" disabled />
+                ) : (
+                  <select className="input-ctrl" value={txCategory} onChange={e => setTxCategory(e.target.value)} required>
+                    {getCategoryOptions(txType).map(c => (
+                      <option key={c} value={c}>{c}</option>
+                    ))}
+                  </select>
+                )}
               </div>
               <div className="form-group">
                 <label>Payee / Recipient</label>
-                <input 
-                  type="text" 
-                  className="input-ctrl" 
-                  value={txPayee} 
-                  onChange={e => setTxPayee(e.target.value)} 
-                  placeholder="e.g. Keells, Dialog, Self" 
+                <input
+                  type="text"
+                  className="input-ctrl"
+                  value={txPayee}
+                  onChange={e => setTxPayee(e.target.value)}
+                  placeholder={txType === 'Online/Account cash transfer' ? "Recipient account holder" : "e.g. Keells, Dialog, Self"}
+                  disabled={txType === 'Online/Account cash transfer'}
                 />
               </div>
             </div>
 
             <div className="form-group">
               <label>Description</label>
-              <input 
-                type="text" 
-                className="input-ctrl" 
-                value={txDesc} 
-                onChange={e => setTxDesc(e.target.value)} 
-                placeholder="Details of the payment" 
-                required 
+              <input
+                type="text"
+                className="input-ctrl"
+                value={txDesc}
+                onChange={e => setTxDesc(e.target.value)}
+                placeholder="Details of the payment"
+                required
               />
             </div>
           </div>
@@ -442,16 +471,16 @@ export default function Transactions() {
                 <option value="income">Income Category</option>
               </select>
             </div>
-            
+
             <div className="form-group">
               <label>Category Name</label>
-              <input 
-                type="text" 
-                className="input-ctrl" 
-                value={newCatName} 
-                onChange={e => setNewCatName(e.target.value)} 
-                placeholder="e.g. WiFi, Mobile Bill, Bonus, Dividend" 
-                required 
+              <input
+                type="text"
+                className="input-ctrl"
+                value={newCatName}
+                onChange={e => setNewCatName(e.target.value)}
+                placeholder="e.g. WiFi, Mobile Bill, Bonus, Dividend"
+                required
               />
             </div>
           </div>

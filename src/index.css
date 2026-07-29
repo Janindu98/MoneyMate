@@ -1103,3 +1103,235 @@ textarea {
   display: flex;
   gap: 8px;
 }
+
+/* Lock Screen CSS */
+.lockscreen-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at 50% 50%, rgba(99, 102, 241, 0.18) 0%, rgba(7, 10, 19, 0.99) 100%);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+}
+
+.lockscreen-card {
+  background: rgba(15, 19, 34, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 28px;
+  padding: 48px 40px;
+  width: 390px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: border-color 0.3s ease;
+}
+
+.lockscreen-card.error {
+  border-color: rgba(244, 63, 150, 0.4);
+}
+
+.lockscreen-header {
+  text-align: center;
+  margin-bottom: 24px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.lockscreen-logo {
+  width: 64px;
+  height: 64px;
+  border-radius: 16px;
+  background: var(--accent-gradient);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #fff;
+  margin-bottom: 16px;
+  box-shadow: 0 8px 24px rgba(99, 102, 241, 0.3);
+  letter-spacing: -0.5px;
+}
+
+.lockscreen-card h2 {
+  font-size: 1.6rem;
+  font-weight: 700;
+  margin-bottom: 6px;
+  color: #fff;
+}
+
+.lockscreen-subtitle {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+/* PIN Lock indicators */
+.pin-container {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.pin-dots {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  margin: 16px 0 24px 0;
+}
+
+.pin-dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  background: transparent;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.pin-dot.filled {
+  background: #6366f1;
+  border-color: #6366f1;
+  box-shadow: 0 0 14px rgba(99, 102, 241, 0.7);
+  transform: scale(1.15);
+}
+
+.lockscreen-error-msg {
+  color: #f43f5e;
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+/* Keypad styling */
+.keypad-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  width: 100%;
+  max-width: 280px;
+}
+
+.keypad-btn {
+  height: 64px;
+  width: 64px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  background: rgba(255, 255, 255, 0.02);
+  color: #f8fafc;
+  font-size: 1.4rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+  transition: all 0.2s ease;
+}
+
+.keypad-btn:hover {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.15);
+  transform: translateY(-2px);
+}
+
+.keypad-btn:active {
+  background: #6366f1;
+  color: #fff;
+  border-color: #6366f1;
+  transform: scale(0.95);
+  box-shadow: 0 0 12px rgba(99, 102, 241, 0.4);
+}
+
+.keypad-btn.action {
+  font-size: 1.05rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  background: transparent;
+  border-color: transparent;
+}
+
+.keypad-btn.action:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+/* Password View Form styling */
+.password-form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  margin-top: 12px;
+}
+
+.password-input-wrapper {
+  position: relative;
+  width: 100%;
+  margin-bottom: 16px;
+}
+
+.lockscreen-password-input {
+  width: 100%;
+  padding: 14px 48px 14px 16px !important;
+  font-size: 1rem;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(15, 19, 34, 0.8) !important;
+  color: #fff;
+}
+
+.lockscreen-password-input:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25);
+}
+
+.password-toggle-btn {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s ease;
+}
+
+.password-toggle-btn:hover {
+  color: #fff;
+}
+
+.lockscreen-submit-btn {
+  width: 100%;
+  padding: 14px !important;
+  font-weight: 600;
+  font-size: 0.95rem;
+  border-radius: 12px;
+}
+
+/* Shaking Error Animation */
+.lockscreen-card.shake {
+  animation: lockscreenShake 0.45s cubic-bezier(.36,.07,.19,.97) both;
+}
+
+@keyframes lockscreenShake {
+  10%, 90% { transform: translate3d(-2px, 0, 0); }
+  20%, 80% { transform: translate3d(4px, 0, 0); }
+  30%, 50%, 70% { transform: translate3d(-6px, 0, 0); }
+  40%, 60% { transform: translate3d(6px, 0, 0); }
+}
+
