@@ -637,10 +637,11 @@ tr:hover td {
   background: rgba(7, 10, 19, 0.75);
   backdrop-filter: blur(8px);
   display: none;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   z-index: 100;
-  padding: 16px;
+  padding: 40px 16px;
+  overflow-y: auto;
 }
 
 .modal-overlay.active {

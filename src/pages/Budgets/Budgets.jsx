@@ -1,13 +1,59 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useDatabase } from '../../hooks/useDatabase';
 import { formatCurrency } from '../../utils/format';
 import Chart from 'chart.js/auto';
+import Modal from '../../components/Modal';
 
 export default function Budgets() {
-  const { transactions, settings } = useDatabase();
+  const { transactions, settings, updateSettings } = useDatabase();
   
   const pieChartRef = useRef(null);
   const barChartRef = useRef(null);
+
+  // Target limits (User Specs)
+  const budgetLimits = settings?.budgetLimits || {
+    Food: 35000,
+    Fuel: 20000,
+    Bills: 18000,
+    Shopping: 15000,
+    Others: 12000,
+    Transportations: 5000
+  };
+
+  const [isLimitsModalOpen, setIsLimitsModalOpen] = useState(false);
+  const [limitFood, setLimitFood] = useState(budgetLimits.Food);
+  const [limitFuel, setLimitFuel] = useState(budgetLimits.Fuel);
+  const [limitBills, setLimitBills] = useState(budgetLimits.Bills);
+  const [limitShopping, setLimitShopping] = useState(budgetLimits.Shopping);
+  const [limitOthers, setLimitOthers] = useState(budgetLimits.Others);
+  const [limitTransport, setLimitTransport] = useState(budgetLimits.Transportations);
+
+  // Sync state if settings load later
+  useEffect(() => {
+    if (settings?.budgetLimits) {
+      setLimitFood(settings.budgetLimits.Food);
+      setLimitFuel(settings.budgetLimits.Fuel);
+      setLimitBills(settings.budgetLimits.Bills);
+      setLimitShopping(settings.budgetLimits.Shopping);
+      setLimitOthers(settings.budgetLimits.Others);
+      setLimitTransport(settings.budgetLimits.Transportations);
+    }
+  }, [settings]);
+
+  const handleSaveLimits = (e) => {
+    e.preventDefault();
+    updateSettings({
+      budgetLimits: {
+        Food: parseFloat(limitFood) || 0,
+        Fuel: parseFloat(limitFuel) || 0,
+        Bills: parseFloat(limitBills) || 0,
+        Shopping: parseFloat(limitShopping) || 0,
+        Others: parseFloat(limitOthers) || 0,
+        Transportations: parseFloat(limitTransport) || 0
+      }
+    });
+    setIsLimitsModalOpen(false);
+  };
 
   const now = new Date();
   const currentMonth = now.getMonth();
@@ -69,12 +115,12 @@ export default function Budgets() {
   // Scorecard compilation (dynamic limits are based on monthly income, defaults to a baseline of 100,000 LKR if income is 0)
   const baseIncomeForLimits = monthlyIncome > 0 ? monthlyIncome : 100000;
   const scorecard = [
-    { name: 'Food', targetPct: 35, actualAmt: foodSpent, targetAmt: baseIncomeForLimits * budgetRatios.Food },
-    { name: 'Fuel', targetPct: 20, actualAmt: fuelSpent, targetAmt: baseIncomeForLimits * budgetRatios.Fuel },
-    { name: 'Bills (Inc. Network)', targetPct: 18, actualAmt: billsSpent, targetAmt: baseIncomeForLimits * budgetRatios.Bills },
-    { name: 'Shopping', targetPct: 15, actualAmt: shoppingSpent, targetAmt: baseIncomeForLimits * budgetRatios.Shopping },
-    { name: 'Others', targetPct: 12, actualAmt: othersSpent, targetAmt: baseIncomeForLimits * budgetRatios.Others },
-    { name: 'Transportations', targetPct: 0, actualAmt: transportSpent, targetAmt: 0 } // no target specified, show actuals
+    { name: 'Food', targetPct: Math.round((budgetLimits.Food / baseIncomeForLimits) * 100), actualAmt: foodSpent, targetAmt: budgetLimits.Food },
+    { name: 'Fuel', targetPct: Math.round((budgetLimits.Fuel / baseIncomeForLimits) * 100), actualAmt: fuelSpent, targetAmt: budgetLimits.Fuel },
+    { name: 'Bills (Inc. Network)', targetPct: Math.round((budgetLimits.Bills / baseIncomeForLimits) * 100), actualAmt: billsSpent, targetAmt: budgetLimits.Bills },
+    { name: 'Shopping', targetPct: Math.round((budgetLimits.Shopping / baseIncomeForLimits) * 100), actualAmt: shoppingSpent, targetAmt: budgetLimits.Shopping },
+    { name: 'Others', targetPct: Math.round((budgetLimits.Others / baseIncomeForLimits) * 100), actualAmt: othersSpent, targetAmt: budgetLimits.Others },
+    { name: 'Transportations', targetPct: Math.round((budgetLimits.Transportations / baseIncomeForLimits) * 100), actualAmt: transportSpent, targetAmt: budgetLimits.Transportations }
   ];
 
   // 2. Multi-month aggregates for Income vs Expenses Bar Chart (last 6 months)
@@ -215,7 +261,16 @@ export default function Budgets() {
 
         {/* Budget comparison scorecard */}
         <div className="panel" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-start' }}>
-          <h2 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '4px' }}>Budget Scorecard</h2>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+            <h2 style={{ fontSize: '1.1rem', fontWeight: 700 }}>Budget Scorecard</h2>
+            <button 
+              className="btn btn-secondary" 
+              onClick={() => setIsLimitsModalOpen(true)}
+              style={{ padding: '6px 12px', fontSize: '0.8rem' }}
+            >
+              Configure Limits
+            </button>
+          </div>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '16px' }}>
             Comparing actual LKR expenses against target thresholds.
           </p>
@@ -273,6 +328,98 @@ export default function Budgets() {
           <canvas ref={barChartRef}></canvas>
         </div>
       </div>
+
+      {/* MODAL: CONFIGURE BUDGET LIMITS */}
+      <Modal isOpen={isLimitsModalOpen} onClose={() => setIsLimitsModalOpen(false)} title="Configure Budget Limits">
+        <form onSubmit={handleSaveLimits}>
+          <div className="modal-body">
+            <div className="form-row-2">
+              <div className="form-group">
+                <label>Food Limit (Rs.)</label>
+                <input 
+                  type="number" 
+                  className="input-ctrl" 
+                  value={limitFood} 
+                  onChange={e => setLimitFood(e.target.value)} 
+                  placeholder="35000" 
+                  min="0"
+                  required 
+                />
+              </div>
+              <div className="form-group">
+                <label>Fuel Limit (Rs.)</label>
+                <input 
+                  type="number" 
+                  className="input-ctrl" 
+                  value={limitFuel} 
+                  onChange={e => setLimitFuel(e.target.value)} 
+                  placeholder="20000" 
+                  min="0"
+                  required 
+                />
+              </div>
+            </div>
+
+            <div className="form-row-2">
+              <div className="form-group">
+                <label>Bills (Inc. Network) Limit (Rs.)</label>
+                <input 
+                  type="number" 
+                  className="input-ctrl" 
+                  value={limitBills} 
+                  onChange={e => setLimitBills(e.target.value)} 
+                  placeholder="18000" 
+                  min="0"
+                  required 
+                />
+              </div>
+              <div className="form-group">
+                <label>Shopping Limit (Rs.)</label>
+                <input 
+                  type="number" 
+                  className="input-ctrl" 
+                  value={limitShopping} 
+                  onChange={e => setLimitShopping(e.target.value)} 
+                  placeholder="15000" 
+                  min="0"
+                  required 
+                />
+              </div>
+            </div>
+
+            <div className="form-row-2">
+              <div className="form-group">
+                <label>Others Limit (Rs.)</label>
+                <input 
+                  type="number" 
+                  className="input-ctrl" 
+                  value={limitOthers} 
+                  onChange={e => setLimitOthers(e.target.value)} 
+                  placeholder="12000" 
+                  min="0"
+                  required 
+                />
+              </div>
+              <div className="form-group">
+                <label>Transportations Limit (Rs.)</label>
+                <input 
+                  type="number" 
+                  className="input-ctrl" 
+                  value={limitTransport} 
+                  onChange={e => setLimitTransport(e.target.value)} 
+                  placeholder="5000" 
+                  min="0"
+                  required 
+                />
+              </div>
+            </div>
+          </div>
+          <div className="modal-footer">
+            <button type="button" className="btn btn-secondary" onClick={() => setIsLimitsModalOpen(false)}>Cancel</button>
+            <button type="submit" className="btn btn-primary">Save Limits</button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }
