@@ -10,7 +10,15 @@ export function DatabaseProvider({ children }) {
     transactions: [],
     categories: { income: [], expense: [] },
     salaryHistory: [],
-    settings: { currency: 'LKR', theme: 'dark' }
+    settings: { currency: 'LKR', theme: 'dark' },
+    profile: {
+      name: '',
+      employeeId: '',
+      company: '',
+      designation: '',
+      bankName: '',
+      accountNumber: ''
+    }
   });
   const [loading, setLoading] = useState(true);
 
@@ -20,7 +28,18 @@ export function DatabaseProvider({ children }) {
       try {
         const data = await api.loadData();
         if (data) {
-          setDbState(data);
+          const mergedData = {
+            ...data,
+            profile: data.profile || {
+              name: '',
+              employeeId: '',
+              company: '',
+              designation: '',
+              bankName: '',
+              accountNumber: ''
+            }
+          };
+          setDbState(mergedData);
         }
       } catch (err) {
         console.error('Failed to load database:', err);
@@ -101,9 +120,23 @@ export function DatabaseProvider({ children }) {
     syncState({ ...dbState, settings: { ...dbState.settings, ...settings } });
   };
 
+  const updateProfile = (updatedProfile) => {
+    syncState({ ...dbState, profile: { ...dbState.profile, ...updatedProfile } });
+  };
+
   // Reset database or restore backup imports
   const restoreDatabase = (newData) => {
-    syncState(newData);
+    syncState({
+      ...newData,
+      profile: newData.profile || {
+        name: '',
+        employeeId: '',
+        company: '',
+        designation: '',
+        bankName: '',
+        accountNumber: ''
+      }
+    });
   };
 
   // Calculate card balances dynamically based on the ledger history
@@ -117,6 +150,7 @@ export function DatabaseProvider({ children }) {
       categories: dbState.categories,
       salaryHistory: dbState.salaryHistory,
       settings: dbState.settings,
+      profile: dbState.profile,
       loading,
       addAccount,
       editAccount,
@@ -128,6 +162,7 @@ export function DatabaseProvider({ children }) {
       addSalaryRecord,
       deleteSalaryRecord,
       updateSettings,
+      updateProfile,
       restoreDatabase
     }}>
       {children}

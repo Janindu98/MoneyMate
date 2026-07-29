@@ -5,7 +5,7 @@ import Modal from '../../components/Modal';
 import { formatCurrency } from '../../utils/format';
 
 export default function BankAccounts() {
-  const { accounts, addAccount, editAccount, deleteAccount, settings } = useDatabase();
+  const { accounts, transactions, addAccount, editAccount, deleteAccount, settings } = useDatabase();
   const { showToast } = useToast();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -20,6 +20,94 @@ export default function BankAccounts() {
   const [status, setStatus] = useState('Active');
   const [cardColor, setCardColor] = useState('#4f46e5');
   const [initialDeposit, setInitialDeposit] = useState('0.00');
+
+  // ePassbook state variables
+  const [selectedAccountId, setSelectedAccountId] = useState(null);
+  const [filterType, setFilterType] = useState('all'); // 'all', 'monthly', 'yearly', 'dates'
+  const [filterMonth, setFilterMonth] = useState(new Date().getMonth().toString());
+  const [filterYear, setFilterYear] = useState(new Date().getFullYear().toString());
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+
+  const monthsList = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ];
+
+  const currencySymbols = {
+    USD: '$',
+    EUR: '€',
+    GBP: '£',
+    INR: '₹',
+    CAD: 'C$',
+    AUD: 'A$',
+    JPY: '¥',
+    LKR: 'Rs.'
+  };
+
+  const getPassbookData = () => {
+    if (!selectedAccountId) return [];
+    
+    // Get all transactions for this account
+    const accTx = transactions.filter(t => 
+      t.bankId === selectedAccountId || 
+      (t.type === 'Online Transfer' && t.targetBankId === selectedAccountId)
+    );
+    
+    // Sort chronologically (date ascending) to compute running balance correctly
+    const sortedAccTx = [...accTx].sort((a, b) => new Date(a.date) - new Date(b.date));
+    
+    let running = 0;
+    const computedTx = sortedAccTx.map(tx => {
+      let isOutflow = false;
+      let isInflow = false;
+      
+      if (tx.bankId === selectedAccountId) {
+        if (['Income', 'Deposit', 'Refund'].includes(tx.type)) {
+          isInflow = true;
+          running += tx.amount;
+        } else if (['Expense', 'Withdrawal', 'online payment', 'Online Transfer'].includes(tx.type)) {
+          isOutflow = true;
+          running -= tx.amount;
+        }
+      } else if (tx.type === 'Online Transfer' && tx.targetBankId === selectedAccountId) {
+        isInflow = true;
+        running += tx.amount;
+      }
+      
+      return {
+        ...tx,
+        isOutflow,
+        isInflow,
+        runningBalance: running
+      };
+    });
+    
+    // Apply filters
+    const filtered = computedTx.filter(tx => {
+      const txDate = new Date(tx.date);
+      if (filterType === 'monthly') {
+        return txDate.getMonth() === parseInt(filterMonth) && txDate.getFullYear() === parseInt(filterYear);
+      } else if (filterType === 'yearly') {
+        return txDate.getFullYear() === parseInt(filterYear);
+      } else if (filterType === 'dates') {
+        const start = startDate ? new Date(startDate) : null;
+        const end = endDate ? new Date(endDate) : null;
+        if (start && end) {
+          const current = new Date(tx.date);
+          current.setHours(0,0,0,0);
+          start.setHours(0,0,0,0);
+          end.setHours(0,0,0,0);
+          return current >= start && current <= end;
+        }
+        return true;
+      }
+      return true;
+    });
+
+    // Show most recent transaction first (descending)
+    return filtered.sort((a, b) => new Date(b.date) - new Date(a.date));
+  };
 
   // Colors available for selection
   const colorThemes = [
@@ -154,7 +242,17 @@ export default function BankAccounts() {
 
       <div className="accounts-grid">
         {accounts.map(acc => (
-          <div key={acc.id} className="bank-card" style={{ background: acc.color || '#1e293b' }}>
+          <div 
+            key={acc.id} 
+            className={`bank-card ${selectedAccountId === acc.id ? 'active' : ''}`}
+            style={{ 
+              background: acc.color || '#1e293b',
+              border: selectedAccountId === acc.id ? '2.5px solid #6366f1' : '1px solid rgba(255, 255, 255, 0.1)',
+              boxShadow: selectedAccountId === acc.id ? '0 0 15px rgba(99, 102, 241, 0.4)' : '0 10px 25px rgba(0, 0, 0, 0.3)',
+              cursor: 'pointer'
+            }}
+            onClick={() => setSelectedAccountId(acc.id)}
+          >
             <div className="card-top">
               <span className="card-bank-name">{acc.bankName}</span>
               <span className="card-type" style={{ background: acc.status === 'Active' ? 'rgba(16, 185, 129, 0.3)' : 'rgba(244, 63, 94, 0.3)' }}>
@@ -198,6 +296,148 @@ export default function BankAccounts() {
           </div>
         )}
       </div>
+
+      {/* Selected Account ePassbook Section */}
+      {selectedAccountId && (() => {
+        const selectedAcc = accounts.find(a => a.id === selectedAccountId);
+        if (!selectedAcc) return null;
+        
+        const passbookData = getPassbookData();
+        
+        return (
+          <div className="panel" style={{ marginTop: '32px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px', borderBottom: '1px solid var(--border-color)', paddingBottom: '16px', marginBottom: '20px' }}>
+              <div>
+                <h2 style={{ fontSize: '1.25rem', fontWeight: 700 }}>ePassbook Statement</h2>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+                  Account: <strong>{selectedAcc.bankName}</strong> ({selectedAcc.accountName}) • No: {selectedAcc.accountNumber || 'N/A'}
+                </p>
+              </div>
+              
+              {/* Filters */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                <div className="form-group" style={{ flexDirection: 'row', alignItems: 'center', gap: '6px' }}>
+                  <label style={{ marginBottom: 0, fontSize: '0.8rem' }}>Filter:</label>
+                  <select 
+                    className="input-ctrl" 
+                    value={filterType} 
+                    onChange={e => setFilterType(e.target.value)} 
+                    style={{ width: '130px', padding: '6px 10px', fontSize: '0.8rem' }}
+                  >
+                    <option value="all">All Logs</option>
+                    <option value="monthly">Monthly</option>
+                    <option value="yearly">Yearly</option>
+                    <option value="dates">Date Range</option>
+                  </select>
+                </div>
+                
+                {filterType === 'monthly' && (
+                  <>
+                    <select 
+                      className="input-ctrl" 
+                      value={filterMonth} 
+                      onChange={e => setFilterMonth(e.target.value)} 
+                      style={{ width: '110px', padding: '6px 10px', fontSize: '0.8rem' }}
+                    >
+                      {monthsList.map((m, idx) => (
+                        <option key={m} value={idx}>{m}</option>
+                      ))}
+                    </select>
+                    <input 
+                      type="number" 
+                      className="input-ctrl" 
+                      value={filterYear} 
+                      onChange={e => setFilterYear(e.target.value)} 
+                      style={{ width: '80px', padding: '6px 10px', fontSize: '0.8rem' }}
+                    />
+                  </>
+                )}
+                
+                {filterType === 'yearly' && (
+                  <input 
+                    type="number" 
+                    className="input-ctrl" 
+                    value={filterYear} 
+                    onChange={e => setFilterYear(e.target.value)} 
+                    style={{ width: '80px', padding: '6px 10px', fontSize: '0.8rem' }}
+                  />
+                )}
+                
+                {filterType === 'dates' && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <input 
+                      type="date" 
+                      className="input-ctrl" 
+                      value={startDate} 
+                      onChange={e => setStartDate(e.target.value)} 
+                      style={{ width: '130px', padding: '6px 10px', fontSize: '0.8rem' }}
+                    />
+                    <span style={{ color: 'var(--text-muted)' }}>to</span>
+                    <input 
+                      type="date" 
+                      className="input-ctrl" 
+                      value={endDate} 
+                      onChange={e => setEndDate(e.target.value)} 
+                      style={{ width: '130px', padding: '6px 10px', fontSize: '0.8rem' }}
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            <div className="table-container">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Type</th>
+                    <th>Category</th>
+                    <th>Payee</th>
+                    <th>Description</th>
+                    <th style={{ textAlign: 'right' }}>Debit (Outflow)</th>
+                    <th style={{ textAlign: 'right' }}>Credit (Inflow)</th>
+                    <th style={{ textAlign: 'right' }}>Running Balance</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {passbookData.map(tx => {
+                    const symbol = currencySymbols[settings.currency || 'LKR'] || 'Rs.';
+                    return (
+                      <tr key={tx.id}>
+                        <td>{tx.date}</td>
+                        <td>
+                          <span className={`badge badge-${tx.isOutflow ? 'expense' : 'income'}`}>
+                            {tx.type}
+                          </span>
+                        </td>
+                        <td>{tx.category}</td>
+                        <td>{tx.payee || 'N/A'}</td>
+                        <td>{tx.description}</td>
+                        <td style={{ textAlign: 'right', color: '#f43f5e', fontWeight: 600 }}>
+                          {tx.isOutflow ? `${symbol} ${tx.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}` : '-'}
+                        </td>
+                        <td style={{ textAlign: 'right', color: '#10b981', fontWeight: 600 }}>
+                          {tx.isInflow ? `${symbol} ${tx.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}` : '-'}
+                        </td>
+                        <td style={{ textAlign: 'right', fontWeight: 700 }}>
+                          {formatCurrency(tx.runningBalance, settings.currency)}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+              
+              {passbookData.length === 0 && (
+                <div className="empty-state">
+                  <svg viewBox="0 0 24 24" width="48" height="48" stroke="currentColor" fill="none" strokeWidth="1.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                  <div className="empty-state-text">No ePassbook entries found matching the filter bounds.</div>
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Modal CRUD Account */}
       <Modal 

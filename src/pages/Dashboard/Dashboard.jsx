@@ -1,18 +1,51 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useDatabase } from '../../hooks/useDatabase';
 import { useToast } from '../../components/Toast';
 import { formatCurrency } from '../../utils/format';
 
 export default function Dashboard({ onNavigate }) {
-  const { accounts, transactions, salaryHistory, addTransaction, addSalaryRecord, settings } = useDatabase();
+  const { accounts, transactions, salaryHistory, addTransaction, addSalaryRecord, settings, profile } = useDatabase();
   const { showToast } = useToast();
   
   const [bankAccountId, setBankAccountId] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [company, setCompany] = useState('');
+  const [employerId, setEmployerId] = useState('');
+  const [position, setPosition] = useState('Software Engineer');
   const [basicSalary, setBasicSalary] = useState('');
   const [fixedAllowance, setFixedAllowance] = useState('');
   const [dashboardPeriod, setDashboardPeriod] = useState('monthly'); // 'overall', 'yearly', 'monthly'
+
+  const developerPositions = [
+    'Intern Software Developer',
+    'Junior Software Engineer',
+    'Associate Software Engineer',
+    'Software Engineer',
+    'Senior Software Engineer',
+    'Tech Lead',
+    'Tech Architect',
+    'Project Manager',
+    'Engineering Manager'
+  ];
+
+  // Prefill states when profile/accounts change
+  useEffect(() => {
+    if (profile) {
+      if (profile.company && !company) setCompany(profile.company);
+      if (profile.employeeId && !employerId) setEmployerId(profile.employeeId);
+      if (profile.designation && (!position || position === 'Software Engineer')) setPosition(profile.designation);
+      
+      if (profile.bankName && accounts.length > 0 && !bankAccountId) {
+        const matchingAcc = accounts.find(a => 
+          a.bankName.toLowerCase() === profile.bankName.toLowerCase() &&
+          (!profile.accountNumber || (a.accountNumber && a.accountNumber.endsWith(profile.accountNumber)))
+        );
+        if (matchingAcc) {
+          setBankAccountId(matchingAcc.id);
+        }
+      }
+    }
+  }, [profile, accounts]);
 
   // 1. Calculations
   // Current Total Balance (sum of all active account balances)
@@ -99,21 +132,26 @@ export default function Dashboard({ onNavigate }) {
 
     const basic = parseFloat(basicSalary) || 0;
     const allowance = parseFloat(fixedAllowance) || 0;
-    const net = basic + allowance;
+    const gross = basic + allowance;
 
-    if (net <= 0) {
+    if (gross <= 0) {
       showToast('Please enter a valid salary amount.', 'error');
       return;
     }
 
     const acc = accounts.find(a => a.id === bankAccountId);
     const bankName = acc ? acc.bankName : 'Unknown';
-    const bankAccountName = acc ? acc.accountName : 'Unknown';
+
+    const epfEmpVal = basic * 0.08;
+    const epfCompVal = basic * 0.12;
+    const etfCompVal = basic * 0.03;
+    const totalDeductions = epfEmpVal + epfCompVal + etfCompVal;
+    const netSalary = gross - totalDeductions;
 
     // Create a detailed salary history record
     const salaryRecord = {
-      employerId: 'EMP-TEMP',
-      position: 'Software Developer',
+      employerId: employerId || 'EMP-TEMP',
+      position: position || 'Software Developer',
       year: date.split('-')[0],
       month: new Date(date).toLocaleString('default', { month: 'long' }),
       company: company || 'My Employer',
@@ -122,14 +160,14 @@ export default function Dashboard({ onNavigate }) {
       otherAllowances: 0,
       bonus: 0,
       overtime: 0,
-      epfEmployee: basic * 0.08, // suggest Sri Lankan default 8%
-      epfCompany: basic * 0.12, // default 12%
-      etfCompany: basic * 0.03, // default 3%
+      epfEmployee: epfEmpVal,
+      epfCompany: epfCompVal,
+      etfCompany: etfCompVal,
       tax: 0,
       taxType: 'APIT',
       loanDeduction: 0,
       otherDeduction: 0,
-      netSalary: net - (basic * 0.08), // Auto Net
+      netSalary: netSalary,
       netAllowance: allowance,
       paymentDate: date,
       bankName: bankName,
@@ -147,7 +185,7 @@ export default function Dashboard({ onNavigate }) {
       category: 'Salary',
       payee: company || 'Employer',
       amount: salaryRecord.netSalary,
-      description: `Salary Received - Basic: ${formatCurrency(basic, settings.currency)} + Allow: ${formatCurrency(allowance, settings.currency)} (EPF deducted)`
+      description: `Salary Received - Basic: ${formatCurrency(basic, settings.currency)} + Allow: ${formatCurrency(allowance, settings.currency)} (EPF 8%+12% + ETF 3% deducted)`
     });
 
     showToast('Salary payment recorded and account balance adjusted.');
@@ -335,16 +373,43 @@ export default function Dashboard({ onNavigate }) {
               </select>
             </div>
 
-            <div className="form-group">
+             <div className="form-group">
               <label>Company / Employer</label>
               <input 
                 type="text" 
                 className="input-ctrl" 
                 value={company}
                 onChange={(e) => setCompany(e.target.value)}
-                placeholder="e.g. WSO2, Virtusa, Axiata"
+                placeholder="e.g. WSO2, Virtusa"
                 required
               />
+            </div>
+
+            <div className="form-row-2">
+              <div className="form-group">
+                <label>Employer ID</label>
+                <input 
+                  type="text" 
+                  className="input-ctrl" 
+                  value={employerId}
+                  onChange={(e) => setEmployeeId ? setEmployerId(e.target.value) : setEmployerId(e.target.value)}
+                  placeholder="e.g. EMP-103"
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>Position / Designation</label>
+                <select 
+                  className="input-ctrl" 
+                  value={position}
+                  onChange={(e) => setPosition(e.target.value)}
+                  required
+                >
+                  {developerPositions.map(p => (
+                    <option key={p} value={p}>{p}</option>
+                  ))}
+                </select>
+              </div>
             </div>
 
             <div className="form-row-2">

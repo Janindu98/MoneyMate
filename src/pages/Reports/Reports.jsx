@@ -226,7 +226,7 @@ export default function Reports() {
         const salaryHeaders = [['Period', 'Employer ID / Position', 'Company', 'Gross Base', 'Total Deduct', `Net Salary (${symbol})`, 'Pay Date']];
         const salaryRows = targetSalaries.map(s => {
           const ded = s.deductions || { tax: 0, pf: 0, health: 0, other: 0 };
-          const totalDed = (s.epfEmployee || 0) + (s.tax || 0) + (s.loanDeduction || 0) + (s.otherDeduction || 0);
+          const totalDed = (s.epfEmployee || 0) + (s.epfCompany || 0) + (s.etfCompany || 0) + (s.tax || 0) + (s.loanDeduction || 0) + (s.otherDeduction || 0);
           return [
             `${s.month} ${s.year}`,
             `${s.employerId}\n${s.position}`,

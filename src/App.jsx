@@ -9,6 +9,7 @@ import Salary from './pages/Salary/Salary';
 import Budgets from './pages/Budgets/Budgets';
 import Reports from './pages/Reports/Reports';
 import Settings from './pages/Settings/Settings';
+import Profile from './pages/Profile/Profile';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -27,6 +28,8 @@ export default function App() {
         return <Budgets />;
       case 'reports':
         return <Reports />;
+      case 'profile':
+        return <Profile />;
       case 'settings':
         return <Settings />;
       default:

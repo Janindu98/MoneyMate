@@ -6,7 +6,7 @@ import { formatCurrency } from '../../utils/format';
 import { api } from '../../services/api';
 
 export default function Salary() {
-  const { accounts, salaryHistory, addSalaryRecord, deleteSalaryRecord, settings } = useDatabase();
+  const { accounts, salaryHistory, addSalaryRecord, deleteSalaryRecord, settings, profile } = useDatabase();
   const { showToast } = useToast();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -34,6 +34,25 @@ export default function Salary() {
   const [bankAccountId, setBankAccountId] = useState('');
   const [payslipPath, setPayslipPath] = useState('');
   const [payslipName, setPayslipName] = useState('');
+
+  // Prefill states when profile/accounts change
+  useEffect(() => {
+    if (profile) {
+      if (profile.company) setCompany(profile.company);
+      if (profile.employeeId) setEmployerId(profile.employeeId);
+      if (profile.designation) setPosition(profile.designation);
+      
+      if (profile.bankName && accounts.length > 0) {
+        const matchingAcc = accounts.find(a => 
+          a.bankName.toLowerCase() === profile.bankName.toLowerCase() &&
+          (!profile.accountNumber || (a.accountNumber && a.accountNumber.endsWith(profile.accountNumber)))
+        );
+        if (matchingAcc) {
+          setBankAccountId(matchingAcc.id);
+        }
+      }
+    }
+  }, [profile, accounts, isModalOpen]);
 
   // Dropdown options
   const developerPositions = [
@@ -125,7 +144,7 @@ export default function Salary() {
 
     // Auto calculations
     const grossEarnings = basic + fixedAllow + otherAllow + bonusVal + otVal;
-    const totalDeductions = epfEmpVal + taxVal + loanVal + otherDedVal;
+    const totalDeductions = epfEmpVal + epfCompVal + etfCompVal + taxVal + loanVal + otherDedVal;
     const netSalary = grossEarnings - totalDeductions;
     const netAllowance = fixedAllow + otherAllow;
 
@@ -385,6 +404,14 @@ export default function Salary() {
                 <div className="deduction-item">
                   <span className="deduction-label">EPF Employee Contribution (8%)</span>
                   <span className="deduction-val">{formatCurrency(selectedSalary.epfEmployee || 0, settings.currency)}</span>
+                </div>
+                <div className="deduction-item">
+                  <span className="deduction-label">EPF Company Contribution (12%)</span>
+                  <span className="deduction-val">{formatCurrency(selectedSalary.epfCompany || 0, settings.currency)}</span>
+                </div>
+                <div className="deduction-item">
+                  <span className="deduction-label">ETF Company Contribution (3%)</span>
+                  <span className="deduction-val">{formatCurrency(selectedSalary.etfCompany || 0, settings.currency)}</span>
                 </div>
                 <div className="deduction-item">
                   <span className="deduction-label">Tax ({selectedSalary.taxType})</span>
