@@ -44,8 +44,15 @@ body {
   display: flex;
 }
 
+#root {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
 /* App Structure */
-#app-container {
+.app-container, #app-container {
   display: flex;
   width: 100%;
   height: 100%;
@@ -183,11 +190,9 @@ body {
 @keyframes fadeIn {
   from {
     opacity: 0;
-    transform: translateY(8px);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
   }
 }
 
@@ -653,11 +658,19 @@ tr:hover td {
   border: 1px solid var(--border-color);
   border-radius: 20px;
   width: 100%;
-  max-width: 500px;
+  max-width: 680px;
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
   transform: scale(0.95);
   opacity: 0;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal form {
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
 }
 
@@ -702,6 +715,8 @@ tr:hover td {
   display: flex;
   flex-direction: column;
   gap: 18px;
+  max-height: 70vh;
+  overflow-y: auto;
 }
 
 .form-group {

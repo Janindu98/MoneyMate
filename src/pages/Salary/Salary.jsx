@@ -6,7 +6,7 @@ import { formatCurrency } from '../../utils/format';
 import { api } from '../../services/api';
 
 export default function Salary() {
-  const { accounts, salaryHistory, addSalaryRecord, deleteSalaryRecord, settings, profile } = useDatabase();
+  const { accounts, salaryHistory, addSalaryRecord, deleteSalaryRecord, settings, profile, addTransaction } = useDatabase();
   const { showToast } = useToast();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -190,6 +190,18 @@ export default function Salary() {
     };
 
     addSalaryRecord(payload);
+
+    // Auto-record as an Income transaction in the ledger
+    addTransaction({
+      date: paymentDate,
+      bankId: bankAccountId,
+      type: 'Income',
+      category: 'Salary',
+      payee: company.trim(),
+      amount: netSalary,
+      description: 'Salary Received'
+    });
+
     setIsModalOpen(false);
     showToast('Monthly salary details recorded.');
   };
@@ -474,7 +486,7 @@ export default function Salary() {
       {/* MODAL: LOG SALARY HISTORY */}
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Log Monthly Salary Slip">
         <form onSubmit={handleSubmit}>
-          <div className="modal-body" style={{ maxHeight: '65vh', overflowY: 'auto' }}>
+          <div className="modal-body">
             <div className="form-row-2">
               <div className="form-group">
                 <label>Company Name</label>
