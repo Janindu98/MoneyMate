@@ -189,7 +189,8 @@ export default function Salary() {
       payslipPath: finalPayslipPath
     };
 
-    addSalaryRecord(payload);
+    const salaryId = `sal_${Date.now()}`;
+    addSalaryRecord({ id: salaryId, ...payload });
 
     // Auto-record as an Income transaction in the ledger
     addTransaction({
@@ -199,7 +200,8 @@ export default function Salary() {
       category: 'Salary',
       payee: company.trim(),
       amount: netSalary,
-      description: 'Salary Received'
+      description: 'Salary Received',
+      salaryRecordId: salaryId
     });
 
     setIsModalOpen(false);

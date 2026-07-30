@@ -3,6 +3,7 @@ import { useDatabase } from '../../hooks/useDatabase';
 import { useToast } from '../../components/Toast';
 import Modal from '../../components/Modal';
 import { formatCurrency } from '../../utils/format';
+import { api } from '../../services/api';
 
 export default function Transactions() {
   const {
@@ -13,7 +14,8 @@ export default function Transactions() {
     editTransaction,
     deleteTransaction,
     addCategory,
-    settings
+    settings,
+    salaryHistory
   } = useDatabase();
   const { showToast } = useToast();
 
@@ -21,6 +23,18 @@ export default function Transactions() {
   const [isTxModalOpen, setIsTxModalOpen] = useState(false);
   const [isCatModalOpen, setIsCatModalOpen] = useState(false);
   const [editId, setEditId] = useState(null);
+  const [selectedTx, setSelectedTx] = useState(null);
+
+  const findSalaryRecord = (tx) => {
+    if (!tx) return null;
+    if (tx.salaryRecordId) {
+      return salaryHistory.find(s => s.id === tx.salaryRecordId);
+    }
+    if (tx.category === 'Salary') {
+      return salaryHistory.find(s => s.netSalary === tx.amount && s.paymentDate === tx.date);
+    }
+    return null;
+  };
 
   // Filters & Pagination State
   const [filterAccount, setFilterAccount] = useState('all');
@@ -292,9 +306,9 @@ export default function Transactions() {
                 const isOutflow = ['Expense', 'Withdrawal', 'online payment', 'Online/Account cash transfer'].includes(tx.type) && tx.bankId === sourceAcc?.id;
 
                 return (
-                  <tr key={tx.id}>
-                    <td>{tx.date}</td>
-                    <td>
+                  <tr key={tx.id} style={{ cursor: 'pointer' }}>
+                    <td onClick={() => setSelectedTx(tx)}>{tx.date}</td>
+                    <td onClick={() => setSelectedTx(tx)}>
                       {tx.type === 'Online/Account cash transfer' ? (
                         <div style={{ fontSize: '0.85rem' }}>
                           <div>From: {sourceAcc ? sourceAcc.bankName : 'Unknown'}</div>
@@ -304,17 +318,20 @@ export default function Transactions() {
                         sourceAcc ? sourceAcc.bankName : 'Unknown'
                       )}
                     </td>
-                    <td><span className={`badge badge-${isOutflow ? 'expense' : 'income'}`}>{tx.type}</span></td>
-                    <td>{tx.category}</td>
-                    <td>{tx.payee || 'N/A'}</td>
-                    <td>{tx.description}</td>
-                    <td>
+                    <td onClick={() => setSelectedTx(tx)}><span className={`badge badge-${isOutflow ? 'expense' : 'income'}`}>{tx.type}</span></td>
+                    <td onClick={() => setSelectedTx(tx)}>{tx.category}</td>
+                    <td onClick={() => setSelectedTx(tx)}>{tx.payee || 'N/A'}</td>
+                    <td onClick={() => setSelectedTx(tx)}>{tx.description}</td>
+                    <td onClick={() => setSelectedTx(tx)}>
                       <span className={`amount ${isOutflow ? 'expense' : 'income'}`}>
                         {isOutflow ? '-' : '+'}{formatCurrency(tx.amount, settings.currency)}
                       </span>
                     </td>
                     <td>
                       <div style={{ display: 'flex', gap: '8px' }}>
+                        <button className="btn btn-secondary btn-icon-only" style={{ width: '28px', height: '28px' }} onClick={() => setSelectedTx(tx)} title="View Details">
+                          <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" strokeWidth="2"><circle cx="12" cy="12" r="10" /><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
+                        </button>
                         <button className="btn btn-secondary btn-icon-only" style={{ width: '28px', height: '28px' }} onClick={() => handleOpenEditTxModal(tx)} title="Edit">
                           <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" strokeWidth="2"><path d="M12 20h9" /><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg>
                         </button>
@@ -488,6 +505,178 @@ export default function Transactions() {
             <button type="submit" className="btn btn-primary">Create Category</button>
           </div>
         </form>
+      </Modal>
+
+      {/* MODAL: TRANSACTION DETAILS & INSPECTOR */}
+      <Modal isOpen={!!selectedTx} onClose={() => setSelectedTx(null)} title="Transaction Details">
+        {selectedTx && (() => {
+          const sourceAcc = accounts.find(a => a.id === selectedTx.bankId);
+          const targetAcc = accounts.find(a => a.id === selectedTx.targetBankId);
+          const isOutflow = ['Expense', 'Withdrawal', 'online payment', 'Online/Account cash transfer'].includes(selectedTx.type) && selectedTx.bankId === sourceAcc?.id;
+          const salaryRec = findSalaryRecord(selectedTx);
+
+          const handleOpenPayslip = async (path) => {
+            if (!path) return;
+            try {
+              const res = await api.openFile(path);
+              if (res.success) {
+                showToast('Opening payslip document attachment...');
+              } else {
+                showToast(`Failed to open payslip: ${res.error}`, 'error');
+              }
+            } catch (err) {
+              console.error(err);
+              showToast('Error launching document viewer.', 'error');
+            }
+          };
+
+          return (
+            <div>
+              <div className="modal-body" style={{ maxHeight: '60vh', overflowY: 'auto' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
+                  <div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Date</div>
+                    <div style={{ fontWeight: 600, fontSize: '0.95rem', marginTop: '2px' }}>{selectedTx.date}</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Payment Type</div>
+                    <div style={{ marginTop: '2px' }}>
+                      <span className={`badge badge-${isOutflow ? 'expense' : 'income'}`} style={{ fontSize: '0.85rem' }}>{selectedTx.type}</span>
+                    </div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Bank Account</div>
+                    <div style={{ fontWeight: 600, fontSize: '0.95rem', marginTop: '2px' }}>
+                      {selectedTx.type === 'Online/Account cash transfer' ? (
+                        <span>From {sourceAcc ? sourceAcc.bankName : 'Unknown'} to {targetAcc ? targetAcc.bankName : 'Unknown'}</span>
+                      ) : (
+                        sourceAcc ? sourceAcc.bankName : 'Unknown'
+                      )}
+                    </div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Category</div>
+                    <div style={{ fontWeight: 600, fontSize: '0.95rem', marginTop: '2px' }}>{selectedTx.category}</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Payee / Recipient</div>
+                    <div style={{ fontWeight: 600, fontSize: '0.95rem', marginTop: '2px' }}>{selectedTx.payee || 'N/A'}</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Transaction Amount</div>
+                    <div style={{ fontWeight: 800, fontSize: '1.2rem', color: isOutflow ? '#f43f5e' : '#10b981', marginTop: '2px' }}>
+                      {isOutflow ? '-' : '+'}{formatCurrency(selectedTx.amount, settings.currency)}
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ marginBottom: '20px' }}>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Description</div>
+                  <div style={{ background: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '12px', marginTop: '4px', fontStyle: 'italic', fontSize: '0.95rem' }}>
+                    {selectedTx.description || 'No description provided.'}
+                  </div>
+                </div>
+
+                {/* salary details if linked */}
+                {salaryRec && (
+                  <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '20px', marginTop: '20px' }}>
+                    <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" fill="none" strokeWidth="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+                      Linked Salary Paystub Breakdown
+                    </h3>
+                    
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px', fontSize: '0.85rem' }}>
+                      <div><strong>Company:</strong> {salaryRec.company}</div>
+                      <div><strong>Position:</strong> {salaryRec.position}</div>
+                      <div><strong>Pay Period:</strong> {salaryRec.month} {salaryRec.year}</div>
+                      <div><strong>Employer ID:</strong> {salaryRec.employerId || 'N/A'}</div>
+                    </div>
+
+                    <div style={{ marginBottom: '16px' }}>
+                      <h4 style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '6px' }}>Earnings Details</h4>
+                      <div className="deduction-item" style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '4px', fontSize: '0.85rem' }}>
+                        <span>Basic Salary</span>
+                        <span style={{ fontWeight: 600 }}>{formatCurrency(salaryRec.basicSalary, settings.currency)}</span>
+                      </div>
+                      <div className="deduction-item" style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '4px', paddingTop: '4px', fontSize: '0.85rem' }}>
+                        <span>Fixed Allowance</span>
+                        <span style={{ fontWeight: 600 }}>{formatCurrency(salaryRec.fixedAllowance, settings.currency)}</span>
+                      </div>
+                      {(salaryRec.otherAllowances > 0) && (
+                        <div className="deduction-item" style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '4px', paddingTop: '4px', fontSize: '0.85rem' }}>
+                          <span>Other Allowances</span>
+                          <span style={{ fontWeight: 600 }}>{formatCurrency(salaryRec.otherAllowances, settings.currency)}</span>
+                        </div>
+                      )}
+                      {(salaryRec.bonus > 0) && (
+                        <div className="deduction-item" style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '4px', paddingTop: '4px', fontSize: '0.85rem' }}>
+                          <span>Bonus</span>
+                          <span style={{ fontWeight: 600, color: '#10b981' }}>{formatCurrency(salaryRec.bonus, settings.currency)}</span>
+                        </div>
+                      )}
+                      {(salaryRec.overtime > 0) && (
+                        <div className="deduction-item" style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '4px', paddingTop: '4px', fontSize: '0.85rem' }}>
+                          <span>Overtime Pay</span>
+                          <span style={{ fontWeight: 600, color: '#3b82f6' }}>{formatCurrency(salaryRec.overtime, settings.currency)}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    <div style={{ marginBottom: '16px' }}>
+                      <h4 style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '6px' }}>Deductions & Statutory</h4>
+                      <div className="deduction-item" style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '4px', fontSize: '0.85rem' }}>
+                        <span>EPF Employee contribution (8%)</span>
+                        <span>{formatCurrency(salaryRec.epfEmployee || 0, settings.currency)}</span>
+                      </div>
+                      <div className="deduction-item" style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '4px', paddingTop: '4px', fontSize: '0.85rem' }}>
+                        <span>EPF Company contribution (12%)</span>
+                        <span>{formatCurrency(salaryRec.epfCompany || 0, settings.currency)}</span>
+                      </div>
+                      <div className="deduction-item" style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '4px', paddingTop: '4px', fontSize: '0.85rem' }}>
+                        <span>ETF Company contribution (3%)</span>
+                        <span>{formatCurrency(salaryRec.etfCompany || 0, settings.currency)}</span>
+                      </div>
+                      {(salaryRec.tax > 0) && (
+                        <div className="deduction-item" style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '4px', paddingTop: '4px', fontSize: '0.85rem' }}>
+                          <span>Tax ({salaryRec.taxType})</span>
+                          <span>{formatCurrency(salaryRec.tax, settings.currency)}</span>
+                        </div>
+                      )}
+                      {(salaryRec.loanDeduction > 0) && (
+                        <div className="deduction-item" style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '4px', paddingTop: '4px', fontSize: '0.85rem' }}>
+                          <span>Loan Deductions</span>
+                          <span>{formatCurrency(salaryRec.loanDeduction, settings.currency)}</span>
+                        </div>
+                      )}
+                      {(salaryRec.otherDeduction > 0) && (
+                        <div className="deduction-item" style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '4px', paddingTop: '4px', fontSize: '0.85rem' }}>
+                          <span>Other Deductions</span>
+                          <span>{formatCurrency(salaryRec.otherDeduction, settings.currency)}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid var(--border-color)', paddingTop: '10px', fontSize: '0.9rem' }}>
+                      <span><strong>Net Allowance:</strong> {formatCurrency(salaryRec.netAllowance, settings.currency)}</span>
+                      <span><strong>Net Disbursed:</strong> <strong style={{ color: '#10b981' }}>{formatCurrency(salaryRec.netSalary, settings.currency)}</strong></span>
+                    </div>
+
+                    {salaryRec.payslipPath && (
+                      <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'center' }}>
+                        <button type="button" className="btn btn-primary" onClick={() => handleOpenPayslip(salaryRec.payslipPath)} style={{ width: '100%' }}>
+                          📄 Open Attached Payslip Document
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-secondary" onClick={() => setSelectedTx(null)}>Close</button>
+              </div>
+            </div>
+          );
+        })()}
       </Modal>
     </div>
   );

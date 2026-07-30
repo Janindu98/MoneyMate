@@ -99,7 +99,7 @@ export default function Sidebar({ activeTab, onTabChange }) {
             key={tab.id}
             className={`nav-item ${activeTab === tab.id ? 'active' : ''}`}
             onClick={() => onTabChange(tab.id)}
-            style={{ background: 'none', border: 'none', textAlign: 'left', width: '100%' }}
+            style={{ border: 'none', textAlign: 'left', width: '100%' }}
           >
             {tab.icon}
             {tab.label}
