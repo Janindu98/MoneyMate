@@ -11,6 +11,9 @@ export default function Profile() {
   const [company, setCompany] = useState('');
   const [designation, setDesignation] = useState('');
   const [selectedBankAccId, setSelectedBankAccId] = useState('');
+  const [taxId, setTaxId] = useState('');
+  const [epfId, setEpfId] = useState('');
+  const [etfId, setEtfId] = useState('');
 
   const developerPositions = [
     'Intern Software Developer',
@@ -31,6 +34,9 @@ export default function Profile() {
       setEmployeeId(profile.employeeId || '');
       setCompany(profile.company || '');
       setDesignation(profile.designation || 'Software Engineer');
+      setTaxId(profile.taxId || '');
+      setEpfId(profile.epfId || '');
+      setEtfId(profile.etfId || '');
       
       // Attempt to find bank account matching the saved bankName & accountNumber
       if (profile.bankName && accounts.length > 0) {
@@ -65,7 +71,10 @@ export default function Profile() {
       company: company.trim(),
       designation,
       bankName: savedBankName,
-      accountNumber: savedAccountNumber
+      accountNumber: savedAccountNumber,
+      taxId: taxId.trim(),
+      epfId: epfId.trim(),
+      etfId: etfId.trim()
     });
 
     showToast('User profile settings updated successfully.');
@@ -76,7 +85,7 @@ export default function Profile() {
       <div className="page-header">
         <div className="header-title">
           <h1>Profile Management</h1>
-          <p>Manage your user identity parameters, employer details, and active designations.</p>
+          <p>Manage your user identity parameters, employer details, tax credentials, and active designations.</p>
         </div>
       </div>
 
@@ -141,6 +150,42 @@ export default function Profile() {
               </div>
             </div>
 
+            {/* Statutory Reference IDs */}
+            <div className="form-row-3" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
+              <div className="form-group">
+                <label>Tax ID (TIN)</label>
+                <input 
+                  type="text" 
+                  className="input-ctrl" 
+                  value={taxId} 
+                  onChange={e => setTaxId(e.target.value)} 
+                  placeholder="e.g. TIN-789012" 
+                />
+              </div>
+
+              <div className="form-group">
+                <label>EPF Member ID</label>
+                <input 
+                  type="text" 
+                  className="input-ctrl" 
+                  value={epfId} 
+                  onChange={e => setEpfId(e.target.value)} 
+                  placeholder="e.g. EPF-3456" 
+                />
+              </div>
+
+              <div className="form-group">
+                <label>ETF Member ID</label>
+                <input 
+                  type="text" 
+                  className="input-ctrl" 
+                  value={etfId} 
+                  onChange={e => setEtfId(e.target.value)} 
+                  placeholder="e.g. ETF-7890" 
+                />
+              </div>
+            </div>
+
             <div className="form-group">
               <label>Default Salary Deposit Account</label>
               <select 
@@ -188,6 +233,18 @@ export default function Profile() {
               <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px dashed rgba(255,255,255,0.2)', paddingBottom: '6px' }}>
                 <span style={{ opacity: 0.8 }}>Company:</span>
                 <span style={{ fontWeight: 600 }}>{company || 'N/A'}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px dashed rgba(255,255,255,0.2)', paddingBottom: '6px' }}>
+                <span style={{ opacity: 0.8 }}>Tax ID (TIN):</span>
+                <span style={{ fontWeight: 600 }}>{taxId || 'N/A'}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px dashed rgba(255,255,255,0.2)', paddingBottom: '6px' }}>
+                <span style={{ opacity: 0.8 }}>EPF ID:</span>
+                <span style={{ fontWeight: 600 }}>{epfId || 'N/A'}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px dashed rgba(255,255,255,0.2)', paddingBottom: '6px' }}>
+                <span style={{ opacity: 0.8 }}>ETF ID:</span>
+                <span style={{ fontWeight: 600 }}>{etfId || 'N/A'}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <span style={{ opacity: 0.8 }}>Bank Account:</span>

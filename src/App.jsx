@@ -10,6 +10,9 @@ import Budgets from './pages/Budgets/Budgets';
 import Reports from './pages/Reports/Reports';
 import Settings from './pages/Settings/Settings';
 import Profile from './pages/Profile/Profile';
+import Subscriptions from './pages/Subscriptions/Subscriptions';
+import Backup from './pages/Backup/Backup';
+import BillAnalysis from './pages/Budgets/BillAnalysis';
 import LockScreen from './components/LockScreen';
 
 export default function App() {
@@ -47,6 +50,12 @@ function AppContent() {
         return <Salary />;
       case 'budgets':
         return <Budgets />;
+      case 'bills':
+        return <BillAnalysis />;
+      case 'subscriptions':
+        return <Subscriptions />;
+      case 'backup':
+        return <Backup />;
       case 'reports':
         return <Reports />;
       case 'profile':

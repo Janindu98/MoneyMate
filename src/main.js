@@ -58,14 +58,24 @@ app.whenReady().then(() => {
     const success = db.setData(newData);
     if (success) {
       try {
-        const backupEnabled = newData?.settings?.gdriveBackupEnabled;
-        const backupPath = newData?.settings?.gdriveBackupPath;
-        if (backupEnabled && backupPath && fs.existsSync(backupPath)) {
-          const targetBackupFile = path.join(backupPath, 'personal_finance_backup.json');
+        const settings = newData?.settings;
+        // GDrive backup
+        if (settings?.gdriveBackupEnabled && settings?.gdriveBackupPath && fs.existsSync(settings.gdriveBackupPath)) {
+          const targetBackupFile = path.join(settings.gdriveBackupPath, 'personal_finance_backup.json');
+          fs.writeFileSync(targetBackupFile, JSON.stringify(newData, null, 2), 'utf8');
+        }
+        // OneDrive backup
+        if (settings?.onedriveBackupEnabled && settings?.onedriveBackupPath && fs.existsSync(settings.onedriveBackupPath)) {
+          const targetBackupFile = path.join(settings.onedriveBackupPath, 'personal_finance_backup.json');
+          fs.writeFileSync(targetBackupFile, JSON.stringify(newData, null, 2), 'utf8');
+        }
+        // Dropbox backup
+        if (settings?.dropboxBackupEnabled && settings?.dropboxBackupPath && fs.existsSync(settings.dropboxBackupPath)) {
+          const targetBackupFile = path.join(settings.dropboxBackupPath, 'personal_finance_backup.json');
           fs.writeFileSync(targetBackupFile, JSON.stringify(newData, null, 2), 'utf8');
         }
       } catch (backupErr) {
-        console.error('Failed to auto-backup database to GDrive folder:', backupErr);
+        console.error('Failed to auto-backup database to cloud folders:', backupErr);
       }
     }
     return success;
@@ -134,22 +144,32 @@ app.whenReady().then(() => {
 
       fs.copyFileSync(sourcePath, targetPath);
 
-      // Check if GDrive background backup is enabled
+      // Check and copy to all enabled cloud folders
       try {
         const appData = db.getData();
-        const backupEnabled = appData?.settings?.gdriveBackupEnabled;
-        const backupPath = appData?.settings?.gdriveBackupPath;
+        const settings = appData?.settings;
+        const cloudPaths = [];
 
-        if (backupEnabled && backupPath && fs.existsSync(backupPath)) {
-          const gdrivePayslipsDir = path.join(backupPath, 'payslips');
-          if (!fs.existsSync(gdrivePayslipsDir)) {
-            fs.mkdirSync(gdrivePayslipsDir, { recursive: true });
-          }
-          const gdriveTargetPath = path.join(gdrivePayslipsDir, fileName);
-          fs.copyFileSync(sourcePath, gdriveTargetPath);
+        if (settings?.gdriveBackupEnabled && settings?.gdriveBackupPath && fs.existsSync(settings.gdriveBackupPath)) {
+          cloudPaths.push(settings.gdriveBackupPath);
         }
+        if (settings?.onedriveBackupEnabled && settings?.onedriveBackupPath && fs.existsSync(settings.onedriveBackupPath)) {
+          cloudPaths.push(settings.onedriveBackupPath);
+        }
+        if (settings?.dropboxBackupEnabled && settings?.dropboxBackupPath && fs.existsSync(settings.dropboxBackupPath)) {
+          cloudPaths.push(settings.dropboxBackupPath);
+        }
+
+        cloudPaths.forEach(p => {
+          const cloudPayslipsDir = path.join(p, 'payslips');
+          if (!fs.existsSync(cloudPayslipsDir)) {
+            fs.mkdirSync(cloudPayslipsDir, { recursive: true });
+          }
+          const cloudTargetPath = path.join(cloudPayslipsDir, fileName);
+          fs.copyFileSync(sourcePath, cloudTargetPath);
+        });
       } catch (backupErr) {
-        console.error('Failed to auto-backup payslip to GDrive folder:', backupErr);
+        console.error('Failed to auto-backup payslip to cloud folders:', backupErr);
       }
 
       return { success: true, filePath: targetPath };
@@ -224,6 +244,45 @@ app.whenReady().then(() => {
     }
   });
 
+  ipcMain.handle('db:sync-cloud-folder', async (event, backupPath) => {
+    try {
+      if (!backupPath || !fs.existsSync(backupPath)) {
+        throw new Error('Cloud backup path does not exist. Please check configuration.');
+      }
+
+      // Copy database JSON
+      const appData = db.getData();
+      const targetBackupFile = path.join(backupPath, 'personal_finance_backup.json');
+      fs.writeFileSync(targetBackupFile, JSON.stringify(appData, null, 2), 'utf8');
+
+      // Copy all existing payslips from local payslips dir
+      const documentsDir = app.getPath('documents');
+      const appDir = path.join(documentsDir, 'MoneyMate');
+      const localPayslipsDir = path.join(appDir, 'payslips');
+
+      if (fs.existsSync(localPayslipsDir)) {
+        const files = fs.readdirSync(localPayslipsDir);
+        const cloudPayslipsDir = path.join(backupPath, 'payslips');
+        if (!fs.existsSync(cloudPayslipsDir)) {
+          fs.mkdirSync(cloudPayslipsDir, { recursive: true });
+        }
+
+        for (const file of files) {
+          const sourceFile = path.join(localPayslipsDir, file);
+          const targetFile = path.join(cloudPayslipsDir, file);
+          if (!fs.existsSync(targetFile)) {
+            fs.copyFileSync(sourceFile, targetFile);
+          }
+        }
+      }
+
+      return { success: true };
+    } catch (e) {
+      console.error('Failed to sync to cloud folder:', e);
+      return { success: false, error: e.message };
+    }
+  });
+
   ipcMain.handle('dialog:select-file', async () => {
     const activeWindow = BrowserWindow.getFocusedWindow();
     const result = await dialog.showOpenDialog(activeWindow, {
@@ -235,6 +294,47 @@ app.whenReady().then(() => {
       return { canceled: false, filePath: result.filePaths[0] };
     }
     return { canceled: true };
+  });
+
+  ipcMain.handle('db:write-encrypted-file', async (event, content, defaultName) => {
+    const activeWindow = BrowserWindow.getFocusedWindow();
+    const documentsDir = app.getPath('documents');
+    const appDir = path.join(documentsDir, 'MoneyMate');
+    if (!fs.existsSync(appDir)) {
+      fs.mkdirSync(appDir, { recursive: true });
+    }
+    const result = await dialog.showSaveDialog(activeWindow, {
+      title: 'Export Encrypted Cloud Backup',
+      defaultPath: path.join(appDir, defaultName || 'moneymate_secure_backup.enc'),
+      filters: [{ name: 'Encrypted Backups', extensions: ['enc'] }]
+    });
+    if (!result.canceled && result.filePath) {
+      try {
+        fs.writeFileSync(result.filePath, content, 'utf8');
+        return { success: true, filePath: result.filePath };
+      } catch (e) {
+        return { success: false, error: e.message };
+      }
+    }
+    return { success: false, canceled: true };
+  });
+
+  ipcMain.handle('db:read-encrypted-file', async (event) => {
+    const activeWindow = BrowserWindow.getFocusedWindow();
+    const result = await dialog.showOpenDialog(activeWindow, {
+      title: 'Restore Encrypted Backup',
+      filters: [{ name: 'Encrypted Backups', extensions: ['enc'] }],
+      properties: ['openFile']
+    });
+    if (!result.canceled && result.filePaths.length > 0) {
+      try {
+        const content = fs.readFileSync(result.filePaths[0], 'utf8');
+        return { success: true, content };
+      } catch (e) {
+        return { success: false, error: e.message };
+      }
+    }
+    return { success: false, canceled: true };
   });
 
   createWindow();

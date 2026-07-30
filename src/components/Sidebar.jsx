@@ -54,6 +54,41 @@ export default function Sidebar({ activeTab, onTabChange }) {
       )
     },
     {
+      id: 'bills',
+      label: 'Bill & Payment Analysis',
+      icon: (
+        <svg viewBox="0 0 24 24">
+          <rect x="3" y="4" width="18" height="16" rx="2" />
+          <line x1="7" y1="8" x2="17" y2="8" />
+          <line x1="7" y1="12" x2="17" y2="12" />
+          <line x1="7" y1="16" x2="13" y2="16" />
+        </svg>
+      )
+    },
+    {
+      id: 'subscriptions',
+      label: 'Subscriptions',
+      icon: (
+        <svg viewBox="0 0 24 24">
+          <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+          <line x1="16" y1="2" x2="16" y2="6" />
+          <line x1="8" y1="2" x2="8" y2="6" />
+          <line x1="3" y1="10" x2="21" y2="10" />
+        </svg>
+      )
+    },
+    {
+      id: 'backup',
+      label: 'Cloud Backup',
+      icon: (
+        <svg viewBox="0 0 24 24">
+          <path d="M21.2 15c.6-1 1-2.2 1-3.5 0-3.9-3.1-7-7-7-2.8 0-5.2 1.6-6.4 4C7.6 8.2 6.4 8 5 8c-2.8 0-5 2.2-5 5 0 2.5 1.8 4.6 4.2 4.9H20v-.1z" />
+          <polyline points="16 16 12 12 8 16" />
+          <line x1="12" y1="12" x2="12" y2="21" />
+        </svg>
+      )
+    },
+    {
       id: 'reports',
       label: 'Reports compiler',
       icon: (

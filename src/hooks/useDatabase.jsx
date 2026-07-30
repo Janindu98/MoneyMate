@@ -10,14 +10,38 @@ export function DatabaseProvider({ children }) {
     transactions: [],
     categories: { income: [], expense: [] },
     salaryHistory: [],
-    settings: { currency: 'LKR', theme: 'dark' },
+    subscriptions: [],
+    settings: {
+      currency: 'LKR',
+      theme: 'dark',
+      budgetLimits: {
+        Food: 35000,
+        Fuel: 20000,
+        Bills: 18000,
+        Shopping: 15000,
+        Others: 12000,
+        Transportations: 5000
+      },
+      billLimits: {
+        Electricity: 8000,
+        Water: 2000,
+        Internet: 5000,
+        Mobile: 3000,
+        Insurance: 15000,
+        CreditCards: 25000,
+        Rent: 45000
+      }
+    },
     profile: {
       name: '',
       employeeId: '',
       company: '',
       designation: '',
       bankName: '',
-      accountNumber: ''
+      accountNumber: '',
+      taxId: '',
+      epfId: '',
+      etfId: ''
     }
   });
   const [loading, setLoading] = useState(true);
@@ -28,7 +52,7 @@ export function DatabaseProvider({ children }) {
       try {
         const data = await api.loadData();
         if (data) {
-          // Migrate Online Transfer type to Online/Account cash transfer and force Category as Money Transfer
+          // Migrate Online Transfer type to Online/Account cash transfer
           const migratedTransactions = (data.transactions || []).map(tx => {
             if (tx.type === 'Online Transfer') {
               return {
@@ -43,15 +67,89 @@ export function DatabaseProvider({ children }) {
           const mergedData = {
             ...data,
             transactions: migratedTransactions,
-            profile: data.profile || {
+            subscriptions: data.subscriptions || [],
+            settings: {
+              currency: 'LKR',
+              theme: 'dark',
+              budgetLimits: {
+                Food: 35000,
+                Fuel: 20000,
+                Bills: 18000,
+                Shopping: 15000,
+                Others: 12000,
+                Transportations: 5000
+              },
+              billLimits: {
+                Electricity: 8000,
+                Water: 2000,
+                Internet: 5000,
+                Mobile: 3000,
+                Insurance: 15000,
+                CreditCards: 25000,
+                Rent: 45000
+              },
+              ...(data.settings || {})
+            },
+            profile: {
               name: '',
               employeeId: '',
               company: '',
               designation: '',
               bankName: '',
-              accountNumber: ''
+              accountNumber: '',
+              taxId: '',
+              epfId: '',
+              etfId: '',
+              ...(data.profile || {})
             }
           };
+
+          // Subscriptions Auto-Renewal Check
+          const updatedSubscriptions = [];
+          const newTransactionsToAdd = [];
+          let hasRenewals = false;
+          const today = new Date().toISOString().split('T')[0];
+
+          (mergedData.subscriptions || []).forEach(sub => {
+            let nextRenewal = sub.nextRenewalDate || sub.startDate;
+            let currentSub = { ...sub };
+            
+            if (sub.status === 'Active') {
+              while (nextRenewal && nextRenewal < today) {
+                hasRenewals = true;
+                
+                // Add expense transaction to ledger
+                newTransactionsToAdd.push({
+                  id: `tx_sub_${sub.id}_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+                  date: nextRenewal,
+                  bankId: sub.bankAccountId || (mergedData.accounts[0]?.id || ''),
+                  type: 'Bill & Payment',
+                  category: 'Other',
+                  payee: sub.name,
+                  amount: sub.cost,
+                  description: `Subscription Auto-Renewal: ${sub.name}`
+                });
+
+                // Advance renewal date
+                const date = new Date(nextRenewal);
+                if (sub.billingCycle === 'Monthly') {
+                  date.setMonth(date.getMonth() + 1);
+                } else {
+                  date.setFullYear(date.getFullYear() + 1);
+                }
+                nextRenewal = date.toISOString().split('T')[0];
+              }
+              currentSub.nextRenewalDate = nextRenewal;
+            }
+            updatedSubscriptions.push(currentSub);
+          });
+
+          if (hasRenewals) {
+            mergedData.subscriptions = updatedSubscriptions;
+            mergedData.transactions = [...mergedData.transactions, ...newTransactionsToAdd];
+            api.saveData(mergedData).catch(err => console.error('Failed to auto-save renewals:', err));
+          }
+
           setDbState(mergedData);
         }
       } catch (err) {
@@ -63,7 +161,7 @@ export function DatabaseProvider({ children }) {
     load();
   }, []);
 
-  // Save changes offline and update React state safely using functional updates
+  // Save changes offline
   const updateDbState = (updater) => {
     setDbState(prev => {
       const next = typeof updater === 'function' ? updater(prev) : updater;
@@ -137,7 +235,7 @@ export function DatabaseProvider({ children }) {
   // Categories Creator
   const addCategory = (type, categoryName) => {
     const list = dbState.categories[type] || [];
-    if (list.includes(categoryName)) return false; // Duplicate category protection
+    if (list.includes(categoryName)) return false;
 
     updateDbState(prev => {
       const currentList = prev.categories[type] || [];
@@ -166,6 +264,28 @@ export function DatabaseProvider({ children }) {
     });
   };
 
+  // Subscriptions CRUD
+  const addSubscription = (sub) => {
+    updateDbState(prev => {
+      const newSub = [...(prev.subscriptions || []), { id: sub.id || `sub_${Date.now()}`, ...sub }];
+      return { ...prev, subscriptions: newSub };
+    });
+  };
+
+  const editSubscription = (id, updated) => {
+    updateDbState(prev => {
+      const newSub = (prev.subscriptions || []).map(s => s.id === id ? { ...s, ...updated } : s);
+      return { ...prev, subscriptions: newSub };
+    });
+  };
+
+  const deleteSubscription = (id) => {
+    updateDbState(prev => {
+      const newSub = (prev.subscriptions || []).filter(s => s.id !== id);
+      return { ...prev, subscriptions: newSub };
+    });
+  };
+
   // Settings
   const updateSettings = (settings) => {
     updateDbState(prev => {
@@ -190,7 +310,10 @@ export function DatabaseProvider({ children }) {
           company: '',
           designation: '',
           bankName: '',
-          accountNumber: ''
+          accountNumber: '',
+          taxId: '',
+          epfId: '',
+          etfId: ''
         }
       };
     });
@@ -202,10 +325,11 @@ export function DatabaseProvider({ children }) {
   return (
     <DatabaseContext.Provider value={{
       accounts: activeAccounts,
-      rawAccounts: dbState.accounts, // Keep raw copy without calculated balances if needed
+      rawAccounts: dbState.accounts,
       transactions: dbState.transactions,
       categories: dbState.categories,
       salaryHistory: dbState.salaryHistory,
+      subscriptions: dbState.subscriptions || [],
       settings: dbState.settings,
       profile: dbState.profile,
       loading,
@@ -218,6 +342,9 @@ export function DatabaseProvider({ children }) {
       addCategory,
       addSalaryRecord,
       deleteSalaryRecord,
+      addSubscription,
+      editSubscription,
+      deleteSubscription,
       updateSettings,
       updateProfile,
       restoreDatabase

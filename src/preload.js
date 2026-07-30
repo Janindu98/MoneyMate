@@ -9,5 +9,8 @@ contextBridge.exposeInMainWorld('api', {
   openFile: (filePath) => ipcRenderer.invoke('db:open-file', filePath),
   selectFile: () => ipcRenderer.invoke('dialog:select-file'),
   selectFolder: () => ipcRenderer.invoke('dialog:select-folder'),
-  syncGDrive: () => ipcRenderer.invoke('db:sync-gdrive')
+  syncGDrive: () => ipcRenderer.invoke('db:sync-gdrive'),
+  syncCloudFolder: (backupPath) => ipcRenderer.invoke('db:sync-cloud-folder', backupPath),
+  writeEncryptedFile: (content, defaultName) => ipcRenderer.invoke('db:write-encrypted-file', content, defaultName),
+  readEncryptedFile: () => ipcRenderer.invoke('db:read-encrypted-file')
 });

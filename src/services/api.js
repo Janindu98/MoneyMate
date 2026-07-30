@@ -26,5 +26,14 @@ export const api = {
   },
   syncGDrive: async () => {
     return await window.api.syncGDrive();
+  },
+  syncCloudFolder: async (backupPath) => {
+    return await window.api.syncCloudFolder(backupPath);
+  },
+  writeEncryptedFile: async (content, defaultName) => {
+    return await window.api.writeEncryptedFile(content, defaultName);
+  },
+  readEncryptedFile: async () => {
+    return await window.api.readEncryptedFile();
   }
 };

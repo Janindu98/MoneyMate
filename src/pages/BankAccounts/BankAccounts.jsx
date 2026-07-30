@@ -78,7 +78,7 @@ export default function BankAccounts() {
         if (['Income', 'Deposit', 'Refund'].includes(tx.type)) {
           isInflow = true;
           running += tx.amount;
-        } else if (['Expense', 'Withdrawal', 'online payment', 'Online/Account cash transfer'].includes(tx.type)) {
+        } else if (['Expense', 'Withdrawal', 'online payment', 'Online/Account cash transfer', 'Bill & Payment'].includes(tx.type)) {
           isOutflow = true;
           running -= tx.amount;
         }

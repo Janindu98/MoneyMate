@@ -65,7 +65,8 @@ export default function Transactions() {
     'Online/Account cash transfer',
     'Deposit',
     'Withdrawal',
-    'Online Payment'
+    'Online Payment',
+    'Bill & Payment'
   ];
 
   // 2. Fetch Category options dynamically based on transaction type selection
@@ -303,7 +304,7 @@ export default function Transactions() {
               {paginatedTx.map(tx => {
                 const sourceAcc = accounts.find(a => a.id === tx.bankId);
                 const targetAcc = accounts.find(a => a.id === tx.targetBankId);
-                const isOutflow = ['Expense', 'Withdrawal', 'online payment', 'Online/Account cash transfer'].includes(tx.type) && tx.bankId === sourceAcc?.id;
+                const isOutflow = ['Expense', 'Withdrawal', 'online payment', 'Online/Account cash transfer', 'Bill & Payment'].includes(tx.type) && tx.bankId === sourceAcc?.id;
 
                 return (
                   <tr key={tx.id} style={{ cursor: 'pointer' }}>
@@ -512,7 +513,7 @@ export default function Transactions() {
         {selectedTx && (() => {
           const sourceAcc = accounts.find(a => a.id === selectedTx.bankId);
           const targetAcc = accounts.find(a => a.id === selectedTx.targetBankId);
-          const isOutflow = ['Expense', 'Withdrawal', 'online payment', 'Online/Account cash transfer'].includes(selectedTx.type) && selectedTx.bankId === sourceAcc?.id;
+          const isOutflow = ['Expense', 'Withdrawal', 'online payment', 'Online/Account cash transfer', 'Bill & Payment'].includes(selectedTx.type) && selectedTx.bankId === sourceAcc?.id;
           const salaryRec = findSalaryRecord(selectedTx);
 
           const handleOpenPayslip = async (path) => {

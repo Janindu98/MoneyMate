@@ -35,8 +35,8 @@ export default class Database {
         {
           id: 'tx_init_commercial',
           date: new Date().toISOString().split('T')[0],
-          bankId: 'acc_commercial_bank', // References accounts.id
-          type: 'Deposit', // Deposit, Withdrawal, Income, Expense, Online Transfer, online payment
+          bankId: 'acc_commercial_bank',
+          type: 'Deposit',
           category: 'Other',
           payee: 'Self',
           amount: 150000.00,
@@ -58,26 +58,51 @@ export default class Database {
         expense: [
           'Food',
           'Fuel',
-          'Bills',
-          'Insurance',
-          'Rent',
           'Shopping',
-          'Medical',
-          'Entertainment',
-          'Investment',
-          'Loan',
-          'Other',
-          'Network - Mobile',
-          'Network - TV',
-          'Network - WIFI'
+          'Transportations',
+          'Electricity',
+          'Water',
+          'Internet',
+          'Mobile phone',
+          'Insurance',
+          'Credit cards',
+          'Rent',
+          'Other'
         ]
       },
-      salaryHistory: [
-        // Stores salary payment details
-      ],
+      salaryHistory: [],
+      subscriptions: [],
       settings: {
         currency: 'LKR',
-        theme: 'dark'
+        theme: 'dark',
+        budgetLimits: {
+          Food: 35000,
+          Fuel: 20000,
+          Bills: 18000,
+          Shopping: 15000,
+          Others: 12000,
+          Transportations: 5000
+        },
+        billLimits: {
+          Electricity: 8000,
+          Water: 2000,
+          Internet: 5000,
+          Mobile: 3000,
+          Insurance: 15000,
+          CreditCards: 25000,
+          Rent: 45000
+        }
+      },
+      profile: {
+        name: '',
+        employeeId: '',
+        company: '',
+        designation: '',
+        bankName: '',
+        accountNumber: '',
+        taxId: '',
+        epfId: '',
+        etfId: ''
       }
     };
   }
@@ -128,9 +153,15 @@ export default class Database {
       this.data.categories.expense = this.getInitialState().categories.expense;
     }
     if (!Array.isArray(this.data.salaryHistory)) this.data.salaryHistory = [];
-    if (!this.data.settings) this.data.settings = { currency: 'LKR', theme: 'dark' };
+    if (!Array.isArray(this.data.subscriptions)) this.data.subscriptions = [];
+    if (!this.data.settings) this.data.settings = this.getInitialState().settings;
     if (!this.data.settings.currency) this.data.settings.currency = 'LKR';
     if (!this.data.settings.theme) this.data.settings.theme = 'dark';
+    if (!this.data.settings.budgetLimits) this.data.settings.budgetLimits = this.getInitialState().settings.budgetLimits;
+    if (!this.data.settings.billLimits) this.data.settings.billLimits = this.getInitialState().settings.billLimits;
+    if (!this.data.profile) {
+      this.data.profile = this.getInitialState().profile;
+    }
   }
 
   save() {
