@@ -231,7 +231,7 @@ export default function Transactions() {
           <p>Search money movements and create custom categories.</p>
         </div>
         <div className="header-actions">
-          <button className="btn btn-secondary" onClick={() => setIsCatModalOpen(true)}>
+          <button className="btn btn-primary" onClick={() => setIsCatModalOpen(true)}>
             Manage Categories
           </button>
           <button className="btn btn-primary" onClick={handleOpenAddTxModal}>

@@ -156,6 +156,48 @@ export default function Settings() {
     }
   };
 
+  const handleSelectGDriveFolder = async () => {
+    try {
+      const res = await api.selectFolder();
+      if (!res.canceled && res.folderPath) {
+        updateSettings({ gdriveBackupPath: res.folderPath });
+        showToast('Google Drive backup sync folder linked.');
+      }
+    } catch (err) {
+      console.error(err);
+      showToast('Failed to select folder.', 'error');
+    }
+  };
+
+  const handleToggleGDriveBackup = (e) => {
+    const checked = e.target.checked;
+    if (checked && !settings.gdriveBackupPath) {
+      showToast('Please select a Google Drive sync folder first.', 'warning');
+      return;
+    }
+    updateSettings({ gdriveBackupEnabled: checked });
+    showToast(`Google Drive backup sync ${checked ? 'enabled' : 'disabled'}.`);
+  };
+
+  const handleSyncGDriveNow = async () => {
+    if (!settings.gdriveBackupPath) {
+      showToast('Please link a folder path before syncing.', 'error');
+      return;
+    }
+    showToast('Starting Google Drive synchronization...');
+    try {
+      const res = await api.syncGDrive();
+      if (res.success) {
+        showToast('Google Drive sync complete. All backups and payslips uploaded.');
+      } else {
+        showToast(`Sync failed: ${res.error}`, 'error');
+      }
+    } catch (err) {
+      console.error(err);
+      showToast('Failed to sync to Google Drive.', 'error');
+    }
+  };
+
   const handleResetData = () => {
     const firstConfirm = confirm('Are you sure you want to delete ALL records? This deletes ledger history, salary plans and accounts.');
     if (firstConfirm) {
@@ -248,6 +290,49 @@ export default function Settings() {
           </div>
         </div>
 
+        {/* Google Drive Cloud Sync */}
+        <div className="settings-section">
+          <div className="settings-section-title">Google Drive Sync (Cloud Backup)</div>
+          <div className="settings-section-desc">Automatically sync database backups and payslip files to your Google Drive Desktop sync folder.</div>
+          
+          <div className="settings-row" style={{ marginBottom: '16px' }}>
+            <div className="settings-row-info">
+              <div className="settings-row-title">Enable Cloud Auto-Sync</div>
+              <div className="settings-row-desc">Automatically upload backups in background on change.</div>
+            </div>
+            <div>
+              <label style={{ display: 'inline-flex', alignItems: 'center', cursor: 'pointer' }}>
+                <input 
+                  type="checkbox" 
+                  checked={!!settings.gdriveBackupEnabled} 
+                  onChange={handleToggleGDriveBackup} 
+                  style={{ width: '20px', height: '20px', cursor: 'pointer' }}
+                />
+              </label>
+            </div>
+          </div>
+
+          <div className="settings-row" style={{ marginBottom: '16px' }}>
+            <div className="settings-row-info">
+              <div className="settings-row-title">GDrive Folder Location</div>
+              <div className="settings-row-desc">Selected path: <strong style={{ color: 'var(--text-primary)' }}>{settings.gdriveBackupPath || 'Not Configured'}</strong></div>
+            </div>
+            <div>
+              <button className="btn btn-settings" onClick={handleSelectGDriveFolder}>Link GDrive Folder</button>
+            </div>
+          </div>
+
+          <div className="settings-row">
+            <div className="settings-row-info">
+              <div className="settings-row-title">Sync Database & Payslips</div>
+              <div className="settings-row-desc">Instantly push all accounts details and attachments to your Drive folder.</div>
+            </div>
+            <div>
+              <button className="btn btn-settings" onClick={handleSyncGDriveNow}>Sync Now</button>
+            </div>
+          </div>
+        </div>
+
         {/* Database Backup and Restore */}
         <div className="settings-section">
           <div className="settings-section-title">Local Database Utilities</div>
@@ -258,7 +343,7 @@ export default function Settings() {
               <div className="settings-row-desc">Generates a complete offline JSON copy of your accounts and ledger.</div>
             </div>
             <div>
-              <button className="btn btn-secondary" onClick={handleExportBackup}>Create Backup</button>
+              <button className="btn btn-settings" onClick={handleExportBackup}>Create Backup</button>
             </div>
           </div>
           <div className="settings-row">
@@ -267,7 +352,7 @@ export default function Settings() {
               <div className="settings-row-desc">Overwrite existing app database with a previously exported JSON backup. WARNING: Existing data will be replaced.</div>
             </div>
             <div>
-              <button className="btn btn-secondary" onClick={handleImportBackup}>Restore Backup</button>
+              <button className="btn btn-settings" onClick={handleImportBackup}>Restore Backup</button>
             </div>
           </div>
         </div>
@@ -350,7 +435,7 @@ export default function Settings() {
           </div>
           <div className="modal-footer">
             <button type="button" className="btn btn-secondary" onClick={() => setSecurityModalOpen(false)}>Cancel</button>
-            <button type="submit" className="btn btn-primary">Enable Protection</button>
+            <button type="submit" className="btn btn-settings">Enable Protection</button>
           </div>
         </form>
       </Modal>
@@ -376,7 +461,7 @@ export default function Settings() {
           </div>
           <div className="modal-footer">
             <button type="button" className="btn btn-secondary" onClick={() => setVerifyModalOpen(false)}>Cancel</button>
-            <button type="submit" className="btn btn-primary">Verify Credentials</button>
+            <button type="submit" className="btn btn-settings">Verify Credentials</button>
           </div>
         </form>
       </Modal>

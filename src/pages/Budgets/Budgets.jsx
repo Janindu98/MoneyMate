@@ -326,7 +326,7 @@ export default function Budgets() {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
             <h2 style={{ fontSize: '1.1rem', fontWeight: 700 }}>Budget Scorecard</h2>
             <button 
-              className="btn btn-secondary" 
+              className="btn btn-primary" 
               onClick={() => setIsLimitsModalOpen(true)}
               style={{ padding: '6px 12px', fontSize: '0.8rem' }}
             >
