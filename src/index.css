@@ -119,6 +119,8 @@ body {
   font-size: 0.95rem;
   font-weight: 500;
   cursor: pointer;
+  background: transparent;
+  border: none;
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -249,14 +251,14 @@ body {
 }
 
 .btn-secondary {
-  background-color: var(--bg-secondary);
-  border-color: var(--border-color);
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   color: var(--text-primary);
 }
 
 .btn-secondary:hover {
-  background-color: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.15);
+  background-color: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.25);
   transform: translateY(-2px);
 }
 
@@ -1427,5 +1429,45 @@ body.light-theme .salary-event-card {
 
 body.light-theme .salary-event-card:hover {
   background: rgba(15, 23, 42, 0.04);
+}
+
+body.light-theme .btn-secondary {
+  background-color: rgba(15, 23, 42, 0.05);
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  color: var(--text-primary);
+}
+
+body.light-theme .btn-secondary:hover {
+  background-color: rgba(15, 23, 42, 0.08);
+  border-color: rgba(15, 23, 42, 0.25);
+}
+
+/* Settings Specific Buttons Style */
+.btn-settings {
+  background-color: #475569;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(71, 85, 105, 0.2);
+}
+
+.btn-settings:hover {
+  background-color: #334155;
+  border-color: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 6px 18px rgba(71, 85, 105, 0.3);
+  transform: translateY(-2px);
+}
+
+body.light-theme .btn-settings {
+  background-color: #64748b;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(100, 116, 139, 0.15);
+}
+
+body.light-theme .btn-settings:hover {
+  background-color: #475569;
+  border-color: rgba(15, 23, 42, 0.15);
+  box-shadow: 0 6px 18px rgba(100, 116, 139, 0.25);
+  transform: translateY(-2px);
 }
 

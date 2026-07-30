@@ -5,6 +5,11 @@ import Modal from '../../components/Modal';
 import { formatCurrency } from '../../utils/format';
 import { api } from '../../services/api';
 
+const monthsList = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December'
+];
+
 export default function Salary() {
   const { accounts, salaryHistory, addSalaryRecord, deleteSalaryRecord, settings, profile, addTransaction } = useDatabase();
   const { showToast } = useToast();
@@ -67,11 +72,6 @@ export default function Salary() {
     'Engineering Manager'
   ];
 
-  const monthsList = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'
-  ];
-
   // Statutory suggestion math based on Basic Salary
   const handleBasicSalaryChange = (val) => {
     setBasicSalary(val);
@@ -84,6 +84,20 @@ export default function Salary() {
       setEpfEmployee('');
       setEpfCompany('');
       setEtfCompany('');
+    }
+  };
+
+  const handlePaymentDateChange = (val) => {
+    setPaymentDate(val);
+    if (val) {
+      const parts = val.split('-');
+      if (parts.length === 3) {
+        setYear(parts[0]);
+        const mIdx = parseInt(parts[1], 10) - 1;
+        if (mIdx >= 0 && mIdx < 12) {
+          setMonth(monthsList[mIdx]);
+        }
+      }
     }
   };
 
@@ -148,10 +162,15 @@ export default function Salary() {
     const netSalary = grossEarnings - totalDeductions;
     const netAllowance = fixedAllow + otherAllow;
 
+    // Derive correct month/year from date on submit
+    const dateParts = paymentDate.split('-');
+    const finalYear = dateParts[0];
+    const finalMonth = monthsList[parseInt(dateParts[1], 10) - 1];
+
     // Secure local copying of payslip if selected
     let finalPayslipPath = '';
     if (payslipPath) {
-      const copyRes = await api.savePayslip(payslipPath);
+      const copyRes = await api.savePayslip(payslipPath, finalMonth.toLowerCase(), finalYear);
       if (copyRes.success) {
         finalPayslipPath = copyRes.filePath;
       } else {
@@ -166,8 +185,8 @@ export default function Salary() {
     const payload = {
       employerId: employerId.trim(),
       position,
-      year,
-      month,
+      year: finalYear,
+      month: finalMonth,
       company: company.trim(),
       basicSalary: basic,
       fixedAllowance: fixedAllow,
@@ -189,7 +208,8 @@ export default function Salary() {
       payslipPath: finalPayslipPath
     };
 
-    addSalaryRecord(payload);
+    const salaryId = `sal_${Date.now()}`;
+    addSalaryRecord({ id: salaryId, ...payload });
 
     // Auto-record as an Income transaction in the ledger
     addTransaction({
@@ -199,7 +219,8 @@ export default function Salary() {
       category: 'Salary',
       payee: company.trim(),
       amount: netSalary,
-      description: 'Salary Received'
+      description: 'Salary Received',
+      salaryRecordId: salaryId
     });
 
     setIsModalOpen(false);
@@ -261,6 +282,12 @@ export default function Salary() {
             setOtherDeduction('');
             setPayslipPath('');
             setPayslipName('');
+            const today = new Date().toISOString().split('T')[0];
+            setPaymentDate(today);
+            const parts = today.split('-');
+            setYear(parts[0]);
+            const mIdx = parseInt(parts[1], 10) - 1;
+            setMonth(monthsList[mIdx]);
             setBankAccountId(accounts[0]?.id || '');
             setIsModalOpen(true);
           }}>
@@ -642,7 +669,7 @@ export default function Salary() {
             <div className="form-row-2" style={{ marginTop: '14px', borderTop: '1px solid var(--border-color)', paddingTop: '14px' }}>
               <div className="form-group">
                 <label>Payment Received Date</label>
-                <input type="date" className="input-ctrl" value={paymentDate} onChange={e => setPaymentDate(e.target.value)} required />
+                <input type="date" className="input-ctrl" value={paymentDate} onChange={e => handlePaymentDateChange(e.target.value)} required />
               </div>
 
               <div className="form-group">

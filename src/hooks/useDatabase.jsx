@@ -63,62 +63,75 @@ export function DatabaseProvider({ children }) {
     load();
   }, []);
 
-  // Save changes offline and update React state
-  const syncState = async (newDb) => {
-    setDbState(newDb);
-    await api.saveData(newDb);
+  // Save changes offline and update React state safely using functional updates
+  const updateDbState = (updater) => {
+    setDbState(prev => {
+      const next = typeof updater === 'function' ? updater(prev) : updater;
+      api.saveData(next).catch(err => console.error('Failed to save database:', err));
+      return next;
+    });
   };
 
   // Accounts CRUD
   const addAccount = (acc, initialBalance = 0) => {
-    const accountId = acc.id || `acc_${Date.now()}`;
-    const newAccount = { id: accountId, ...acc };
-    const newAccounts = [...dbState.accounts, newAccount];
-    
-    let newTx = dbState.transactions;
-    if (initialBalance > 0) {
-      newTx = [...dbState.transactions, {
-        id: `tx_${Date.now()}`,
-        date: new Date().toISOString().split('T')[0],
-        bankId: accountId,
-        type: 'Deposit',
-        category: 'Other',
-        payee: 'Self',
-        amount: initialBalance,
-        description: 'Opening balance'
-      }];
-    }
-    
-    syncState({ ...dbState, accounts: newAccounts, transactions: newTx });
+    updateDbState(prev => {
+      const accountId = acc.id || `acc_${Date.now()}`;
+      const newAccount = { id: accountId, ...acc };
+      const newAccounts = [...prev.accounts, newAccount];
+      
+      let newTx = prev.transactions;
+      if (initialBalance > 0) {
+        newTx = [...prev.transactions, {
+          id: `tx_${Date.now()}`,
+          date: new Date().toISOString().split('T')[0],
+          bankId: accountId,
+          type: 'Deposit',
+          category: 'Other',
+          payee: 'Self',
+          amount: initialBalance,
+          description: 'Opening balance'
+        }];
+      }
+      return { ...prev, accounts: newAccounts, transactions: newTx };
+    });
   };
 
   const editAccount = (id, updated) => {
-    const newAccounts = dbState.accounts.map(a => a.id === id ? { ...a, ...updated } : a);
-    syncState({ ...dbState, accounts: newAccounts });
+    updateDbState(prev => {
+      const newAccounts = prev.accounts.map(a => a.id === id ? { ...a, ...updated } : a);
+      return { ...prev, accounts: newAccounts };
+    });
   };
 
   const deleteAccount = (id) => {
-    const newAccounts = dbState.accounts.filter(a => a.id !== id);
-    // Remove transaction reference links
-    const newTx = dbState.transactions.filter(t => t.bankId !== id && t.targetBankId !== id);
-    const newSalary = dbState.salaryHistory.filter(s => s.bankAccount !== id);
-    syncState({ ...dbState, accounts: newAccounts, transactions: newTx, salaryHistory: newSalary });
+    updateDbState(prev => {
+      const newAccounts = prev.accounts.filter(a => a.id !== id);
+      const newTx = prev.transactions.filter(t => t.bankId !== id && t.targetBankId !== id);
+      const newSalary = prev.salaryHistory.filter(s => s.bankAccount !== id);
+      return { ...prev, accounts: newAccounts, transactions: newTx, salaryHistory: newSalary };
+    });
   };
 
   // Transactions CRUD
   const addTransaction = (tx) => {
-    const newTx = [...dbState.transactions, { id: `tx_${Date.now()}`, ...tx }];
-    syncState({ ...dbState, transactions: newTx });
+    updateDbState(prev => {
+      const newTx = [...prev.transactions, { id: tx.id || `tx_${Date.now()}`, ...tx }];
+      return { ...prev, transactions: newTx };
+    });
   };
 
   const editTransaction = (id, updated) => {
-    const newTx = dbState.transactions.map(t => t.id === id ? { ...t, ...updated } : t);
-    syncState({ ...dbState, transactions: newTx });
+    updateDbState(prev => {
+      const newTx = prev.transactions.map(t => t.id === id ? { ...t, ...updated } : t);
+      return { ...prev, transactions: newTx };
+    });
   };
 
   const deleteTransaction = (id) => {
-    const newTx = dbState.transactions.filter(t => t.id !== id);
-    syncState({ ...dbState, transactions: newTx });
+    updateDbState(prev => {
+      const newTx = prev.transactions.filter(t => t.id !== id);
+      return { ...prev, transactions: newTx };
+    });
   };
 
   // Categories Creator
@@ -126,46 +139,60 @@ export function DatabaseProvider({ children }) {
     const list = dbState.categories[type] || [];
     if (list.includes(categoryName)) return false; // Duplicate category protection
 
-    const updatedCategories = {
-      ...dbState.categories,
-      [type]: [...list, categoryName]
-    };
-    syncState({ ...dbState, categories: updatedCategories });
+    updateDbState(prev => {
+      const currentList = prev.categories[type] || [];
+      if (currentList.includes(categoryName)) return prev;
+      const updatedCategories = {
+        ...prev.categories,
+        [type]: [...currentList, categoryName]
+      };
+      return { ...prev, categories: updatedCategories };
+    });
     return true;
   };
 
   // Salary CRUD
   const addSalaryRecord = (sal) => {
-    const newSal = [...dbState.salaryHistory, { id: `sal_${Date.now()}`, ...sal }];
-    syncState({ ...dbState, salaryHistory: newSal });
+    updateDbState(prev => {
+      const newSal = [...prev.salaryHistory, { id: sal.id || `sal_${Date.now()}`, ...sal }];
+      return { ...prev, salaryHistory: newSal };
+    });
   };
 
   const deleteSalaryRecord = (id) => {
-    const newSal = dbState.salaryHistory.filter(s => s.id !== id);
-    syncState({ ...dbState, salaryHistory: newSal });
+    updateDbState(prev => {
+      const newSal = prev.salaryHistory.filter(s => s.id !== id);
+      return { ...prev, salaryHistory: newSal };
+    });
   };
 
   // Settings
   const updateSettings = (settings) => {
-    syncState({ ...dbState, settings: { ...dbState.settings, ...settings } });
+    updateDbState(prev => {
+      return { ...prev, settings: { ...prev.settings, ...settings } };
+    });
   };
 
   const updateProfile = (updatedProfile) => {
-    syncState({ ...dbState, profile: { ...dbState.profile, ...updatedProfile } });
+    updateDbState(prev => {
+      return { ...prev, profile: { ...prev.profile, ...updatedProfile } };
+    });
   };
 
   // Reset database or restore backup imports
   const restoreDatabase = (newData) => {
-    syncState({
-      ...newData,
-      profile: newData.profile || {
-        name: '',
-        employeeId: '',
-        company: '',
-        designation: '',
-        bankName: '',
-        accountNumber: ''
-      }
+    updateDbState(prev => {
+      return {
+        ...newData,
+        profile: newData.profile || {
+          name: '',
+          employeeId: '',
+          company: '',
+          designation: '',
+          bankName: '',
+          accountNumber: ''
+        }
+      };
     });
   };
 

@@ -160,12 +160,53 @@ export default function Budgets() {
     // 1. Render Pie Chart
     const pieCtx = pieChartRef.current.getContext('2d');
     const hasExpenseData = totalExpense > 0;
+
+    // Calculate category percentages
+    const foodPct = totalExpense > 0 ? ((foodSpent / totalExpense) * 100).toFixed(1) : '0.0';
+    const fuelPct = totalExpense > 0 ? ((fuelSpent / totalExpense) * 100).toFixed(1) : '0.0';
+    const billsPct = totalExpense > 0 ? ((billsSpent / totalExpense) * 100).toFixed(1) : '0.0';
+    const shoppingPct = totalExpense > 0 ? ((shoppingSpent / totalExpense) * 100).toFixed(1) : '0.0';
+    const othersPct = totalExpense > 0 ? ((othersSpent / totalExpense) * 100).toFixed(1) : '0.0';
+    const transportPct = totalExpense > 0 ? ((transportSpent / totalExpense) * 100).toFixed(1) : '0.0';
     
+    const centerTextPlugin = {
+      id: 'centerText',
+      afterDraw: (chart) => {
+        const { ctx } = chart;
+        const width = chart.width;
+        const height = chart.height;
+        ctx.save();
+        
+        ctx.font = '600 11px "Plus Jakarta Sans", sans-serif';
+        ctx.fillStyle = settings.theme === 'light' ? '#64748b' : '#94a3b8';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        
+        const chartArea = chart.chartArea;
+        const centerX = chartArea ? (chartArea.left + chartArea.right) / 2 : width / 2;
+        const centerY = chartArea ? (chartArea.top + chartArea.bottom) / 2 : height / 2;
+        
+        ctx.fillText('TOTAL EXPENSES', centerX, centerY - 10);
+
+        ctx.font = '800 15px "Plus Jakarta Sans", sans-serif';
+        ctx.fillStyle = settings.theme === 'light' ? '#0f172a' : '#f8fafc';
+        ctx.fillText(formatCurrency(totalExpense, settings.currency), centerX, centerY + 10);
+        ctx.restore();
+      }
+    };
+
     const pieChart = new Chart(pieCtx, {
       type: 'doughnut',
       data: {
         labels: hasExpenseData 
-          ? ['Food', 'Fuel', 'Bills (Inc. Network)', 'Shopping', 'Others', 'Transportations'] 
+          ? [
+              `Food (${foodPct}%)`,
+              `Fuel (${fuelPct}%)`,
+              `Bills (Inc. Network) (${billsPct}%)`,
+              `Shopping (${shoppingPct}%)`,
+              `Others (${othersPct}%)`,
+              `Transportations (${transportPct}%)`
+            ]
           : ['No expense logged'],
         datasets: [{
           data: hasExpenseData 
@@ -177,6 +218,7 @@ export default function Budgets() {
           borderWidth: 0
         }]
       },
+      plugins: [centerTextPlugin],
       options: {
         responsive: true,
         maintainAspectRatio: false,
@@ -184,7 +226,18 @@ export default function Budgets() {
         plugins: {
           legend: {
             position: 'right',
-            labels: { color: '#94a3b8', font: { family: 'Plus Jakarta Sans', size: 11 } }
+            labels: { 
+              color: settings.theme === 'light' ? '#475569' : '#94a3b8', 
+              font: { family: 'Plus Jakarta Sans', size: 11 } 
+            }
+          },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                const val = context.raw || 0;
+                return ` ${formatCurrency(val, settings.currency)}`;
+              }
+            }
           }
         }
       }
@@ -222,12 +275,21 @@ export default function Budgets() {
         maintainAspectRatio: false,
         plugins: {
           legend: {
-            labels: { color: '#94a3b8', font: { family: 'Plus Jakarta Sans' } }
+            labels: { 
+              color: settings.theme === 'light' ? '#475569' : '#94a3b8', 
+              font: { family: 'Plus Jakarta Sans' } 
+            }
           }
         },
         scales: {
-          x: { grid: { display: false }, ticks: { color: '#64748b' } },
-          y: { grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#64748b' } }
+          x: { 
+            grid: { display: false }, 
+            ticks: { color: settings.theme === 'light' ? '#475569' : '#64748b' } 
+          },
+          y: { 
+            grid: { color: settings.theme === 'light' ? 'rgba(0, 0, 0, 0.06)' : 'rgba(255, 255, 255, 0.05)' }, 
+            ticks: { color: settings.theme === 'light' ? '#475569' : '#64748b' } 
+          }
         }
       }
     });
@@ -236,7 +298,7 @@ export default function Budgets() {
       pieChart.destroy();
       barChart.destroy();
     };
-  }, [transactions, totalExpense, foodSpent, fuelSpent, billsSpent, shoppingSpent, othersSpent, transportSpent, monthsData]);
+  }, [transactions, settings.theme, settings.currency, totalExpense, foodSpent, fuelSpent, billsSpent, shoppingSpent, othersSpent, transportSpent]);
 
   return (
     <div className="page active">
@@ -264,7 +326,7 @@ export default function Budgets() {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
             <h2 style={{ fontSize: '1.1rem', fontWeight: 700 }}>Budget Scorecard</h2>
             <button 
-              className="btn btn-secondary" 
+              className="btn btn-primary" 
               onClick={() => setIsLimitsModalOpen(true)}
               style={{ padding: '6px 12px', fontSize: '0.8rem' }}
             >

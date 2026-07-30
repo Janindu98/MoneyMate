@@ -12,13 +12,19 @@ export const api = {
   importBackup: async () => {
     return await window.api.importBackup();
   },
-  savePayslip: async (filePath) => {
-    return await window.api.savePayslip(filePath);
+  savePayslip: async (filePath, month, year) => {
+    return await window.api.savePayslip(filePath, month, year);
   },
   openFile: async (filePath) => {
     return await window.api.openFile(filePath);
   },
   selectFile: async () => {
     return await window.api.selectFile();
+  },
+  selectFolder: async () => {
+    return await window.api.selectFolder();
+  },
+  syncGDrive: async () => {
+    return await window.api.syncGDrive();
   }
 };

@@ -55,14 +55,32 @@ app.whenReady().then(() => {
   });
 
   ipcMain.handle('db:save', (event, newData) => {
-    return db.setData(newData);
+    const success = db.setData(newData);
+    if (success) {
+      try {
+        const backupEnabled = newData?.settings?.gdriveBackupEnabled;
+        const backupPath = newData?.settings?.gdriveBackupPath;
+        if (backupEnabled && backupPath && fs.existsSync(backupPath)) {
+          const targetBackupFile = path.join(backupPath, 'personal_finance_backup.json');
+          fs.writeFileSync(targetBackupFile, JSON.stringify(newData, null, 2), 'utf8');
+        }
+      } catch (backupErr) {
+        console.error('Failed to auto-backup database to GDrive folder:', backupErr);
+      }
+    }
+    return success;
   });
 
   ipcMain.handle('db:export-backup', async () => {
     const activeWindow = BrowserWindow.getFocusedWindow();
+    const documentsDir = app.getPath('documents');
+    const appDir = path.join(documentsDir, 'MoneyMate');
+    if (!fs.existsSync(appDir)) {
+      fs.mkdirSync(appDir, { recursive: true });
+    }
     const result = await dialog.showSaveDialog(activeWindow, {
       title: 'Backup Personal Finance Database',
-      defaultPath: path.join(app.getPath('documents'), 'personal_finance_backup.json'),
+      defaultPath: path.join(appDir, 'personal_finance_backup.json'),
       filters: [{ name: 'JSON Files', extensions: ['json'] }]
     });
     if (!result.canceled && result.filePath) {
@@ -101,18 +119,39 @@ app.whenReady().then(() => {
   });
 
   // Local PDF / File attachments handlers
-  ipcMain.handle('db:save-payslip', async (event, sourcePath) => {
+  ipcMain.handle('db:save-payslip', async (event, sourcePath, month, year) => {
     try {
-      const payslipsDir = path.join(app.getPath('userData'), 'payslips');
+      const documentsDir = app.getPath('documents');
+      const appDir = path.join(documentsDir, 'MoneyMate');
+      const payslipsDir = path.join(appDir, 'payslips');
       if (!fs.existsSync(payslipsDir)) {
         fs.mkdirSync(payslipsDir, { recursive: true });
       }
 
       const fileExt = path.extname(sourcePath) || '.pdf';
-      const fileName = `payslip_${Date.now()}${fileExt}`;
+      const fileName = `payslip_${month || 'archive'}_${year || Date.now()}${fileExt}`;
       const targetPath = path.join(payslipsDir, fileName);
 
       fs.copyFileSync(sourcePath, targetPath);
+
+      // Check if GDrive background backup is enabled
+      try {
+        const appData = db.getData();
+        const backupEnabled = appData?.settings?.gdriveBackupEnabled;
+        const backupPath = appData?.settings?.gdriveBackupPath;
+
+        if (backupEnabled && backupPath && fs.existsSync(backupPath)) {
+          const gdrivePayslipsDir = path.join(backupPath, 'payslips');
+          if (!fs.existsSync(gdrivePayslipsDir)) {
+            fs.mkdirSync(gdrivePayslipsDir, { recursive: true });
+          }
+          const gdriveTargetPath = path.join(gdrivePayslipsDir, fileName);
+          fs.copyFileSync(sourcePath, gdriveTargetPath);
+        }
+      } catch (backupErr) {
+        console.error('Failed to auto-backup payslip to GDrive folder:', backupErr);
+      }
+
       return { success: true, filePath: targetPath };
     } catch (e) {
       console.error('Failed to copy payslip file:', e);
@@ -130,6 +169,57 @@ app.whenReady().then(() => {
       }
     } catch (e) {
       console.error('Failed to open file path:', e);
+      return { success: false, error: e.message };
+    }
+  });
+
+  ipcMain.handle('dialog:select-folder', async () => {
+    const activeWindow = BrowserWindow.getFocusedWindow();
+    const result = await dialog.showOpenDialog(activeWindow, {
+      title: 'Select Google Drive Backup Folder',
+      properties: ['openDirectory', 'createDirectory']
+    });
+    if (!result.canceled && result.filePaths.length > 0) {
+      return { canceled: false, folderPath: result.filePaths[0] };
+    }
+    return { canceled: true };
+  });
+
+  ipcMain.handle('db:sync-gdrive', async () => {
+    try {
+      const appData = db.getData();
+      const backupPath = appData?.settings?.gdriveBackupPath;
+
+      if (!backupPath || !fs.existsSync(backupPath)) {
+        throw new Error('Google Drive backup path does not exist. Please configure it in Settings first.');
+      }
+
+      // Copy database JSON
+      const targetBackupFile = path.join(backupPath, 'personal_finance_backup.json');
+      fs.writeFileSync(targetBackupFile, JSON.stringify(appData, null, 2), 'utf8');
+
+      // Copy all existing payslips from local payslips dir
+      const documentsDir = app.getPath('documents');
+      const appDir = path.join(documentsDir, 'MoneyMate');
+      const localPayslipsDir = path.join(appDir, 'payslips');
+
+      if (fs.existsSync(localPayslipsDir)) {
+        const files = fs.readdirSync(localPayslipsDir);
+        const gdrivePayslipsDir = path.join(backupPath, 'payslips');
+        if (!fs.existsSync(gdrivePayslipsDir)) {
+          fs.mkdirSync(gdrivePayslipsDir, { recursive: true });
+        }
+
+        for (const file of files) {
+          const sourceFile = path.join(localPayslipsDir, file);
+          const targetFile = path.join(gdrivePayslipsDir, file);
+          fs.copyFileSync(sourceFile, targetFile);
+        }
+      }
+
+      return { success: true };
+    } catch (e) {
+      console.error('Failed to sync to GDrive folder:', e);
       return { success: false, error: e.message };
     }
   });
