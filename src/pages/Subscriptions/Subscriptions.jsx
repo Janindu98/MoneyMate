@@ -237,11 +237,6 @@ export default function Subscriptions() {
           <h1>Subscription Manager</h1>
           <p>Track your recurring SaaS products, antivirus licenses, cloud services, and automate ledger renewals.</p>
         </div>
-        <div className="header-actions">
-          <button className="btn btn-primary" onClick={handleOpenAddModal}>
-            Add Subscription
-          </button>
-        </div>
       </div>
 
       {/* Subscription Summary Cards */}
@@ -272,11 +267,16 @@ export default function Subscriptions() {
       </div>
 
       {/* Table & Chart Split Layout Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '24px', alignItems: 'start' }}>
+      <div className="charts-grid" style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: '24px', alignItems: 'start' }}>
         {/* Subscriptions Table */}
-        <div className="panel" style={{ margin: 0 }}>
-          <h2 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '4px' }}>Registered Subscriptions List</h2>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '20px' }}>
+        <div className="panel" style={{ margin: 0, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+            <h2 style={{ fontSize: '1.1rem', fontWeight: 700 }}>Subscriptions List</h2>
+            <button className="btn btn-primary" onClick={handleOpenAddModal} style={{ padding: '6px 12px', fontSize: '0.8rem' }}>
+              Add Subscription
+            </button>
+          </div>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '16px' }}>
             Renewals automatically update cash-flows inside your transaction ledger logs on renewal dates.
           </p>
 
@@ -285,8 +285,8 @@ export default function Subscriptions() {
               No subscriptions registered yet. Click "Add Subscription" to start tracking recurring products!
             </div>
           ) : (
-            <div className="table-container">
-              <table>
+            <div className="table-container" style={{ flexGrow: 1 }}>
+              <table style={{ fontSize: '0.85rem' }}>
                 <thead>
                   <tr>
                     <th>Product</th>
@@ -342,12 +342,9 @@ export default function Subscriptions() {
         </div>
 
         {/* Subscription Expense Distribution Chart Panel */}
-        <div className="panel" style={{ margin: 0, display: 'flex', flexDirection: 'column', minHeight: '420px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-            <div>
-              <h2 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '2px' }}>Expense Distribution</h2>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>Recurring cost contribution ratio</p>
-            </div>
+        <div className="panel" style={{ margin: 0, display: 'flex', flexDirection: 'column' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+            <h2 style={{ fontSize: '1.1rem', fontWeight: 700 }}>Subscription Expense Distribution</h2>
             <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '6px', padding: '2px' }}>
               <button 
                 type="button"
@@ -367,13 +364,16 @@ export default function Subscriptions() {
               </button>
             </div>
           </div>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '16px' }}>
+            Recurring cost contribution ratio filtered by cycle.
+          </p>
 
           {activeSubs.length === 0 ? (
             <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', fontSize: '0.9rem', textAlign: 'center', padding: '40px' }}>
               No active subscriptions to display distribution data.
             </div>
           ) : (
-            <div style={{ position: 'relative', flex: 1, minHeight: '260px' }}>
+            <div className="chart-wrapper" style={{ height: '330px', position: 'relative' }}>
               <canvas ref={chartRef}></canvas>
             </div>
           )}

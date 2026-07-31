@@ -19,6 +19,7 @@ const createWindow = () => {
     minWidth: 1000,
     minHeight: 700,
     title: "MoneyMate",
+    icon: path.join(__dirname, '..', '..', 'images', 'logo.png'),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       nodeIntegration: false,

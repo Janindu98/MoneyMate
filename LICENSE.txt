@@ -1,0 +1,14 @@
+MONEYMATE END USER LICENSE AGREEMENT (EULA)
+
+Please read this End User License Agreement ("Agreement") carefully before installing or using MoneyMate ("Application").
+
+1. LICENSE GRANT
+The creator of MoneyMate grants you a personal, non-transferable, non-exclusive license to use the Application on your devices for personal finance tracking purposes.
+
+2. PRIVACY & DATA SAFETY
+MoneyMate is a local-first application. All data, transaction ledgers, bank card balances, and profile parameters are stored locally on your device. No financial data is sent to external servers without your explicit action (such as manual cloud folder backup configurations).
+
+3. DISCLAIMER OF WARRANTY
+The Application is provided "AS IS" without warranty of any kind. In no event shall the authors be liable for any claims, damages, or other liabilities arising from the use of the Application.
+
+By clicking "I Agree", you agree to be bound by the terms of this Agreement.

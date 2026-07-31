@@ -10,7 +10,8 @@
     "package": "electron-forge package",
     "make": "electron-forge make",
     "publish": "electron-forge publish",
-    "lint": "echo \"No linting configured\""
+    "lint": "echo \"No linting configured\"",
+    "build-installer": "electron-builder --win"
   },
   "keywords": [],
   "author": "ASUS",
@@ -27,6 +28,7 @@
     "@electron/fuses": "^1.8.0",
     "@vitejs/plugin-react": "^5.2.0",
     "electron": "43.2.0",
+    "electron-builder": "^26.15.3",
     "vite": "^5.4.21"
   },
   "dependencies": {
@@ -37,5 +39,32 @@
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "xlsx": "^0.18.5"
+  },
+  "build": {
+    "appId": "com.moneymate.app",
+    "productName": "MoneyMate",
+    "win": {
+      "target": "nsis",
+      "icon": "images/logo.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": true,
+      "allowElevation": true,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": false,
+      "installerHeaderIcon": "images/logo.ico",
+      "installerIcon": "images/logo.ico",
+      "uninstallerIcon": "images/logo.ico",
+      "license": "LICENSE.txt",
+      "include": "build/installer.nsh",
+      "warningsAsErrors": false
+    },
+    "files": [
+      ".vite/**/*",
+      "images/**/*",
+      "package.json",
+      "LICENSE.txt"
+    ]
   }
 }
