@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import logoImg from '../../images/logo.png';
 
 export default function LockScreen({ settings, onUnlock }) {
   const securityType = settings.securityType; // 'pin' or 'password'
@@ -83,8 +84,8 @@ export default function LockScreen({ settings, onUnlock }) {
     <div className="lockscreen-overlay">
       <div className={`lockscreen-card ${shake ? 'shake' : ''} ${error ? 'error' : ''}`}>
         <div className="lockscreen-header">
-          <div className="lockscreen-logo">
-            MM
+          <div className="lockscreen-logo" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent' }}>
+            <img src={logoImg} alt="MoneyMate Logo" style={{ width: '48px', height: '48px', objectFit: 'contain' }} />
           </div>
           <h2>MoneyMate</h2>
           <p className="lockscreen-subtitle">
