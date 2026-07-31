@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useDatabase } from '../../hooks/useDatabase';
 import { useToast } from '../../components/Toast';
 import { formatCurrency } from '../../utils/format';
 import Modal from '../../components/Modal';
+import Chart from 'chart.js/auto';
 
 export default function Subscriptions() {
   const { subscriptions, addSubscription, editSubscription, deleteSubscription, accounts, settings } = useDatabase();
@@ -20,13 +21,20 @@ export default function Subscriptions() {
   const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
   const [bankAccountId, setBankAccountId] = useState('');
 
+  // Chart State & Ref
+  const chartRef = useRef(null);
+  const [chartFilter, setChartFilter] = useState('Monthly');
+
   const subscriptionPresets = [
     'Netflix',
+    'YouTube Premium',
     'Spotify',
+    'Apple Music',
+    'Google One',
     'Microsoft 365',
     'Adobe Creative Cloud',
-    'ChatGPT Plus',
-    'Antivirus Software',
+    'Grammarly Premium',
+    'Claude Pro',
     'Custom'
   ];
 
@@ -90,14 +98,15 @@ export default function Subscriptions() {
       return;
     }
 
+    const existing = modalMode === 'edit' ? subscriptions.find(s => s.id === editingId) : null;
     const payload = {
       name: finalName,
       cost: parseFloat(cost),
       billingCycle,
       startDate,
       bankAccountId,
-      status: modalMode === 'edit' ? subscriptions.find(s => s.id === editingId)?.status || 'Active' : 'Active',
-      nextRenewalDate: startDate // Reset renewal base
+      status: existing ? existing.status : 'Active',
+      nextRenewalDate: existing && existing.startDate === startDate ? existing.nextRenewalDate : startDate
     };
 
     if (modalMode === 'add') {
@@ -122,6 +131,104 @@ export default function Subscriptions() {
       showToast(`Subscription "${name}" deleted.`);
     }
   };
+
+  // Chart Rendering Effect
+  const activeSubs = subscriptions.filter(sub => sub.status === 'Active');
+  const chartLabels = activeSubs.map(sub => sub.name);
+  const chartData = activeSubs.map(sub => {
+    const costVal = parseFloat(sub.cost) || 0;
+    if (chartFilter === 'Monthly') {
+      return sub.billingCycle === 'Monthly' ? costVal : costVal / 12;
+    } else {
+      return sub.billingCycle === 'Monthly' ? costVal * 12 : costVal;
+    }
+  });
+
+  useEffect(() => {
+    if (activeSubs.length === 0 || !chartRef.current) return;
+
+    const ctx = chartRef.current.getContext('2d');
+    
+    const centerTextPlugin = {
+      id: 'subCenterText',
+      afterDraw: (chart) => {
+        const { ctx } = chart;
+        const width = chart.width;
+        const height = chart.height;
+        ctx.save();
+
+        ctx.font = '600 11px "Plus Jakarta Sans", sans-serif';
+        ctx.fillStyle = settings.theme === 'light' ? '#64748b' : '#94a3b8';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
+        const chartArea = chart.chartArea;
+        const centerX = chartArea ? (chartArea.left + chartArea.right) / 2 : width / 2;
+        const centerY = chartArea ? (chartArea.top + chartArea.bottom) / 2 : height / 2;
+
+        ctx.fillText('TOTAL SUB COST', centerX, centerY - 10);
+
+        ctx.font = '800 14px "Plus Jakarta Sans", sans-serif';
+        ctx.fillStyle = settings.theme === 'light' ? '#0f172a' : '#f8fafc';
+        
+        const total = chartData.reduce((a, b) => a + b, 0);
+        ctx.fillText(formatCurrency(total, settings.currency), centerX, centerY + 10);
+        ctx.restore();
+      }
+    };
+
+    const colors = [
+      '#6366f1', // Indigo
+      '#ec4899', // Pink
+      '#10b981', // Emerald
+      '#f59e0b', // Amber
+      '#3b82f6', // Blue
+      '#a855f7', // Purple
+      '#14b8a6', // Teal
+      '#f43f5e', // Rose
+      '#84cc16', // Lime
+      '#06b6d4'  // Cyan
+    ];
+
+    const subChart = new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: chartLabels,
+        datasets: [{
+          data: chartData,
+          backgroundColor: colors.slice(0, activeSubs.length),
+          borderWidth: 0
+        }]
+      },
+      plugins: [centerTextPlugin],
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '70%',
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: {
+              color: settings.theme === 'light' ? '#475569' : '#94a3b8',
+              font: { family: 'Plus Jakarta Sans', size: 10 }
+            }
+          },
+          tooltip: {
+            callbacks: {
+              label: function (context) {
+                const val = context.raw || 0;
+                return ` ${context.label}: ${formatCurrency(val, settings.currency)}`;
+              }
+            }
+          }
+        }
+      }
+    });
+
+    return () => {
+      subChart.destroy();
+    };
+  }, [subscriptions, chartFilter, settings.theme, settings.currency]);
 
   return (
     <div className="page active">
@@ -164,72 +271,113 @@ export default function Subscriptions() {
         </div>
       </div>
 
-      {/* Subscriptions Table */}
-      <div className="panel">
-        <h2 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '4px' }}>Registered Subscriptions List</h2>
-        <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '20px' }}>
-          Renewals automatically update cash-flows inside your transaction ledger logs on renewal dates.
-        </p>
+      {/* Table & Chart Split Layout Grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '24px', alignItems: 'start' }}>
+        {/* Subscriptions Table */}
+        <div className="panel" style={{ margin: 0 }}>
+          <h2 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '4px' }}>Registered Subscriptions List</h2>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '20px' }}>
+            Renewals automatically update cash-flows inside your transaction ledger logs on renewal dates.
+          </p>
 
-        {subscriptions.length === 0 ? (
-          <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>
-            No subscriptions registered yet. Click "Add Subscription" to start tracking recurring products!
+          {subscriptions.length === 0 ? (
+            <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>
+              No subscriptions registered yet. Click "Add Subscription" to start tracking recurring products!
+            </div>
+          ) : (
+            <div className="table-container">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Product</th>
+                    <th>Cost</th>
+                    <th>Billing Cycle</th>
+                    <th>Start Date</th>
+                    <th>Next Renewal Date</th>
+                    <th>Payment Account</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {subscriptions.map(sub => {
+                    const payAcc = accounts.find(a => a.id === sub.bankAccountId);
+                    return (
+                      <tr key={sub.id} style={{ opacity: sub.status === 'Cancelled' ? 0.6 : 1 }}>
+                        <td style={{ fontWeight: 700, fontSize: '0.95rem' }}>{sub.name}</td>
+                        <td style={{ fontWeight: 700 }}>{formatCurrency(sub.cost, settings.currency)}</td>
+                        <td>
+                          <span className={`badge ${sub.billingCycle === 'Monthly' ? 'badge-income' : 'badge-pending'}`}>
+                            {sub.billingCycle}
+                          </span>
+                        </td>
+                        <td>{sub.startDate}</td>
+                        <td style={{ fontWeight: 600 }}>{sub.status === 'Active' ? sub.nextRenewalDate || sub.startDate : 'N/A'}</td>
+                        <td>{payAcc ? `${payAcc.bankName} - ${payAcc.accountName}` : 'None Linked'}</td>
+                        <td>
+                          <span className={`badge ${sub.status === 'Active' ? 'badge-income' : 'badge-expense'}`}>
+                            {sub.status}
+                          </span>
+                        </td>
+                        <td>
+                          <div style={{ display: 'flex', gap: '8px' }}>
+                            <button className="btn btn-secondary" onClick={() => handleToggleStatus(sub)} style={{ padding: '4px 8px', fontSize: '0.75rem' }}>
+                              {sub.status === 'Active' ? 'Cancel' : 'Activate'}
+                            </button>
+                            <button className="btn btn-secondary" onClick={() => handleOpenEditModal(sub)} style={{ padding: '4px 8px', fontSize: '0.75rem' }}>
+                              Edit
+                            </button>
+                            <button className="btn btn-secondary" onClick={() => handleDelete(sub.id, sub.name)} style={{ padding: '4px 8px', fontSize: '0.75rem', color: '#f43f5e', borderColor: '#f43f5e' }}>
+                              Delete
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
+        {/* Subscription Expense Distribution Chart Panel */}
+        <div className="panel" style={{ margin: 0, display: 'flex', flexDirection: 'column', minHeight: '420px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+            <div>
+              <h2 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '2px' }}>Expense Distribution</h2>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>Recurring cost contribution ratio</p>
+            </div>
+            <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '6px', padding: '2px' }}>
+              <button 
+                type="button"
+                className={`btn ${chartFilter === 'Monthly' ? 'btn-primary' : 'btn-secondary'}`} 
+                onClick={() => setChartFilter('Monthly')}
+                style={{ padding: '4px 10px', fontSize: '0.75rem', border: 'none', borderRadius: '4px' }}
+              >
+                Monthly
+              </button>
+              <button 
+                type="button"
+                className={`btn ${chartFilter === 'Yearly' ? 'btn-primary' : 'btn-secondary'}`} 
+                onClick={() => setChartFilter('Yearly')}
+                style={{ padding: '4px 10px', fontSize: '0.75rem', border: 'none', borderRadius: '4px' }}
+              >
+                Yearly
+              </button>
+            </div>
           </div>
-        ) : (
-          <div className="table-container">
-            <table>
-              <thead>
-                <tr>
-                  <th>Product</th>
-                  <th>Cost</th>
-                  <th>Billing Cycle</th>
-                  <th>Start Date</th>
-                  <th>Next Renewal Date</th>
-                  <th>Payment Account</th>
-                  <th>Status</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {subscriptions.map(sub => {
-                  const payAcc = accounts.find(a => a.id === sub.bankAccountId);
-                  return (
-                    <tr key={sub.id} style={{ opacity: sub.status === 'Cancelled' ? 0.6 : 1 }}>
-                      <td style={{ fontWeight: 700, fontSize: '0.95rem' }}>{sub.name}</td>
-                      <td style={{ fontWeight: 700 }}>{formatCurrency(sub.cost, settings.currency)}</td>
-                      <td>
-                        <span className={`badge ${sub.billingCycle === 'Monthly' ? 'badge-income' : 'badge-pending'}`}>
-                          {sub.billingCycle}
-                        </span>
-                      </td>
-                      <td>{sub.startDate}</td>
-                      <td style={{ fontWeight: 600 }}>{sub.status === 'Active' ? sub.nextRenewalDate || sub.startDate : 'N/A'}</td>
-                      <td>{payAcc ? `${payAcc.bankName} - ${payAcc.accountName}` : 'None Linked'}</td>
-                      <td>
-                        <span className={`badge ${sub.status === 'Active' ? 'badge-income' : 'badge-expense'}`}>
-                          {sub.status}
-                        </span>
-                      </td>
-                      <td>
-                        <div style={{ display: 'flex', gap: '8px' }}>
-                          <button className="btn btn-secondary" onClick={() => handleToggleStatus(sub)} style={{ padding: '4px 8px', fontSize: '0.75rem' }}>
-                            {sub.status === 'Active' ? 'Cancel' : 'Activate'}
-                          </button>
-                          <button className="btn btn-secondary" onClick={() => handleOpenEditModal(sub)} style={{ padding: '4px 8px', fontSize: '0.75rem' }}>
-                            Edit
-                          </button>
-                          <button className="btn btn-secondary" onClick={() => handleDelete(sub.id, sub.name)} style={{ padding: '4px 8px', fontSize: '0.75rem', color: '#f43f5e', borderColor: '#f43f5e' }}>
-                            Delete
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
+
+          {activeSubs.length === 0 ? (
+            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', fontSize: '0.9rem', textAlign: 'center', padding: '40px' }}>
+              No active subscriptions to display distribution data.
+            </div>
+          ) : (
+            <div style={{ position: 'relative', flex: 1, minHeight: '260px' }}>
+              <canvas ref={chartRef}></canvas>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* ADD / EDIT SUBSCRIPTION MODAL */}
@@ -249,13 +397,13 @@ export default function Subscriptions() {
               {name === 'Custom' && (
                 <div className="form-group">
                   <label>Custom Product Name</label>
-                  <input 
-                    type="text" 
-                    className="input-ctrl" 
-                    value={customName} 
-                    onChange={e => setCustomName(e.target.value)} 
-                    placeholder="e.g. Disney+" 
-                    required 
+                  <input
+                    type="text"
+                    className="input-ctrl"
+                    value={customName}
+                    onChange={e => setCustomName(e.target.value)}
+                    placeholder="e.g. Disney+"
+                    required
                   />
                 </div>
               )}
@@ -264,15 +412,15 @@ export default function Subscriptions() {
             <div className="form-row-2" style={{ marginTop: '12px' }}>
               <div className="form-group">
                 <label>Billing Cost (Rs.)</label>
-                <input 
-                  type="number" 
-                  className="input-ctrl" 
-                  value={cost} 
-                  onChange={e => setCost(e.target.value)} 
-                  placeholder="1490.00" 
-                  min="0.01" 
+                <input
+                  type="number"
+                  className="input-ctrl"
+                  value={cost}
+                  onChange={e => setCost(e.target.value)}
+                  placeholder="1490.00"
+                  min="0.01"
                   step="0.01"
-                  required 
+                  required
                 />
               </div>
 
@@ -288,12 +436,12 @@ export default function Subscriptions() {
             <div className="form-row-2" style={{ marginTop: '12px' }}>
               <div className="form-group">
                 <label>Billing Start Date</label>
-                <input 
-                  type="date" 
-                  className="input-ctrl" 
-                  value={startDate} 
-                  onChange={e => setStartDate(e.target.value)} 
-                  required 
+                <input
+                  type="date"
+                  className="input-ctrl"
+                  value={startDate}
+                  onChange={e => setStartDate(e.target.value)}
+                  required
                 />
               </div>
 

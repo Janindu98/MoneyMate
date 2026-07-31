@@ -1,4 +1,5 @@
 import React from 'react';
+import logoImg from '../../images/logo.png';
 
 export default function Sidebar({ activeTab, onTabChange }) {
   const tabs = [
@@ -125,7 +126,7 @@ export default function Sidebar({ activeTab, onTabChange }) {
   return (
     <aside className="sidebar">
       <div className="brand">
-        <div className="brand-icon">Rs.</div>
+        <img src={logoImg} alt="MoneyMate Logo" style={{ width: '36px', height: '36px', objectFit: 'contain' }} />
         <div className="brand-name">MoneyMate</div>
       </div>
       <nav className="nav-links">

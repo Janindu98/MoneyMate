@@ -4,11 +4,71 @@ import { calculateAccountBalances } from '../utils/format';
 
 const DatabaseContext = createContext();
 
+function processSubscriptionRenewals(data) {
+  const today = new Date().toISOString().split('T')[0];
+  const updatedSubscriptions = [];
+  const newTransactionsToAdd = [];
+  let hasRenewals = false;
+
+  (data.subscriptions || []).forEach(sub => {
+    let nextRenewal = sub.nextRenewalDate || sub.startDate;
+    let currentSub = { ...sub };
+    
+    if (sub.status === 'Active') {
+      while (nextRenewal && nextRenewal <= today) {
+        hasRenewals = true;
+        
+        // Add expense transaction to ledger
+        newTransactionsToAdd.push({
+          id: `tx_sub_${sub.id}_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+          date: nextRenewal,
+          bankId: sub.bankAccountId || (data.accounts[0]?.id || ''),
+          type: 'Bill & Payment',
+          category: 'Other',
+          payee: sub.name,
+          amount: sub.cost,
+          description: `Subscription Auto-Renewal: ${sub.name}`
+        });
+
+        // Advance renewal date
+        const date = new Date(nextRenewal);
+        if (sub.billingCycle === 'Monthly') {
+          date.setMonth(date.getMonth() + 1);
+        } else {
+          date.setFullYear(date.getFullYear() + 1);
+        }
+        nextRenewal = date.toISOString().split('T')[0];
+      }
+      currentSub.nextRenewalDate = nextRenewal;
+    }
+    updatedSubscriptions.push(currentSub);
+  });
+
+  if (hasRenewals) {
+    return {
+      ...data,
+      subscriptions: updatedSubscriptions,
+      transactions: [...(data.transactions || []), ...newTransactionsToAdd]
+    };
+  }
+  return data;
+}
+
 export function DatabaseProvider({ children }) {
   const [dbState, setDbState] = useState({
     accounts: [],
     transactions: [],
-    categories: { income: [], expense: [] },
+    categories: {
+      income: [],
+      expense: [],
+      'Income': [],
+      'Expense': [],
+      'Online/Account cash transfer': [],
+      'Deposit': [],
+      'Withdrawal': [],
+      'Online Payment': [],
+      'Bill & Payment': []
+    },
     salaryHistory: [],
     subscriptions: [],
     settings: {
@@ -104,53 +164,33 @@ export function DatabaseProvider({ children }) {
             }
           };
 
-          // Subscriptions Auto-Renewal Check
-          const updatedSubscriptions = [];
-          const newTransactionsToAdd = [];
-          let hasRenewals = false;
-          const today = new Date().toISOString().split('T')[0];
+          // Ensure new category schema keys are loaded
+          const currentCats = mergedData.categories || {};
+          const paymentTypes = ['Income', 'Expense', 'Online/Account cash transfer', 'Deposit', 'Withdrawal', 'Online Payment', 'Bill & Payment'];
+          const initialIncome = ['Salary', 'Bonus', 'Interest', 'Refund', 'Other'];
+          const initialExpense = ['Food', 'Fuel', 'Shopping', 'Transportations', 'Other'];
+          const initialBills = ['Electricity', 'Water', 'Internet', 'Mobile phone', 'Insurance', 'Credit cards', 'Rent', 'Other'];
 
-          (mergedData.subscriptions || []).forEach(sub => {
-            let nextRenewal = sub.nextRenewalDate || sub.startDate;
-            let currentSub = { ...sub };
-            
-            if (sub.status === 'Active') {
-              while (nextRenewal && nextRenewal < today) {
-                hasRenewals = true;
-                
-                // Add expense transaction to ledger
-                newTransactionsToAdd.push({
-                  id: `tx_sub_${sub.id}_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
-                  date: nextRenewal,
-                  bankId: sub.bankAccountId || (mergedData.accounts[0]?.id || ''),
-                  type: 'Bill & Payment',
-                  category: 'Other',
-                  payee: sub.name,
-                  amount: sub.cost,
-                  description: `Subscription Auto-Renewal: ${sub.name}`
-                });
-
-                // Advance renewal date
-                const date = new Date(nextRenewal);
-                if (sub.billingCycle === 'Monthly') {
-                  date.setMonth(date.getMonth() + 1);
-                } else {
-                  date.setFullYear(date.getFullYear() + 1);
-                }
-                nextRenewal = date.toISOString().split('T')[0];
-              }
-              currentSub.nextRenewalDate = nextRenewal;
+          paymentTypes.forEach(pt => {
+            if (!Array.isArray(currentCats[pt])) {
+              if (pt === 'Income') currentCats[pt] = currentCats.income || initialIncome;
+              else if (pt === 'Expense') currentCats[pt] = currentCats.expense || initialExpense;
+              else if (pt === 'Deposit') currentCats[pt] = currentCats.income || initialIncome;
+              else if (pt === 'Withdrawal') currentCats[pt] = ['Cash Withdrawal', 'ATM Withdrawal', 'Other'];
+              else if (pt === 'Online/Account cash transfer') currentCats[pt] = ['Money Transfer'];
+              else if (pt === 'Online Payment') currentCats[pt] = currentCats.expense || initialExpense;
+              else if (pt === 'Bill & Payment') currentCats[pt] = initialBills;
             }
-            updatedSubscriptions.push(currentSub);
           });
+          mergedData.categories = currentCats;
 
-          if (hasRenewals) {
-            mergedData.subscriptions = updatedSubscriptions;
-            mergedData.transactions = [...mergedData.transactions, ...newTransactionsToAdd];
-            api.saveData(mergedData).catch(err => console.error('Failed to auto-save renewals:', err));
+          // Subscriptions Auto-Renewal Check
+          const renewedData = processSubscriptionRenewals(mergedData);
+          if (renewedData.transactions.length !== mergedData.transactions.length) {
+            api.saveData(renewedData).catch(err => console.error('Failed to auto-save renewals:', err));
           }
 
-          setDbState(mergedData);
+          setDbState(renewedData);
         }
       } catch (err) {
         console.error('Failed to load database:', err);
@@ -244,6 +284,13 @@ export function DatabaseProvider({ children }) {
         ...prev.categories,
         [type]: [...currentList, categoryName]
       };
+      // Keep legacy keys in sync
+      if (type === 'Income') {
+        updatedCategories.income = [...(prev.categories.income || []), categoryName].filter((v, i, a) => a.indexOf(v) === i);
+      }
+      if (type === 'Expense') {
+        updatedCategories.expense = [...(prev.categories.expense || []), categoryName].filter((v, i, a) => a.indexOf(v) === i);
+      }
       return { ...prev, categories: updatedCategories };
     });
     return true;
@@ -267,15 +314,17 @@ export function DatabaseProvider({ children }) {
   // Subscriptions CRUD
   const addSubscription = (sub) => {
     updateDbState(prev => {
-      const newSub = [...(prev.subscriptions || []), { id: sub.id || `sub_${Date.now()}`, ...sub }];
-      return { ...prev, subscriptions: newSub };
+      const newSub = { id: sub.id || `sub_${Date.now()}`, ...sub };
+      const nextState = { ...prev, subscriptions: [...(prev.subscriptions || []), newSub] };
+      return processSubscriptionRenewals(nextState);
     });
   };
 
   const editSubscription = (id, updated) => {
     updateDbState(prev => {
       const newSub = (prev.subscriptions || []).map(s => s.id === id ? { ...s, ...updated } : s);
-      return { ...prev, subscriptions: newSub };
+      const nextState = { ...prev, subscriptions: newSub };
+      return processSubscriptionRenewals(nextState);
     });
   };
 

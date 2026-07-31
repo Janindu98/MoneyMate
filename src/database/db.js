@@ -68,6 +68,22 @@ export default class Database {
           'Credit cards',
           'Rent',
           'Other'
+        ],
+        'Income': ['Salary', 'Bonus', 'Interest', 'Refund', 'Other'],
+        'Expense': ['Food', 'Fuel', 'Shopping', 'Transportations', 'Other'],
+        'Online/Account cash transfer': ['Money Transfer'],
+        'Deposit': ['Salary', 'Bonus', 'Interest', 'Refund', 'Other'],
+        'Withdrawal': ['Cash Withdrawal', 'ATM Withdrawal', 'Other'],
+        'Online Payment': ['Food', 'Fuel', 'Shopping', 'Transportations', 'Other'],
+        'Bill & Payment': [
+          'Electricity',
+          'Water',
+          'Internet',
+          'Mobile phone',
+          'Insurance',
+          'Credit cards',
+          'Rent',
+          'Other'
         ]
       },
       salaryHistory: [],
@@ -152,6 +168,22 @@ export default class Database {
     if (!Array.isArray(this.data.categories.expense)) {
       this.data.categories.expense = this.getInitialState().categories.expense;
     }
+    
+    // Migrate categories for individual payment types
+    const currentCats = this.data.categories;
+    const initialCats = this.getInitialState().categories;
+    const paymentTypes = ['Income', 'Expense', 'Online/Account cash transfer', 'Deposit', 'Withdrawal', 'Online Payment', 'Bill & Payment'];
+    paymentTypes.forEach(pt => {
+      if (!Array.isArray(currentCats[pt])) {
+        if (pt === 'Income') currentCats[pt] = currentCats.income || initialCats['Income'];
+        else if (pt === 'Expense') currentCats[pt] = currentCats.expense || initialCats['Expense'];
+        else if (pt === 'Deposit') currentCats[pt] = currentCats.income || initialCats['Deposit'];
+        else if (pt === 'Withdrawal') currentCats[pt] = initialCats['Withdrawal'];
+        else if (pt === 'Online/Account cash transfer') currentCats[pt] = initialCats['Online/Account cash transfer'];
+        else if (pt === 'Online Payment') currentCats[pt] = currentCats.expense || initialCats['Online Payment'];
+        else if (pt === 'Bill & Payment') currentCats[pt] = initialCats['Bill & Payment'];
+      }
+    });
     if (!Array.isArray(this.data.salaryHistory)) this.data.salaryHistory = [];
     if (!Array.isArray(this.data.subscriptions)) this.data.subscriptions = [];
     if (!this.data.settings) this.data.settings = this.getInitialState().settings;

@@ -55,7 +55,7 @@ export default function Transactions() {
   const [txDesc, setTxDesc] = useState('');
 
   // Category Form Fields
-  const [newCatType, setNewCatType] = useState('expense'); // income or expense
+  const [newCatType, setNewCatType] = useState('Expense');
   const [newCatName, setNewCatName] = useState('');
 
   // 1. Types list based on user spec
@@ -71,10 +71,7 @@ export default function Transactions() {
 
   // 2. Fetch Category options dynamically based on transaction type selection
   const getCategoryOptions = (type) => {
-    // If it's an Income or Deposit, load income categories.
-    // Otherwise load expense categories.
-    const isIncomeType = type === 'Income' || type === 'Deposit';
-    return isIncomeType ? categories.income : categories.expense;
+    return categories[type] || [];
   };
 
   const handleTxTypeChange = (type) => {
@@ -188,7 +185,6 @@ export default function Transactions() {
     if (success) {
       showToast(`Category "${name}" added to ${newCatType} options.`);
       setNewCatName('');
-      setIsCatModalOpen(false);
     } else {
       showToast('This category already exists.', 'error');
     }
@@ -261,17 +257,17 @@ export default function Transactions() {
 
           <select className="input-ctrl filter-select" value={filterCategory} onChange={e => { setPage(1); setFilterCategory(e.target.value); }}>
             <option value="all">All Categories</option>
-            <option value="Money Transfer">Money Transfer</option>
-            <optgroup label="Income">
-              {categories.income.map(c => (
-                <option key={c} value={c}>{c}</option>
-              ))}
-            </optgroup>
-            <optgroup label="Expense">
-              {categories.expense.map(c => (
-                <option key={c} value={c}>{c}</option>
-              ))}
-            </optgroup>
+            {paymentTypes.map(pt => {
+              const cats = categories[pt] || [];
+              if (cats.length === 0) return null;
+              return (
+                <optgroup key={pt} label={pt}>
+                  {cats.map(c => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </optgroup>
+              );
+            })}
           </select>
         </div>
 
@@ -477,35 +473,74 @@ export default function Transactions() {
         </form>
       </Modal>
 
-      {/* MODAL: ADD CUSTOM CATEGORY */}
-      <Modal isOpen={isCatModalOpen} onClose={() => setIsCatModalOpen(false)} title="Create Custom Category">
-        <form onSubmit={handleCatSubmit}>
-          <div className="modal-body">
-            <div className="form-group">
-              <label>Category Group</label>
-              <select className="input-ctrl" value={newCatType} onChange={e => setNewCatType(e.target.value)}>
-                <option value="expense">Expense Category</option>
-                <option value="income">Income Category</option>
-              </select>
-            </div>
+      {/* MODAL: MANAGE CATEGORIES */}
+      <Modal isOpen={isCatModalOpen} onClose={() => setIsCatModalOpen(false)} title="Manage Categories">
+        <div className="modal-body">
+          <div className="form-group" style={{ marginBottom: '16px' }}>
+            <label style={{ fontWeight: 600 }}>Select Payment Type</label>
+            <select 
+              className="input-ctrl" 
+              value={newCatType} 
+              onChange={e => setNewCatType(e.target.value)}
+            >
+              {paymentTypes.map(pt => (
+                <option key={pt} value={pt}>{pt}</option>
+              ))}
+            </select>
+          </div>
 
-            <div className="form-group">
-              <label>Category Name</label>
-              <input
-                type="text"
-                className="input-ctrl"
-                value={newCatName}
-                onChange={e => setNewCatName(e.target.value)}
-                placeholder="e.g. WiFi, Mobile Bill, Bonus, Dividend"
-                required
-              />
+          <div style={{ marginBottom: '20px' }}>
+            <label style={{ fontWeight: 600, display: 'block', marginBottom: '8px' }}>
+              Existing Categories for {newCatType}
+            </label>
+            <div style={{ 
+              display: 'flex', 
+              flexWrap: 'wrap', 
+              gap: '8px', 
+              maxHeight: '150px', 
+              overflowY: 'auto', 
+              padding: '10px', 
+              background: 'rgba(255,255,255,0.02)', 
+              border: '1px solid var(--border-color)', 
+              borderRadius: '8px' 
+            }}>
+              {(categories[newCatType] || []).length === 0 ? (
+                <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>No categories defined.</span>
+              ) : (
+                (categories[newCatType] || []).map(cat => (
+                  <span 
+                    key={cat} 
+                    className="badge badge-secondary" 
+                    style={{ fontSize: '0.85rem', padding: '6px 10px', background: 'rgba(255,255,255,0.05)' }}
+                  >
+                    {cat}
+                  </span>
+                ))
+              )}
             </div>
           </div>
-          <div className="modal-footer">
-            <button type="button" className="btn btn-secondary" onClick={() => setIsCatModalOpen(false)}>Cancel</button>
-            <button type="submit" className="btn btn-primary">Create Category</button>
-          </div>
-        </form>
+
+          <form onSubmit={handleCatSubmit} style={{ borderTop: '1px solid var(--border-color)', paddingTop: '16px' }}>
+            <div className="form-group">
+              <label style={{ fontWeight: 600 }}>Add New Category</label>
+              <div style={{ display: 'flex', gap: '8px', marginTop: '6px' }}>
+                <input
+                  type="text"
+                  className="input-ctrl"
+                  value={newCatName}
+                  onChange={e => setNewCatName(e.target.value)}
+                  placeholder="e.g. WiFi, Mobile Bill, Bonus, Dividend"
+                  required
+                  style={{ flex: 1 }}
+                />
+                <button type="submit" className="btn btn-primary">Add</button>
+              </div>
+            </div>
+          </form>
+        </div>
+        <div className="modal-footer">
+          <button type="button" className="btn btn-secondary" onClick={() => setIsCatModalOpen(false)}>Close</button>
+        </div>
       </Modal>
 
       {/* MODAL: TRANSACTION DETAILS & INSPECTOR */}
