@@ -191,9 +191,10 @@ export default function Settings() {
                 <option value="CAD">CAD (C$)</option>
                 <option value="AUD">AUD (A$)</option>
                 <option value="JPY">JPY (¥)</option>
-                <option value="CHF">CHF (Fr.)</option>
-                <option value="SGD">SGD (S$)</option>
-                <option value="NZD">NZD (NZ$)</option>
+                <option value="KRW">KRW (₩)</option>
+                <option value="RUB">RUB (₽)</option>
+                <option value="AED">AED (د.إ)</option>
+                <option value="SAR">SAR (﷼)</option>
               </select>
             </div>
           </div>

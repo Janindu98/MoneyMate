@@ -301,7 +301,6 @@ export default function Transactions() {
                 <th>Payment Type</th>
                 <th>Category</th>
                 <th>Payee / Recipient</th>
-                <th>Description</th>
                 <th>Amount</th>
                 <th>Actions</th>
               </tr>
@@ -332,7 +331,6 @@ export default function Transactions() {
                      </td>
                      <td onClick={() => setSelectedTx(tx)}>{tx.category}</td>
                      <td onClick={() => setSelectedTx(tx)}>{tx.payee || 'N/A'}</td>
-                     <td onClick={() => setSelectedTx(tx)}>{tx.description}</td>
                      <td onClick={() => setSelectedTx(tx)}>
                        <span className={`amount ${tx.type === 'Online/Account cash transfer' ? 'transfer' : (isOutflow ? 'expense' : 'income')}`}>
                          {isOutflow ? '-' : '+'}{formatCurrency(tx.amount, settings.currency)}

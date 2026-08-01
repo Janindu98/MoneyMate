@@ -7,9 +7,10 @@ export const currencySymbols = {
   AUD: 'A$',
   JPY: '¥',
   LKR: 'Rs.',
-  CHF: 'Fr.',
-  SGD: 'S$',
-  NZD: 'NZ$'
+  KRW: '₩',
+  RUB: '₽',
+  AED: 'د.إ',
+  SAR: '﷼'
 };
 
 export function formatCurrency(amount, currencyCode = 'LKR') {

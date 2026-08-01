@@ -73,9 +73,10 @@ export default function BankAccounts() {
     AUD: 'A$',
     JPY: '¥',
     LKR: 'Rs.',
-    CHF: 'Fr.',
-    SGD: 'S$',
-    NZD: 'NZ$'
+    KRW: '₩',
+    RUB: '₽',
+    AED: 'د.إ',
+    SAR: '﷼'
   };
 
   const getPassbookData = () => {
@@ -161,7 +162,8 @@ export default function BankAccounts() {
     { value: '#f43f5e', label: 'Crimson Rose' },
     { value: '#db2777', label: 'Sunset Berry' },
     { value: '#0d9488', label: 'Forest Pine' },
-    { value: '#b45309', label: 'Golden Bronze' }
+    { value: '#b45309', label: 'Golden Bronze' },
+    { value: '#2563eb', label: 'Cobalt Neon' }
   ];
 
   const handleOpenAddModal = () => {
