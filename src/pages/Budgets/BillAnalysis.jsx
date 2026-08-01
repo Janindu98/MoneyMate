@@ -59,9 +59,16 @@ export default function BillAnalysis() {
     setIsLimitsModalOpen(false);
   };
 
-  const now = new Date();
-  const currentMonth = now.getMonth();
-  const currentYear = now.getFullYear();
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+
+  const monthsList = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ];
+
+  const currentMonth = selectedMonth;
+  const currentYear = selectedYear;
 
   // 1. Group transactions for the current month
   let monthlyIncome = 0;
@@ -129,7 +136,7 @@ export default function BillAnalysis() {
   const monthsData = [];
   
   for (let i = 5; i >= 0; i--) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const d = new Date(selectedYear, selectedMonth - i, 1);
     monthsData.push({
       year: d.getFullYear(),
       month: d.getMonth(),
@@ -343,7 +350,7 @@ export default function BillAnalysis() {
       pieChart.destroy();
       lineChart.destroy();
     };
-  }, [transactions, settings.theme, settings.currency, totalExpense, electricitySpent, waterSpent, internetSpent, mobileSpent, insuranceSpent, creditCardsSpent, rentSpent, othersSpent]);
+  }, [transactions, settings.theme, settings.currency, totalExpense, electricitySpent, waterSpent, internetSpent, mobileSpent, insuranceSpent, creditCardsSpent, rentSpent, othersSpent, selectedMonth, selectedYear]);
 
   return (
     <div className="page active">
@@ -351,6 +358,30 @@ export default function BillAnalysis() {
         <div className="header-title">
           <h1>Bill & Payment Analysis</h1>
           <p>Analyze utility payments, lease rent, credit cards, and insurance costs against targets.</p>
+        </div>
+        <div className="header-actions">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Period:</span>
+            <select
+              className="input-ctrl"
+              value={selectedMonth}
+              onChange={e => setSelectedMonth(parseInt(e.target.value))}
+              style={{ width: '120px', padding: '6px 10px', fontSize: '0.85rem' }}
+            >
+              {monthsList.map((m, idx) => (
+                <option key={m} value={idx}>{m}</option>
+              ))}
+            </select>
+            <input
+              type="number"
+              className="input-ctrl"
+              value={selectedYear}
+              onChange={e => setSelectedYear(parseInt(e.target.value) || new Date().getFullYear())}
+              style={{ width: '80px', padding: '6px 10px', fontSize: '0.85rem' }}
+              min="2000"
+              max="2100"
+            />
+          </div>
         </div>
       </div>
 

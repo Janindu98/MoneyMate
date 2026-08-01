@@ -66,11 +66,18 @@ export default function BankAccounts() {
       (t.type === 'Online/Account cash transfer' && t.targetBankId === selectedAccountId)
     );
     
+    // Map transactions to include their original index in the main transactions list
+    const accTxWithIndex = accTx.map(tx => ({
+      tx,
+      index: transactions.indexOf(tx)
+    }));
+
     // Sort chronologically (date ascending) to compute running balance correctly
-    const sortedAccTx = [...accTx].sort((a, b) => new Date(a.date) - new Date(b.date));
+    const sortedAccTx = [...accTxWithIndex].sort((a, b) => new Date(a.tx.date) - new Date(b.tx.date) || a.index - b.index);
     
     let running = 0;
-    const computedTx = sortedAccTx.map(tx => {
+    const computedTx = sortedAccTx.map(item => {
+      const tx = item.tx;
       let isOutflow = false;
       let isInflow = false;
       
@@ -78,7 +85,7 @@ export default function BankAccounts() {
         if (['Income', 'Deposit', 'Refund'].includes(tx.type)) {
           isInflow = true;
           running += tx.amount;
-        } else if (['Expense', 'Withdrawal', 'online payment', 'Online/Account cash transfer', 'Bill & Payment'].includes(tx.type)) {
+        } else if (['Expense', 'Withdrawal', 'online payment', 'Online Payment', 'Online/Account cash transfer', 'Bill & Payment'].includes(tx.type)) {
           isOutflow = true;
           running -= tx.amount;
         }
@@ -91,7 +98,8 @@ export default function BankAccounts() {
         ...tx,
         isOutflow,
         isInflow,
-        runningBalance: running
+        runningBalance: running,
+        originalIndex: item.index
       };
     });
     
@@ -118,7 +126,7 @@ export default function BankAccounts() {
     });
 
     // Show most recent transaction first (descending)
-    return filtered.sort((a, b) => new Date(b.date) - new Date(a.date));
+    return filtered.sort((a, b) => new Date(b.date) - new Date(a.date) || b.originalIndex - a.originalIndex);
   };
 
   // Colors available for selection

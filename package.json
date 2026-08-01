@@ -11,7 +11,7 @@
     "make": "electron-forge make",
     "publish": "electron-forge publish",
     "lint": "echo \"No linting configured\"",
-    "build-installer": "electron-builder --win"
+    "build-installer": "npm run package && electron-builder --win"
   },
   "keywords": [],
   "author": "ASUS",

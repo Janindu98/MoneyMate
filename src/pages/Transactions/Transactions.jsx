@@ -211,7 +211,7 @@ export default function Transactions() {
   });
 
   // Sort descending by date
-  filteredTx.sort((a, b) => new Date(b.date) - new Date(a.date));
+  filteredTx.sort((a, b) => new Date(b.date) - new Date(a.date) || transactions.indexOf(b) - transactions.indexOf(a));
 
   // Pagination Math
   const totalRecords = filteredTx.length;
@@ -300,7 +300,7 @@ export default function Transactions() {
               {paginatedTx.map(tx => {
                 const sourceAcc = accounts.find(a => a.id === tx.bankId);
                 const targetAcc = accounts.find(a => a.id === tx.targetBankId);
-                const isOutflow = ['Expense', 'Withdrawal', 'online payment', 'Online/Account cash transfer', 'Bill & Payment'].includes(tx.type) && tx.bankId === sourceAcc?.id;
+                const isOutflow = ['Expense', 'Withdrawal', 'online payment', 'Online Payment', 'Online/Account cash transfer', 'Bill & Payment'].includes(tx.type) && tx.bankId === sourceAcc?.id;
 
                 return (
                   <tr key={tx.id} style={{ cursor: 'pointer' }}>
@@ -315,15 +315,19 @@ export default function Transactions() {
                         sourceAcc ? sourceAcc.bankName : 'Unknown'
                       )}
                     </td>
-                    <td onClick={() => setSelectedTx(tx)}><span className={`badge badge-${isOutflow ? 'expense' : 'income'}`}>{tx.type}</span></td>
-                    <td onClick={() => setSelectedTx(tx)}>{tx.category}</td>
-                    <td onClick={() => setSelectedTx(tx)}>{tx.payee || 'N/A'}</td>
-                    <td onClick={() => setSelectedTx(tx)}>{tx.description}</td>
                     <td onClick={() => setSelectedTx(tx)}>
-                      <span className={`amount ${isOutflow ? 'expense' : 'income'}`}>
-                        {isOutflow ? '-' : '+'}{formatCurrency(tx.amount, settings.currency)}
-                      </span>
-                    </td>
+                       <span className={`badge ${tx.type === 'Online/Account cash transfer' ? 'badge-transfer' : (isOutflow ? 'badge-expense' : 'badge-income')}`}>
+                         {tx.type}
+                       </span>
+                     </td>
+                     <td onClick={() => setSelectedTx(tx)}>{tx.category}</td>
+                     <td onClick={() => setSelectedTx(tx)}>{tx.payee || 'N/A'}</td>
+                     <td onClick={() => setSelectedTx(tx)}>{tx.description}</td>
+                     <td onClick={() => setSelectedTx(tx)}>
+                       <span className={`amount ${tx.type === 'Online/Account cash transfer' ? 'transfer' : (isOutflow ? 'expense' : 'income')}`}>
+                         {isOutflow ? '-' : '+'}{formatCurrency(tx.amount, settings.currency)}
+                       </span>
+                     </td>
                     <td>
                       <div style={{ display: 'flex', gap: '8px' }}>
                         <button className="btn btn-secondary btn-icon-only" style={{ width: '28px', height: '28px' }} onClick={() => setSelectedTx(tx)} title="View Details">
@@ -548,7 +552,7 @@ export default function Transactions() {
         {selectedTx && (() => {
           const sourceAcc = accounts.find(a => a.id === selectedTx.bankId);
           const targetAcc = accounts.find(a => a.id === selectedTx.targetBankId);
-          const isOutflow = ['Expense', 'Withdrawal', 'online payment', 'Online/Account cash transfer', 'Bill & Payment'].includes(selectedTx.type) && selectedTx.bankId === sourceAcc?.id;
+          const isOutflow = ['Expense', 'Withdrawal', 'online payment', 'Online Payment', 'Online/Account cash transfer', 'Bill & Payment'].includes(selectedTx.type) && selectedTx.bankId === sourceAcc?.id;
           const salaryRec = findSalaryRecord(selectedTx);
 
           const handleOpenPayslip = async (path) => {
@@ -577,7 +581,7 @@ export default function Transactions() {
                   <div>
                     <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Payment Type</div>
                     <div style={{ marginTop: '2px' }}>
-                      <span className={`badge badge-${isOutflow ? 'expense' : 'income'}`} style={{ fontSize: '0.85rem' }}>{selectedTx.type}</span>
+                      <span className={`badge ${selectedTx.type === 'Online/Account cash transfer' ? 'badge-transfer' : (isOutflow ? 'badge-expense' : 'badge-income')}`} style={{ fontSize: '0.85rem' }}>{selectedTx.type}</span>
                     </div>
                   </div>
                   <div>

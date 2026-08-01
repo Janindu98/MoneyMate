@@ -29,9 +29,9 @@ export function calculateAccountBalances(accounts, transactions) {
       // Source account balance adjustments
       if (tx.bankId === acc.id) {
         const type = tx.type;
-        if (type === 'Income' || type === 'Deposit') {
+        if (type === 'Income' || type === 'Deposit' || type === 'Refund') {
           balance += tx.amount;
-        } else if (type === 'Expense' || type === 'Withdrawal' || type === 'online payment' || type === 'Online/Account cash transfer') {
+        } else if (type === 'Expense' || type === 'Withdrawal' || type === 'online payment' || type === 'Online Payment' || type === 'Online/Account cash transfer' || type === 'Bill & Payment') {
           balance -= tx.amount;
         }
       }

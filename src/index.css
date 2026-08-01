@@ -620,6 +620,15 @@ tr:hover td {
   color: #10b981;
 }
 
+.badge-transfer {
+  background-color: rgba(99, 102, 241, 0.15);
+  color: #6366f1;
+}
+
+.amount.transfer {
+  color: #6366f1;
+}
+
 /* Amount styling */
 .amount {
   font-weight: 700;
