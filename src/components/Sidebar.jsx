@@ -143,7 +143,7 @@ export default function Sidebar({ activeTab, onTabChange }) {
         ))}
       </nav>
       <div className="sidebar-footer">
-        <p>MoneyMate v1.2.0</p>
+        <p>MoneyMate v1.3.0</p>
         <p style={{ marginTop: '4px' }}>Local Database Offline</p>
       </div>
     </aside>

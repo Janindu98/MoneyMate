@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useDatabase } from '../../hooks/useDatabase';
 import { useToast } from '../../components/Toast';
+import ConfirmModal from '../../components/ConfirmModal';
 import { encryptData, decryptData } from '../../utils/crypto';
 import { api } from '../../services/api';
 
@@ -8,12 +9,27 @@ export default function Backup() {
   const { transactions, accounts, categories, salaryHistory, settings, profile, restoreDatabase, updateSettings } = useDatabase();
   const { showToast } = useToast();
 
+  const [confirmState, setConfirmState] = useState({ isOpen: false, title: '', message: '', onConfirm: null, type: 'danger', requireTextInput: '' });
+
+  const showConfirm = (title, message, onConfirm, type = 'danger', requireTextInput = '') => {
+    setConfirmState({ isOpen: true, title, message, onConfirm, type, requireTextInput });
+  };
+
   const [activeTab, setActiveTab] = useState('gdrive'); // gdrive, onedrive, dropbox
-  const [connections, setConnections] = useState({
-    gdrive: { connected: false, email: '' },
-    onedrive: { connected: false, email: '' },
-    dropbox: { connected: false, email: '' }
-  });
+  const connections = {
+    gdrive: {
+      connected: !!settings.gdriveConnected,
+      email: settings.gdriveEmail || ''
+    },
+    onedrive: {
+      connected: !!settings.onedriveConnected,
+      email: settings.onedriveEmail || ''
+    },
+    dropbox: {
+      connected: !!settings.dropboxConnected,
+      email: settings.dropboxEmail || ''
+    }
+  };
 
   const [simulatedLoginEmail, setSimulatedLoginEmail] = useState('');
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
@@ -26,7 +42,7 @@ export default function Backup() {
   const activeConn = connections[activeTab];
 
   const handleOpenLogin = () => {
-    setSimulatedLoginEmail(activeTab === 'gdrive' ? 'janindu@gmail.com' : activeTab === 'onedrive' ? 'janindu@outlook.com' : 'janindu@dropbox.com');
+    setSimulatedLoginEmail(activeTab === 'gdrive' ? 'john@gmail.com' : activeTab === 'onedrive' ? 'john@outlook.com' : 'john@dropbox.com');
     setIsLoginModalOpen(true);
   };
 
@@ -36,19 +52,20 @@ export default function Backup() {
       showToast('Please enter an account email.', 'error');
       return;
     }
-    setConnections(prev => ({
-      ...prev,
-      [activeTab]: { connected: true, email: simulatedLoginEmail.trim() }
-    }));
+    updateSettings({
+      [activeTab + 'Connected']: true,
+      [activeTab + 'Email']: simulatedLoginEmail.trim()
+    });
     setIsLoginModalOpen(false);
     showToast(`Successfully linked to ${activeTab === 'gdrive' ? 'Google Drive' : activeTab === 'onedrive' ? 'OneDrive' : 'Dropbox'}!`);
   };
 
   const handleDisconnect = () => {
-    setConnections(prev => ({
-      ...prev,
-      [activeTab]: { connected: false, email: '' }
-    }));
+    updateSettings({
+      [activeTab + 'Connected']: false,
+      [activeTab + 'Email']: '',
+      [activeTab + 'BackupEnabled']: false
+    });
     showToast(`Disconnected from ${activeTab === 'gdrive' ? 'Google Drive' : activeTab === 'onedrive' ? 'OneDrive' : 'Dropbox'}.`);
   };
 
@@ -155,16 +172,7 @@ export default function Backup() {
     }
   };
 
-  // Run Decrypted Restore Workflow
-  const handleRestoreWorkflow = async () => {
-    if (!activeConn.connected) {
-      showToast('Please connect your cloud account first.', 'warning');
-      return;
-    }
-
-    const confirmRestore = confirm('Warning: Restoring from a backup will overwrite all current profiles, accounts, and transactions ledger. Proceed?');
-    if (!confirmRestore) return;
-
+  const executeRestoreWorkflow = async () => {
     setIsWorkflowActive(true);
     setWorkflowType('restore');
     setWorkflowStep(1); // 1. Select / Download file
@@ -209,6 +217,22 @@ export default function Backup() {
       setWorkflowType(null);
       setWorkflowStep(0);
     }
+  };
+
+  // Run Decrypted Restore Workflow
+  const handleRestoreWorkflow = async () => {
+    if (!activeConn.connected) {
+      showToast('Please connect your cloud account first.', 'warning');
+      return;
+    }
+
+    showConfirm(
+      'Restore Database Backup',
+      'Warning: Restoring from a backup will overwrite all current profiles, accounts, and transactions ledger. Proceed?',
+      () => {
+        executeRestoreWorkflow();
+      }
+    );
   };
 
   return (
@@ -437,6 +461,16 @@ export default function Backup() {
           </div>
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={confirmState.isOpen}
+        onClose={() => setConfirmState(prev => ({ ...prev, isOpen: false }))}
+        onConfirm={confirmState.onConfirm}
+        title={confirmState.title}
+        message={confirmState.message}
+        type={confirmState.type}
+        requireTextInput={confirmState.requireTextInput}
+      />
     </div>
   );
 }

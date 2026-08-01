@@ -4,7 +4,9 @@ import { formatCurrency } from '../../utils/format';
 
 export default function Dashboard({ onNavigate }) {
   const { accounts, transactions, settings } = useDatabase();
-  const [dashboardPeriod, setDashboardPeriod] = useState('monthly'); // 'overall', 'yearly', 'monthly'
+  const [dashboardPeriod, setDashboardPeriod] = useState('this_month'); // 'overall', 'this_year', 'this_month', 'last_month', 'custom'
+  const [customStartDate, setCustomStartDate] = useState('');
+  const [customEndDate, setCustomEndDate] = useState('');
 
   // 1. Calculations
   // Current Total Balance (sum of all active account balances)
@@ -22,6 +24,10 @@ export default function Dashboard({ onNavigate }) {
   const currentMonth = now.getMonth();
   const currentYear = now.getFullYear();
 
+  const lastMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const lastMonthVal = lastMonthDate.getMonth();
+  const lastMonthYear = lastMonthDate.getFullYear();
+
   let displayedIncome = 0;
   let displayedExpense = 0;
 
@@ -31,16 +37,22 @@ export default function Dashboard({ onNavigate }) {
     
     if (dashboardPeriod === 'overall') {
       match = true;
-    } else if (dashboardPeriod === 'yearly') {
+    } else if (dashboardPeriod === 'this_year' || dashboardPeriod === 'yearly') {
       match = txDate.getFullYear() === currentYear;
-    } else if (dashboardPeriod === 'monthly') {
+    } else if (dashboardPeriod === 'this_month' || dashboardPeriod === 'monthly') {
       match = txDate.getMonth() === currentMonth && txDate.getFullYear() === currentYear;
+    } else if (dashboardPeriod === 'last_month') {
+      match = txDate.getMonth() === lastMonthVal && txDate.getFullYear() === lastMonthYear;
+    } else if (dashboardPeriod === 'custom') {
+      const matchStart = !customStartDate || tx.date >= customStartDate;
+      const matchEnd = !customEndDate || tx.date <= customEndDate;
+      match = matchStart && matchEnd;
     }
 
     if (match) {
       if (['Income', 'Deposit', 'Refund'].includes(tx.type)) {
         displayedIncome += tx.amount;
-      } else if (['Expense', 'Withdrawal', 'online payment', 'Bill & Payment'].includes(tx.type) && tx.bankId) {
+      } else if (['Expense', 'Withdrawal', 'online payment', 'Online Payment', 'Bill & Payment'].includes(tx.type) && tx.bankId) {
         displayedExpense += tx.amount;
       }
     }
@@ -57,6 +69,7 @@ export default function Dashboard({ onNavigate }) {
           expenses: 'Overall Expenses',
           trend: 'For all logged history'
         };
+      case 'this_year':
       case 'yearly':
         return {
           savings: 'Yearly Savings',
@@ -64,6 +77,22 @@ export default function Dashboard({ onNavigate }) {
           expenses: 'Yearly Expenses',
           trend: `For current calendar year (${currentYear})`
         };
+      case 'last_month':
+        const lastMonthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+        return {
+          savings: 'Last Month Savings',
+          income: 'Last Month Income',
+          expenses: 'Last Month Expenses',
+          trend: `For ${lastMonthNames[lastMonthVal]} ${lastMonthYear}`
+        };
+      case 'custom':
+        return {
+          savings: 'Custom Savings',
+          income: 'Custom Income',
+          expenses: 'Custom Expenses',
+          trend: `For range ${customStartDate || 'Start'} to ${customEndDate || 'End'}`
+        };
+      case 'this_month':
       case 'monthly':
       default:
         return {
@@ -78,7 +107,7 @@ export default function Dashboard({ onNavigate }) {
   const periodLabels = getPeriodLabels();
 
   // Recent transactions (last 5)
-  const sortedTx = [...transactions].sort((a, b) => new Date(b.date) - new Date(a.date));
+  const sortedTx = [...transactions].sort((a, b) => new Date(b.date) - new Date(a.date) || transactions.indexOf(b) - transactions.indexOf(a));
   const recentTx = sortedTx.slice(0, 5);
 
   return (
@@ -89,18 +118,39 @@ export default function Dashboard({ onNavigate }) {
           <p>Local offline salary and spending oversight styled in {settings.currency || 'LKR'}.</p>
         </div>
         <div className="header-actions">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
             <label style={{ whiteSpace: 'nowrap', color: 'var(--text-secondary)', fontSize: '0.9rem', fontWeight: 600 }}>Period:</label>
             <select
               className="input-ctrl"
-              style={{ width: '220px', padding: '8px 12px', fontSize: '0.85rem' }}
+              style={{ width: '200px', padding: '8px 12px', fontSize: '0.85rem' }}
               value={dashboardPeriod}
               onChange={(e) => setDashboardPeriod(e.target.value)}
             >
               <option value="overall">Overall</option>
-              <option value="yearly">Yearly (Current)</option>
-              <option value="monthly">Monthly (Current year)</option>
+              <option value="this_year">This Year</option>
+              <option value="this_month">This Month</option>
+              <option value="last_month">Last Month</option>
+              <option value="custom">Custom Range</option>
             </select>
+            {dashboardPeriod === 'custom' && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <input
+                  type="date"
+                  className="input-ctrl"
+                  style={{ padding: '6px 10px', fontSize: '0.85rem', width: '135px' }}
+                  value={customStartDate}
+                  onChange={(e) => setCustomStartDate(e.target.value)}
+                />
+                <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>to</span>
+                <input
+                  type="date"
+                  className="input-ctrl"
+                  style={{ padding: '6px 10px', fontSize: '0.85rem', width: '135px' }}
+                  value={customEndDate}
+                  onChange={(e) => setCustomEndDate(e.target.value)}
+                />
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -194,7 +244,7 @@ export default function Dashboard({ onNavigate }) {
               <tbody>
                 {recentTx.map(tx => {
                   const acc = accounts.find(a => a.id === tx.bankId);
-                  const isOutflow = ['Expense', 'Withdrawal', 'online payment', 'Online/Account cash transfer', 'Bill & Payment'].includes(tx.type) && tx.bankId === acc?.id;
+                  const isOutflow = ['Expense', 'Withdrawal', 'online payment', 'Online Payment', 'Online/Account cash transfer', 'Bill & Payment'].includes(tx.type) && tx.bankId === acc?.id;
                   return (
                     <tr key={tx.id}>
                       <td>

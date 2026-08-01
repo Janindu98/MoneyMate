@@ -3,10 +3,17 @@ import { useDatabase } from '../../hooks/useDatabase';
 import { useToast } from '../../components/Toast';
 import { api } from '../../services/api';
 import Modal from '../../components/Modal';
+import ConfirmModal from '../../components/ConfirmModal';
 
 export default function Settings() {
   const { settings, updateSettings, restoreDatabase, showToast: hookShowToast } = useDatabase();
   const { showToast } = useToast();
+
+  const [confirmState, setConfirmState] = useState({ isOpen: false, title: '', message: '', onConfirm: null, type: 'danger', requireTextInput: '' });
+
+  const showConfirm = (title, message, onConfirm, type = 'danger', requireTextInput = '') => {
+    setConfirmState({ isOpen: true, title, message, onConfirm, type, requireTextInput });
+  };
 
   // Security options states
   const [securityModalOpen, setSecurityModalOpen] = useState(false);
@@ -124,99 +131,35 @@ export default function Settings() {
     showToast(`App theme set to: ${val === 'light' ? 'Light Theme' : 'Dark Theme'}`);
   };
 
-  const handleExportBackup = async () => {
-    try {
-      const res = await api.exportBackup();
-      if (res.success) {
-        showToast('Offline database backup file saved successfully.');
-      } else if (!res.canceled) {
-        showToast(`Failed to export database: ${res.error}`, 'error');
-      }
-    } catch (err) {
-      console.error(err);
-      showToast('Error exporting backup file.', 'error');
-    }
-  };
-
-  const handleImportBackup = async () => {
-    const confirmRestore = confirm('Warning: Overwriting your current database with a backup file is irreversible. All current logs will be replaced. Proceed?');
-    if (!confirmRestore) return;
-
-    try {
-      const res = await api.importBackup();
-      if (res.success && res.data) {
-        restoreDatabase(res.data);
-        showToast('Database backup restored successfully.');
-      } else if (!res.canceled) {
-        showToast(`Failed to restore backup: ${res.error}`, 'error');
-      }
-    } catch (err) {
-      console.error(err);
-      showToast('Error restoring backup file.', 'error');
-    }
-  };
-
-  const handleSelectGDriveFolder = async () => {
-    try {
-      const res = await api.selectFolder();
-      if (!res.canceled && res.folderPath) {
-        updateSettings({ gdriveBackupPath: res.folderPath });
-        showToast('Google Drive backup sync folder linked.');
-      }
-    } catch (err) {
-      console.error(err);
-      showToast('Failed to select folder.', 'error');
-    }
-  };
-
-  const handleToggleGDriveBackup = (e) => {
-    const checked = e.target.checked;
-    if (checked && !settings.gdriveBackupPath) {
-      showToast('Please select a Google Drive sync folder first.', 'warning');
-      return;
-    }
-    updateSettings({ gdriveBackupEnabled: checked });
-    showToast(`Google Drive backup sync ${checked ? 'enabled' : 'disabled'}.`);
-  };
-
-  const handleSyncGDriveNow = async () => {
-    if (!settings.gdriveBackupPath) {
-      showToast('Please link a folder path before syncing.', 'error');
-      return;
-    }
-    showToast('Starting Google Drive synchronization...');
-    try {
-      const res = await api.syncGDrive();
-      if (res.success) {
-        showToast('Google Drive sync complete. All backups and payslips uploaded.');
-      } else {
-        showToast(`Sync failed: ${res.error}`, 'error');
-      }
-    } catch (err) {
-      console.error(err);
-      showToast('Failed to sync to Google Drive.', 'error');
-    }
-  };
-
   const handleResetData = () => {
-    const firstConfirm = confirm('Are you sure you want to delete ALL records? This deletes ledger history, salary plans and accounts.');
-    if (firstConfirm) {
-      const secondConfirm = confirm('CRITICAL WARNING: This action is permanent and cannot be undone. Type "OK" to proceed.');
-      if (secondConfirm) {
-        const resetState = {
-          accounts: [],
-          transactions: [],
-          categories: {
-            income: ['Salary', 'Bonus', 'Interest', 'Refund', 'Other'],
-            expense: ['Food', 'Fuel', 'Bills', 'Insurance', 'Rent', 'Shopping', 'Medical', 'Entertainment', 'Investment', 'Loan', 'Other']
-          },
-          salaryHistory: [],
-          settings: { currency: 'LKR', theme: 'dark' }
-        };
-        restoreDatabase(resetState);
-        showToast('All local data wiped. Reset to clean template.');
+    showConfirm(
+      'Reset Database?',
+      'Are you sure you want to delete ALL records? This deletes ledger history, salary plans and accounts.',
+      () => {
+        setTimeout(() => {
+          showConfirm(
+            'Confirm Permanent Deletion',
+            'CRITICAL WARNING: This action is permanent and cannot be undone. Please type "OK" below to proceed.',
+            () => {
+              const resetState = {
+                accounts: [],
+                transactions: [],
+                categories: {
+                  income: ['Salary', 'Bonus', 'Interest', 'Refund', 'Other'],
+                  expense: ['Food', 'Fuel', 'Bills', 'Insurance', 'Rent', 'Shopping', 'Medical', 'Entertainment', 'Investment', 'Loan', 'Other']
+                },
+                salaryHistory: [],
+                settings: { currency: 'LKR', theme: 'dark' }
+              };
+              restoreDatabase(resetState);
+              showToast('All local data wiped. Reset to clean template.');
+            },
+            'danger',
+            'OK'
+          );
+        }, 150);
       }
-    }
+    );
   };
 
   return (
@@ -248,6 +191,10 @@ export default function Settings() {
                 <option value="CAD">CAD (C$)</option>
                 <option value="AUD">AUD (A$)</option>
                 <option value="JPY">JPY (¥)</option>
+                <option value="KRW">KRW (₩)</option>
+                <option value="RUB">RUB (₽)</option>
+                <option value="AED">AED (د.إ)</option>
+                <option value="SAR">SAR (﷼)</option>
               </select>
             </div>
           </div>
@@ -286,73 +233,6 @@ export default function Settings() {
                 <option value="pin">PIN Lock</option>
                 <option value="password">Password</option>
               </select>
-            </div>
-          </div>
-        </div>
-
-        {/* Google Drive Cloud Sync */}
-        <div className="settings-section">
-          <div className="settings-section-title">Google Drive Sync (Cloud Backup)</div>
-          <div className="settings-section-desc">Automatically sync database backups and payslip files to your Google Drive Desktop sync folder.</div>
-          
-          <div className="settings-row" style={{ marginBottom: '16px' }}>
-            <div className="settings-row-info">
-              <div className="settings-row-title">Enable Cloud Auto-Sync</div>
-              <div className="settings-row-desc">Automatically upload backups in background on change.</div>
-            </div>
-            <div>
-              <label style={{ display: 'inline-flex', alignItems: 'center', cursor: 'pointer' }}>
-                <input 
-                  type="checkbox" 
-                  checked={!!settings.gdriveBackupEnabled} 
-                  onChange={handleToggleGDriveBackup} 
-                  style={{ width: '20px', height: '20px', cursor: 'pointer' }}
-                />
-              </label>
-            </div>
-          </div>
-
-          <div className="settings-row" style={{ marginBottom: '16px' }}>
-            <div className="settings-row-info">
-              <div className="settings-row-title">GDrive Folder Location</div>
-              <div className="settings-row-desc">Selected path: <strong style={{ color: 'var(--text-primary)' }}>{settings.gdriveBackupPath || 'Not Configured'}</strong></div>
-            </div>
-            <div>
-              <button className="btn btn-settings" onClick={handleSelectGDriveFolder}>Link GDrive Folder</button>
-            </div>
-          </div>
-
-          <div className="settings-row">
-            <div className="settings-row-info">
-              <div className="settings-row-title">Sync Database & Payslips</div>
-              <div className="settings-row-desc">Instantly push all accounts details and attachments to your Drive folder.</div>
-            </div>
-            <div>
-              <button className="btn btn-settings" onClick={handleSyncGDriveNow}>Sync Now</button>
-            </div>
-          </div>
-        </div>
-
-        {/* Database Backup and Restore */}
-        <div className="settings-section">
-          <div className="settings-section-title">Local Database Utilities</div>
-          <div className="settings-section-desc">Export a copy of database JSON data or restore from a previously exported backup file.</div>
-          <div className="settings-row" style={{ marginBottom: '16px' }}>
-            <div className="settings-row-info">
-              <div className="settings-row-title">Backup database</div>
-              <div className="settings-row-desc">Generates a complete offline JSON copy of your accounts and ledger.</div>
-            </div>
-            <div>
-              <button className="btn btn-settings" onClick={handleExportBackup}>Create Backup</button>
-            </div>
-          </div>
-          <div className="settings-row">
-            <div className="settings-row-info">
-              <div className="settings-row-title">Restore backup</div>
-              <div className="settings-row-desc">Overwrite existing app database with a previously exported JSON backup. WARNING: Existing data will be replaced.</div>
-            </div>
-            <div>
-              <button className="btn btn-settings" onClick={handleImportBackup}>Restore Backup</button>
             </div>
           </div>
         </div>
@@ -465,6 +345,16 @@ export default function Settings() {
           </div>
         </form>
       </Modal>
+
+      <ConfirmModal
+        isOpen={confirmState.isOpen}
+        onClose={() => setConfirmState(prev => ({ ...prev, isOpen: false }))}
+        onConfirm={confirmState.onConfirm}
+        title={confirmState.title}
+        message={confirmState.message}
+        type={confirmState.type}
+        requireTextInput={confirmState.requireTextInput}
+      />
     </div>
   );
 }

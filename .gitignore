@@ -92,3 +92,8 @@ typings/
 
 # Electron-Forge
 out/
+
+# Electron-Builder Installer
+dist/
+/dist
+/dist/assets

@@ -3,6 +3,7 @@ import { useDatabase } from '../../hooks/useDatabase';
 import { useToast } from '../../components/Toast';
 import { formatCurrency } from '../../utils/format';
 import Modal from '../../components/Modal';
+import ConfirmModal from '../../components/ConfirmModal';
 import Chart from 'chart.js/auto';
 
 export default function Subscriptions() {
@@ -12,6 +13,12 @@ export default function Subscriptions() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState('add'); // 'add' or 'edit'
   const [editingId, setEditingId] = useState(null);
+  const [selectedSub, setSelectedSub] = useState(null);
+  const [confirmState, setConfirmState] = useState({ isOpen: false, title: '', message: '', onConfirm: null, type: 'danger', requireTextInput: '' });
+
+  const showConfirm = (title, message, onConfirm, type = 'danger', requireTextInput = '') => {
+    setConfirmState({ isOpen: true, title, message, onConfirm, type, requireTextInput });
+  };
 
   // Form Fields
   const [name, setName] = useState('Netflix');
@@ -126,10 +133,14 @@ export default function Subscriptions() {
   };
 
   const handleDelete = (id, name) => {
-    if (confirm(`Are you sure you want to delete subscription "${name}"?`)) {
-      deleteSubscription(id);
-      showToast(`Subscription "${name}" deleted.`);
-    }
+    showConfirm(
+      'Delete Subscription',
+      `Are you sure you want to delete subscription "${name}"?`,
+      () => {
+        deleteSubscription(id);
+        showToast(`Subscription "${name}" deleted.`);
+      }
+    );
   };
 
   // Chart Rendering Effect
@@ -292,43 +303,42 @@ export default function Subscriptions() {
                     <th>Product</th>
                     <th>Cost</th>
                     <th>Billing Cycle</th>
-                    <th>Start Date</th>
                     <th>Next Renewal Date</th>
-                    <th>Payment Account</th>
                     <th>Status</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {subscriptions.map(sub => {
-                    const payAcc = accounts.find(a => a.id === sub.bankAccountId);
                     return (
-                      <tr key={sub.id} style={{ opacity: sub.status === 'Cancelled' ? 0.6 : 1 }}>
-                        <td style={{ fontWeight: 700, fontSize: '0.95rem' }}>{sub.name}</td>
-                        <td style={{ fontWeight: 700 }}>{formatCurrency(sub.cost, settings.currency)}</td>
-                        <td>
+                      <tr key={sub.id} style={{ opacity: sub.status === 'Cancelled' ? 0.6 : 1, cursor: 'pointer' }}>
+                        <td onClick={() => setSelectedSub(sub)} style={{ fontWeight: 700, fontSize: '0.95rem' }}>{sub.name}</td>
+                        <td onClick={() => setSelectedSub(sub)} style={{ fontWeight: 700 }}>{formatCurrency(sub.cost, settings.currency)}</td>
+                        <td onClick={() => setSelectedSub(sub)}>
                           <span className={`badge ${sub.billingCycle === 'Monthly' ? 'badge-income' : 'badge-pending'}`}>
                             {sub.billingCycle}
                           </span>
                         </td>
-                        <td>{sub.startDate}</td>
-                        <td style={{ fontWeight: 600 }}>{sub.status === 'Active' ? sub.nextRenewalDate || sub.startDate : 'N/A'}</td>
-                        <td>{payAcc ? `${payAcc.bankName} - ${payAcc.accountName}` : 'None Linked'}</td>
-                        <td>
+                        <td onClick={() => setSelectedSub(sub)} style={{ fontWeight: 600 }}>{sub.status === 'Active' ? sub.nextRenewalDate || sub.startDate : 'N/A'}</td>
+                        <td onClick={() => setSelectedSub(sub)}>
                           <span className={`badge ${sub.status === 'Active' ? 'badge-income' : 'badge-expense'}`}>
                             {sub.status}
                           </span>
                         </td>
                         <td>
                           <div style={{ display: 'flex', gap: '8px' }}>
-                            <button className="btn btn-secondary" onClick={() => handleToggleStatus(sub)} style={{ padding: '4px 8px', fontSize: '0.75rem' }}>
-                              {sub.status === 'Active' ? 'Cancel' : 'Activate'}
+                            <button className="btn btn-secondary btn-icon-only" style={{ width: '28px', height: '28px' }} onClick={() => handleToggleStatus(sub)} title={sub.status === 'Active' ? 'Cancel' : 'Activate'}>
+                              {sub.status === 'Active' ? (
+                                <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" strokeWidth="2"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
+                              ) : (
+                                <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" strokeWidth="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                              )}
                             </button>
-                            <button className="btn btn-secondary" onClick={() => handleOpenEditModal(sub)} style={{ padding: '4px 8px', fontSize: '0.75rem' }}>
-                              Edit
+                            <button className="btn btn-secondary btn-icon-only" style={{ width: '28px', height: '28px' }} onClick={() => handleOpenEditModal(sub)} title="Edit">
+                              <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" strokeWidth="2"><path d="M12 20h9" /><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg>
                             </button>
-                            <button className="btn btn-secondary" onClick={() => handleDelete(sub.id, sub.name)} style={{ padding: '4px 8px', fontSize: '0.75rem', color: '#f43f5e', borderColor: '#f43f5e' }}>
-                              Delete
+                            <button className="btn btn-danger btn-icon-only" style={{ width: '28px', height: '28px', background: 'rgba(244, 63, 94, 0.15)', color: '#f43f5e' }} onClick={() => handleDelete(sub.id, sub.name)} title="Delete">
+                              <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" strokeWidth="2"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /></svg>
                             </button>
                           </div>
                         </td>
@@ -464,6 +474,76 @@ export default function Subscriptions() {
           </div>
         </form>
       </Modal>
+
+      {/* SUBSCRIPTION DETAILS MODAL */}
+      <Modal isOpen={!!selectedSub} onClose={() => setSelectedSub(null)} title="Subscription Details">
+        {selectedSub && (() => {
+          const payAcc = accounts.find(a => a.id === selectedSub.bankAccountId);
+          return (
+            <div>
+              <div className="modal-body" style={{ maxHeight: '60vh', overflowY: 'auto' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
+                  <div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Product Name</div>
+                    <div style={{ fontWeight: 600, fontSize: '0.95rem', marginTop: '2px' }}>{selectedSub.name}</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Status</div>
+                    <div style={{ marginTop: '2px' }}>
+                      <span className={`badge ${selectedSub.status === 'Active' ? 'badge-income' : 'badge-expense'}`} style={{ fontSize: '0.85rem' }}>
+                        {selectedSub.status}
+                      </span>
+                    </div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Cost</div>
+                    <div style={{ fontWeight: 700, fontSize: '1.1rem', marginTop: '2px', color: '#f43f5e' }}>
+                      {formatCurrency(selectedSub.cost, settings.currency)}
+                    </div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Billing Cycle</div>
+                    <div style={{ marginTop: '2px' }}>
+                      <span className={`badge ${selectedSub.billingCycle === 'Monthly' ? 'badge-income' : 'badge-pending'}`} style={{ fontSize: '0.85rem' }}>
+                        {selectedSub.billingCycle}
+                      </span>
+                    </div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Start Date</div>
+                    <div style={{ fontWeight: 600, fontSize: '0.95rem', marginTop: '2px' }}>{selectedSub.startDate}</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Next Renewal Date</div>
+                    <div style={{ fontWeight: 600, fontSize: '0.95rem', marginTop: '2px' }}>
+                      {selectedSub.status === 'Active' ? selectedSub.nextRenewalDate || selectedSub.startDate : 'N/A'}
+                    </div>
+                  </div>
+                  <div style={{ gridColumn: 'span 2' }}>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Payment Account</div>
+                    <div style={{ fontWeight: 600, fontSize: '0.95rem', marginTop: '2px' }}>
+                      {payAcc ? `${payAcc.bankName} (${payAcc.accountName}) • ${payAcc.accountNumber || 'N/A'}` : 'None Linked'}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-secondary" onClick={() => setSelectedSub(null)}>Close</button>
+              </div>
+            </div>
+          );
+        })()}
+      </Modal>
+
+      <ConfirmModal
+        isOpen={confirmState.isOpen}
+        onClose={() => setConfirmState(prev => ({ ...prev, isOpen: false }))}
+        onConfirm={confirmState.onConfirm}
+        title={confirmState.title}
+        message={confirmState.message}
+        type={confirmState.type}
+        requireTextInput={confirmState.requireTextInput}
+      />
     </div>
   );
 }
