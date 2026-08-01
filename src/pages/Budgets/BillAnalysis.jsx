@@ -18,7 +18,8 @@ export default function BillAnalysis() {
     Mobile: 3000,
     Insurance: 15000,
     CreditCards: 25000,
-    Rent: 45000
+    Rent: 45000,
+    Subscriptions: 10000
   };
 
   const [isLimitsModalOpen, setIsLimitsModalOpen] = useState(false);
@@ -29,6 +30,7 @@ export default function BillAnalysis() {
   const [limitInsurance, setLimitInsurance] = useState(billLimits.Insurance);
   const [limitCreditCards, setLimitCreditCards] = useState(billLimits.CreditCards);
   const [limitRent, setLimitRent] = useState(billLimits.Rent);
+  const [limitSubscriptions, setLimitSubscriptions] = useState(billLimits.Subscriptions || 0);
 
   // Sync state if settings load later
   useEffect(() => {
@@ -40,6 +42,7 @@ export default function BillAnalysis() {
       setLimitInsurance(settings.billLimits.Insurance || 0);
       setLimitCreditCards(settings.billLimits.CreditCards || 0);
       setLimitRent(settings.billLimits.Rent || 0);
+      setLimitSubscriptions(settings.billLimits.Subscriptions || 0);
     }
   }, [settings]);
 
@@ -53,7 +56,8 @@ export default function BillAnalysis() {
         Mobile: parseFloat(limitMobile) || 0,
         Insurance: parseFloat(limitInsurance) || 0,
         CreditCards: parseFloat(limitCreditCards) || 0,
-        Rent: parseFloat(limitRent) || 0
+        Rent: parseFloat(limitRent) || 0,
+        Subscriptions: parseFloat(limitSubscriptions) || 0
       }
     });
     setIsLimitsModalOpen(false);
@@ -93,12 +97,15 @@ export default function BillAnalysis() {
   let insuranceSpent = 0;
   let creditCardsSpent = 0;
   let rentSpent = 0;
+  let subscriptionsSpent = 0;
   let othersSpent = 0;
 
   currentMonthExpenses.forEach(tx => {
     const category = tx.category.toLowerCase();
     
-    if (category.includes('electricity') || category.includes('power') || category.includes('ceb') || category.includes('leco')) {
+    if (category.includes('subscriptions')) {
+      subscriptionsSpent += tx.amount;
+    } else if (category.includes('electricity') || category.includes('power') || category.includes('ceb') || category.includes('leco')) {
       electricitySpent += tx.amount;
     } else if (category.includes('water') || category.includes('nwsdb') || category.includes('h2o')) {
       waterSpent += tx.amount;
@@ -117,7 +124,7 @@ export default function BillAnalysis() {
     }
   });
 
-  const totalExpense = electricitySpent + waterSpent + internetSpent + mobileSpent + insuranceSpent + creditCardsSpent + rentSpent + othersSpent;
+  const totalExpense = electricitySpent + waterSpent + internetSpent + mobileSpent + insuranceSpent + creditCardsSpent + rentSpent + subscriptionsSpent + othersSpent;
   const baseIncomeForLimits = monthlyIncome > 0 ? monthlyIncome : 100000;
   
   const scorecard = [
@@ -128,6 +135,7 @@ export default function BillAnalysis() {
     { name: 'Insurance', targetPct: Math.round((limitInsurance / baseIncomeForLimits) * 100), actualAmt: insuranceSpent, targetAmt: limitInsurance },
     { name: 'Credit cards', targetPct: Math.round((limitCreditCards / baseIncomeForLimits) * 100), actualAmt: creditCardsSpent, targetAmt: limitCreditCards },
     { name: 'Rent', targetPct: Math.round((limitRent / baseIncomeForLimits) * 100), actualAmt: rentSpent, targetAmt: limitRent },
+    { name: 'Subscriptions', targetPct: Math.round((limitSubscriptions / baseIncomeForLimits) * 100), actualAmt: subscriptionsSpent, targetAmt: limitSubscriptions },
     { name: 'Others', targetPct: 0, actualAmt: othersSpent, targetAmt: 0 }
   ];
 
@@ -147,7 +155,8 @@ export default function BillAnalysis() {
       mobile: 0,
       insurance: 0,
       creditCards: 0,
-      rent: 0
+      rent: 0,
+      subscriptions: 0
     });
   }
 
@@ -156,7 +165,9 @@ export default function BillAnalysis() {
     const match = monthsData.find(m => m.month === txDate.getMonth() && m.year === txDate.getFullYear());
     if (match && tx.type === 'Bill & Payment') {
       const category = tx.category.toLowerCase();
-      if (category.includes('electricity') || category.includes('power') || category.includes('ceb')) {
+      if (category.includes('subscriptions')) {
+        match.subscriptions += tx.amount;
+      } else if (category.includes('electricity') || category.includes('power') || category.includes('ceb')) {
         match.electricity += tx.amount;
       } else if (category.includes('water') || category.includes('nwsdb')) {
         match.water += tx.amount;
@@ -188,6 +199,7 @@ export default function BillAnalysis() {
     const insurancePct = totalExpense > 0 ? ((insuranceSpent / totalExpense) * 100).toFixed(1) : '0.0';
     const cardsPct = totalExpense > 0 ? ((creditCardsSpent / totalExpense) * 100).toFixed(1) : '0.0';
     const rentPct = totalExpense > 0 ? ((rentSpent / totalExpense) * 100).toFixed(1) : '0.0';
+    const subscriptionsPct = totalExpense > 0 ? ((subscriptionsSpent / totalExpense) * 100).toFixed(1) : '0.0';
     const othersPct = totalExpense > 0 ? ((othersSpent / totalExpense) * 100).toFixed(1) : '0.0';
     
     const centerTextPlugin = {
@@ -228,15 +240,16 @@ export default function BillAnalysis() {
               `Insurance (${insurancePct}%)`,
               `Credit cards (${cardsPct}%)`,
               `Rent (${rentPct}%)`,
+              `Subscriptions (${subscriptionsPct}%)`,
               `Others (${othersPct}%)`
             ]
           : ['No bills logged'],
         datasets: [{
           data: hasExpenseData 
-            ? [electricitySpent, waterSpent, internetSpent, mobileSpent, insuranceSpent, creditCardsSpent, rentSpent, othersSpent] 
+            ? [electricitySpent, waterSpent, internetSpent, mobileSpent, insuranceSpent, creditCardsSpent, rentSpent, subscriptionsSpent, othersSpent] 
             : [1],
           backgroundColor: hasExpenseData 
-            ? ['#ef4444', '#06b6d4', '#3b82f6', '#f59e0b', '#10b981', '#8b5cf6', '#ec4899', '#64748b'] 
+            ? ['#ef4444', '#06b6d4', '#3b82f6', '#f59e0b', '#10b981', '#8b5cf6', '#ec4899', '#db2777', '#64748b'] 
             : ['rgba(255, 255, 255, 0.05)'],
           borderWidth: 0
         }]
@@ -320,6 +333,13 @@ export default function BillAnalysis() {
             label: 'Rent',
             data: monthsData.map(m => m.rent),
             borderColor: '#ec4899',
+            backgroundColor: 'transparent',
+            tension: 0.3
+          },
+          {
+            label: 'Subscriptions',
+            data: monthsData.map(m => m.subscriptions),
+            borderColor: '#db2777',
             backgroundColor: 'transparent',
             tension: 0.3
           }
@@ -552,17 +572,31 @@ export default function BillAnalysis() {
               </div>
             </div>
 
-            <div className="form-group" style={{ marginTop: '10px' }}>
-              <label>Rent Limit (Rs.)</label>
-              <input 
-                type="number" 
-                className="input-ctrl" 
-                value={limitRent} 
-                onChange={e => setLimitRent(e.target.value)} 
-                placeholder="45000" 
-                min="0"
-                required 
-              />
+            <div className="form-row-2" style={{ marginTop: '10px' }}>
+              <div className="form-group">
+                <label>Rent Limit (Rs.)</label>
+                <input 
+                  type="number" 
+                  className="input-ctrl" 
+                  value={limitRent} 
+                  onChange={e => setLimitRent(e.target.value)} 
+                  placeholder="45000" 
+                  min="0"
+                  required 
+                />
+              </div>
+              <div className="form-group">
+                <label>Subscriptions Limit (Rs.)</label>
+                <input 
+                  type="number" 
+                  className="input-ctrl" 
+                  value={limitSubscriptions} 
+                  onChange={e => setLimitSubscriptions(e.target.value)} 
+                  placeholder="10000" 
+                  min="0"
+                  required 
+                />
+              </div>
             </div>
           </div>
           <div className="modal-footer">

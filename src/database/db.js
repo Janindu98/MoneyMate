@@ -56,25 +56,30 @@ export default class Database {
       categories: {
         income: ['Salary', 'Bonus', 'Interest', 'Refund', 'Other'],
         expense: [
-          'Food',
+          'Food & Dining',
+          'Groceries',
+          'Transportation',
           'Fuel',
+          'Healthcare & Medical',
           'Shopping',
-          'Transportations',
-          'Electricity',
-          'Water',
-          'Internet',
-          'Mobile phone',
-          'Insurance',
-          'Credit cards',
-          'Rent',
-          'Alert Charges',
-          'Debit Card Annual Fee',
+          'Family & Gifts',
+          'Education',
           'Other'
         ],
         'Income': ['Salary', 'Bonus', 'Interest', 'Refund', 'Other'],
-        'Expense': ['Food', 'Fuel', 'Shopping', 'Transportations', 'Alert Charges', 'Debit Card Annual Fee', 'Other'],
-        'Online/Account cash transfer': ['Money Transfer'],
-        'Deposit': ['Salary', 'Bonus', 'Interest', 'Refund', 'Other'],
+        'Expense': [
+          'Food & Dining',
+          'Groceries',
+          'Transportation',
+          'Fuel',
+          'Healthcare & Medical',
+          'Shopping',
+          'Family & Gifts',
+          'Education',
+          'Other'
+        ],
+        'Online/Account cash transfer': ['Money Transfer', 'Wallet Transfer'],
+        'Deposit': ['Cash Deposit', 'Bank Deposit', 'Other Deposit'],
         'Withdrawal': ['Cash Withdrawal', 'ATM Withdrawal', 'Other'],
         'Online Payment': ['Food', 'Fuel', 'Shopping', 'Transportations', 'Transaction Charges', 'Other'],
         'Bill & Payment': [
@@ -85,6 +90,10 @@ export default class Database {
           'Insurance',
           'Credit cards',
           'Rent',
+          'Alert Charges',
+          'Debit Card Annual Fee',
+          'Subscriptions',
+          'Government Payment',
           'Other'
         ]
       },
@@ -94,12 +103,14 @@ export default class Database {
         currency: 'LKR',
         theme: 'dark',
         budgetLimits: {
-          Food: 35000,
+          FoodDining: 20000,
+          Groceries: 15000,
+          Transportation: 5000,
           Fuel: 20000,
-          Bills: 18000,
+          HealthcareMedical: 10000,
           Shopping: 15000,
-          Others: 12000,
-          Transportations: 5000
+          Education: 10000,
+          Others: 12000
         },
         billLimits: {
           Electricity: 8000,
@@ -108,7 +119,8 @@ export default class Database {
           Mobile: 3000,
           Insurance: 15000,
           CreditCards: 25000,
-          Rent: 45000
+          Rent: 45000,
+          Subscriptions: 10000
         }
       },
       profile: {
