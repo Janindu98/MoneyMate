@@ -3,6 +3,7 @@ import { useDatabase } from '../../hooks/useDatabase';
 import { useToast } from '../../components/Toast';
 import { formatCurrency } from '../../utils/format';
 import Modal from '../../components/Modal';
+import ConfirmModal from '../../components/ConfirmModal';
 import Chart from 'chart.js/auto';
 
 export default function Subscriptions() {
@@ -13,6 +14,11 @@ export default function Subscriptions() {
   const [modalMode, setModalMode] = useState('add'); // 'add' or 'edit'
   const [editingId, setEditingId] = useState(null);
   const [selectedSub, setSelectedSub] = useState(null);
+  const [confirmState, setConfirmState] = useState({ isOpen: false, title: '', message: '', onConfirm: null, type: 'danger', requireTextInput: '' });
+
+  const showConfirm = (title, message, onConfirm, type = 'danger', requireTextInput = '') => {
+    setConfirmState({ isOpen: true, title, message, onConfirm, type, requireTextInput });
+  };
 
   // Form Fields
   const [name, setName] = useState('Netflix');
@@ -127,10 +133,14 @@ export default function Subscriptions() {
   };
 
   const handleDelete = (id, name) => {
-    if (confirm(`Are you sure you want to delete subscription "${name}"?`)) {
-      deleteSubscription(id);
-      showToast(`Subscription "${name}" deleted.`);
-    }
+    showConfirm(
+      'Delete Subscription',
+      `Are you sure you want to delete subscription "${name}"?`,
+      () => {
+        deleteSubscription(id);
+        showToast(`Subscription "${name}" deleted.`);
+      }
+    );
   };
 
   // Chart Rendering Effect
@@ -524,6 +534,16 @@ export default function Subscriptions() {
           );
         })()}
       </Modal>
+
+      <ConfirmModal
+        isOpen={confirmState.isOpen}
+        onClose={() => setConfirmState(prev => ({ ...prev, isOpen: false }))}
+        onConfirm={confirmState.onConfirm}
+        title={confirmState.title}
+        message={confirmState.message}
+        type={confirmState.type}
+        requireTextInput={confirmState.requireTextInput}
+      />
     </div>
   );
 }

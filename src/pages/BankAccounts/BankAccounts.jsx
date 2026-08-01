@@ -2,14 +2,32 @@ import React, { useState } from 'react';
 import { useDatabase } from '../../hooks/useDatabase';
 import { useToast } from '../../components/Toast';
 import Modal from '../../components/Modal';
+import ConfirmModal from '../../components/ConfirmModal';
 import { formatCurrency } from '../../utils/format';
 
 export default function BankAccounts() {
-  const { accounts, transactions, addAccount, editAccount, deleteAccount, settings } = useDatabase();
+  const { accounts, transactions, addAccount, editAccount, deleteAccount, settings, salaryHistory } = useDatabase();
   const { showToast } = useToast();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editId, setEditId] = useState(null);
+  const [selectedTx, setSelectedTx] = useState(null);
+  const [confirmState, setConfirmState] = useState({ isOpen: false, title: '', message: '', onConfirm: null, type: 'danger', requireTextInput: '' });
+
+  const showConfirm = (title, message, onConfirm, type = 'danger', requireTextInput = '') => {
+    setConfirmState({ isOpen: true, title, message, onConfirm, type, requireTextInput });
+  };
+
+  const findSalaryRecord = (tx) => {
+    if (!tx) return null;
+    if (tx.salaryRecordId) {
+      return salaryHistory?.find(s => s.id === tx.salaryRecordId);
+    }
+    if (tx.category === 'Salary') {
+      return salaryHistory?.find(s => s.netSalary === tx.amount && s.paymentDate === tx.date);
+    }
+    return null;
+  };
 
   // Form Fields
   const [bankName, setBankName] = useState('');
@@ -19,7 +37,7 @@ export default function BankAccounts() {
   const [accountType, setAccountType] = useState('Savings');
   const [status, setStatus] = useState('Active');
   const [cardColor, setCardColor] = useState('#4f46e5');
-  const [initialDeposit, setInitialDeposit] = useState('0.00');
+  const [initialDeposit, setInitialDeposit] = useState('');
 
   // Debit Card Fields
   const [cardNo, setCardNo] = useState('');
@@ -54,18 +72,21 @@ export default function BankAccounts() {
     CAD: 'C$',
     AUD: 'A$',
     JPY: '¥',
-    LKR: 'Rs.'
+    LKR: 'Rs.',
+    CHF: 'Fr.',
+    SGD: 'S$',
+    NZD: 'NZ$'
   };
 
   const getPassbookData = () => {
     if (!selectedAccountId) return [];
-    
+
     // Get all transactions for this account
-    const accTx = transactions.filter(t => 
-      t.bankId === selectedAccountId || 
+    const accTx = transactions.filter(t =>
+      t.bankId === selectedAccountId ||
       (t.type === 'Online/Account cash transfer' && t.targetBankId === selectedAccountId)
     );
-    
+
     // Map transactions to include their original index in the main transactions list
     const accTxWithIndex = accTx.map(tx => ({
       tx,
@@ -74,13 +95,13 @@ export default function BankAccounts() {
 
     // Sort chronologically (date ascending) to compute running balance correctly
     const sortedAccTx = [...accTxWithIndex].sort((a, b) => new Date(a.tx.date) - new Date(b.tx.date) || a.index - b.index);
-    
+
     let running = 0;
     const computedTx = sortedAccTx.map(item => {
       const tx = item.tx;
       let isOutflow = false;
       let isInflow = false;
-      
+
       if (tx.bankId === selectedAccountId) {
         if (['Income', 'Deposit', 'Refund'].includes(tx.type)) {
           isInflow = true;
@@ -93,7 +114,7 @@ export default function BankAccounts() {
         isInflow = true;
         running += tx.amount;
       }
-      
+
       return {
         ...tx,
         isOutflow,
@@ -102,7 +123,7 @@ export default function BankAccounts() {
         originalIndex: item.index
       };
     });
-    
+
     // Apply filters
     const filtered = computedTx.filter(tx => {
       const txDate = new Date(tx.date);
@@ -115,9 +136,9 @@ export default function BankAccounts() {
         const end = endDate ? new Date(endDate) : null;
         if (start && end) {
           const current = new Date(tx.date);
-          current.setHours(0,0,0,0);
-          start.setHours(0,0,0,0);
-          end.setHours(0,0,0,0);
+          current.setHours(0, 0, 0, 0);
+          start.setHours(0, 0, 0, 0);
+          end.setHours(0, 0, 0, 0);
           return current >= start && current <= end;
         }
         return true;
@@ -137,7 +158,10 @@ export default function BankAccounts() {
     { value: '#f59e0b', label: 'Warm Amber' },
     { value: '#3b82f6', label: 'Ocean Blue' },
     { value: '#1e293b', label: 'Slate Slate' },
-    { value: '#f43f5e', label: 'Crimson Rose' }
+    { value: '#f43f5e', label: 'Crimson Rose' },
+    { value: '#db2777', label: 'Sunset Berry' },
+    { value: '#0d9488', label: 'Forest Pine' },
+    { value: '#b45309', label: 'Golden Bronze' }
   ];
 
   const handleOpenAddModal = () => {
@@ -149,7 +173,7 @@ export default function BankAccounts() {
     setAccountType('Savings');
     setStatus('Active');
     setCardColor('#4f46e5');
-    setInitialDeposit('0.00');
+    setInitialDeposit('0');
     setCardNo('');
     setCardExpiry('');
     setCardCvv('');
@@ -166,7 +190,7 @@ export default function BankAccounts() {
     setAccountType(acc.accountType);
     setStatus(acc.status || 'Active');
     setCardColor(acc.color || '#4f46e5');
-    setInitialDeposit('0.00'); // Disabled or ignored during edit
+    setInitialDeposit('0'); // Disabled or ignored during edit
     setCardNo(acc.cardNo || '');
     setCardExpiry(acc.cardExpiry || '');
     setCardCvv(acc.cardCvv || '');
@@ -210,10 +234,14 @@ export default function BankAccounts() {
   };
 
   const handleDelete = (id, name) => {
-    if (confirm(`Wipe "${name}"? This permanently deletes the account and all corresponding transaction ledgers.`)) {
-      deleteAccount(id);
-      showToast(`Account "${name}" deleted.`);
-    }
+    showConfirm(
+      'Delete Bank Account',
+      `Wipe "${name}"? This permanently deletes the account and all corresponding transaction ledgers.`,
+      () => {
+        deleteAccount(id);
+        showToast(`Account "${name}" deleted.`);
+      }
+    );
   };
 
   return (
@@ -225,7 +253,7 @@ export default function BankAccounts() {
         </div>
         <div className="header-actions">
           <button className="btn btn-primary" onClick={handleOpenAddModal}>
-            <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
             Create Account
           </button>
         </div>
@@ -233,10 +261,10 @@ export default function BankAccounts() {
 
       <div className="accounts-grid">
         {accounts.map(acc => (
-          <div 
-            key={acc.id} 
+          <div
+            key={acc.id}
             className={`bank-card ${selectedAccountId === acc.id ? 'active' : ''}`}
-            style={{ 
+            style={{
               background: acc.color || '#1e293b',
               border: selectedAccountId === acc.id ? '2.5px solid #6366f1' : '1px solid rgba(255, 255, 255, 0.1)',
               boxShadow: selectedAccountId === acc.id ? '0 0 15px rgba(99, 102, 241, 0.4)' : '0 10px 25px rgba(0, 0, 0, 0.3)',
@@ -250,7 +278,7 @@ export default function BankAccounts() {
                 {acc.status}
               </span>
             </div>
-            
+
             <div className="card-middle">
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div>
@@ -275,10 +303,10 @@ export default function BankAccounts() {
                   </button>
                 )}
                 <button className="btn-card-action" onClick={() => handleOpenEditModal(acc)} title="Edit Details">
-                  <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" strokeWidth="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                  <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" strokeWidth="2"><path d="M12 20h9" /><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg>
                 </button>
                 <button className="btn-card-action" onClick={() => handleDelete(acc.id, acc.bankName)} style={{ background: 'rgba(244, 63, 94, 0.3)' }} title="Delete Account">
-                  <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" strokeWidth="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                  <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" strokeWidth="2"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /></svg>
                 </button>
               </div>
             </div>
@@ -287,7 +315,7 @@ export default function BankAccounts() {
 
         {accounts.length === 0 && (
           <div className="panel empty-state" style={{ gridColumn: '1 / -1' }}>
-            <svg viewBox="0 0 24 24" width="48" height="48" stroke="currentColor" fill="none" strokeWidth="1.5"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+            <svg viewBox="0 0 24 24" width="48" height="48" stroke="currentColor" fill="none" strokeWidth="1.5"><rect x="2" y="5" width="20" height="14" rx="2" /><line x1="2" y1="10" x2="22" y2="10" /></svg>
             <div className="empty-state-text">No active cards found. Create a bank account to log ledger entries.</div>
           </div>
         )}
@@ -297,9 +325,9 @@ export default function BankAccounts() {
       {selectedAccountId && (() => {
         const selectedAcc = accounts.find(a => a.id === selectedAccountId);
         if (!selectedAcc) return null;
-        
+
         const passbookData = getPassbookData();
-        
+
         return (
           <div className="panel" style={{ marginTop: '32px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px', borderBottom: '1px solid var(--border-color)', paddingBottom: '16px', marginBottom: '20px' }}>
@@ -309,15 +337,15 @@ export default function BankAccounts() {
                   Account: <strong>{selectedAcc.bankName}</strong> ({selectedAcc.accountName}) • No: {selectedAcc.accountNumber || 'N/A'}
                 </p>
               </div>
-              
+
               {/* Filters */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
                 <div className="form-group" style={{ flexDirection: 'row', alignItems: 'center', gap: '6px' }}>
                   <label style={{ marginBottom: 0, fontSize: '0.8rem' }}>Filter:</label>
-                  <select 
-                    className="input-ctrl" 
-                    value={filterType} 
-                    onChange={e => setFilterType(e.target.value)} 
+                  <select
+                    className="input-ctrl"
+                    value={filterType}
+                    onChange={e => setFilterType(e.target.value)}
                     style={{ width: '130px', padding: '6px 10px', fontSize: '0.8rem' }}
                   >
                     <option value="all">All Logs</option>
@@ -326,61 +354,61 @@ export default function BankAccounts() {
                     <option value="dates">Date Range</option>
                   </select>
                 </div>
-                
+
                 {filterType === 'monthly' && (
                   <>
-                    <select 
-                      className="input-ctrl" 
-                      value={filterMonth} 
-                      onChange={e => setFilterMonth(e.target.value)} 
+                    <select
+                      className="input-ctrl"
+                      value={filterMonth}
+                      onChange={e => setFilterMonth(e.target.value)}
                       style={{ width: '110px', padding: '6px 10px', fontSize: '0.8rem' }}
                     >
                       {monthsList.map((m, idx) => (
                         <option key={m} value={idx}>{m}</option>
                       ))}
                     </select>
-                    <input 
-                      type="number" 
-                      className="input-ctrl" 
-                      value={filterYear} 
-                      onChange={e => setFilterYear(e.target.value)} 
+                    <input
+                      type="number"
+                      className="input-ctrl"
+                      value={filterYear}
+                      onChange={e => setFilterYear(e.target.value)}
                       style={{ width: '80px', padding: '6px 10px', fontSize: '0.8rem' }}
                     />
                   </>
                 )}
-                
+
                 {filterType === 'yearly' && (
-                  <input 
-                    type="number" 
-                    className="input-ctrl" 
-                    value={filterYear} 
-                    onChange={e => setFilterYear(e.target.value)} 
+                  <input
+                    type="number"
+                    className="input-ctrl"
+                    value={filterYear}
+                    onChange={e => setFilterYear(e.target.value)}
                     style={{ width: '80px', padding: '6px 10px', fontSize: '0.8rem' }}
                   />
                 )}
-                
+
                 {filterType === 'dates' && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <input 
-                      type="date" 
-                      className="input-ctrl" 
-                      value={startDate} 
-                      onChange={e => setStartDate(e.target.value)} 
+                    <input
+                      type="date"
+                      className="input-ctrl"
+                      value={startDate}
+                      onChange={e => setStartDate(e.target.value)}
                       style={{ width: '130px', padding: '6px 10px', fontSize: '0.8rem' }}
                     />
                     <span style={{ color: 'var(--text-muted)' }}>to</span>
-                    <input 
-                      type="date" 
-                      className="input-ctrl" 
-                      value={endDate} 
-                      onChange={e => setEndDate(e.target.value)} 
+                    <input
+                      type="date"
+                      className="input-ctrl"
+                      value={endDate}
+                      onChange={e => setEndDate(e.target.value)}
                       style={{ width: '130px', padding: '6px 10px', fontSize: '0.8rem' }}
                     />
                   </div>
                 )}
               </div>
             </div>
-            
+
             <div className="table-container">
               <table>
                 <thead>
@@ -389,7 +417,6 @@ export default function BankAccounts() {
                     <th>Type</th>
                     <th>Category</th>
                     <th>Payee</th>
-                    <th>Description</th>
                     <th style={{ textAlign: 'right' }}>Debit (Outflow)</th>
                     <th style={{ textAlign: 'right' }}>Credit (Inflow)</th>
                     <th style={{ textAlign: 'right' }}>Running Balance</th>
@@ -399,16 +426,15 @@ export default function BankAccounts() {
                   {passbookData.map(tx => {
                     const symbol = currencySymbols[settings.currency || 'LKR'] || 'Rs.';
                     return (
-                      <tr key={tx.id}>
+                      <tr key={tx.id} style={{ cursor: 'pointer' }} onClick={() => setSelectedTx(tx)}>
                         <td>{tx.date}</td>
                         <td>
-                          <span className={`badge badge-${tx.isOutflow ? 'expense' : 'income'}`}>
+                          <span className={`badge ${tx.type === 'Online/Account cash transfer' ? 'badge-transfer' : (tx.isOutflow ? 'badge-expense' : 'badge-income')}`}>
                             {tx.type}
                           </span>
                         </td>
                         <td>{tx.category}</td>
                         <td>{tx.payee || 'N/A'}</td>
-                        <td>{tx.description}</td>
                         <td style={{ textAlign: 'right', color: '#f43f5e', fontWeight: 600 }}>
                           {tx.isOutflow ? `${symbol} ${tx.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}` : '-'}
                         </td>
@@ -423,10 +449,10 @@ export default function BankAccounts() {
                   })}
                 </tbody>
               </table>
-              
+
               {passbookData.length === 0 && (
                 <div className="empty-state">
-                  <svg viewBox="0 0 24 24" width="48" height="48" stroke="currentColor" fill="none" strokeWidth="1.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                  <svg viewBox="0 0 24 24" width="48" height="48" stroke="currentColor" fill="none" strokeWidth="1.5"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
                   <div className="empty-state-text">No ePassbook entries found matching the filter bounds.</div>
                 </div>
               )}
@@ -436,30 +462,30 @@ export default function BankAccounts() {
       })()}
 
       {/* Modal CRUD Account */}
-      <Modal 
-        isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
+      <Modal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
         title={editId ? 'Edit Bank Account' : 'Create Bank Account'}
       >
         <form onSubmit={handleSubmit}>
           <div className="modal-body">
             <div className="form-group">
               <label>Bank Name</label>
-              <input 
-                type="text" 
-                className="input-ctrl" 
+              <input
+                type="text"
+                className="input-ctrl"
                 value={bankName}
                 onChange={e => setBankName(e.target.value)}
-                placeholder="e.g. Commercial Bank, HNB, Sampath, Cash"
+                placeholder="e.g. ABC Bank, HNB, Sampath, Cash"
                 required
               />
             </div>
 
             <div className="form-group">
               <label>Account Holder Name</label>
-              <input 
-                type="text" 
-                className="input-ctrl" 
+              <input
+                type="text"
+                className="input-ctrl"
                 value={accountName}
                 onChange={e => setAccountName(e.target.value)}
                 placeholder="e.g. John Doe, A. B. Perera"
@@ -470,8 +496,8 @@ export default function BankAccounts() {
             <div className="form-row-2">
               <div className="form-group">
                 <label>Account Type</label>
-                <select 
-                  className="input-ctrl" 
+                <select
+                  className="input-ctrl"
                   value={accountType}
                   onChange={e => setAccountType(e.target.value)}
                 >
@@ -485,8 +511,8 @@ export default function BankAccounts() {
 
               <div className="form-group">
                 <label>Status</label>
-                <select 
-                  className="input-ctrl" 
+                <select
+                  className="input-ctrl"
                   value={status}
                   onChange={e => setStatus(e.target.value)}
                 >
@@ -499,9 +525,9 @@ export default function BankAccounts() {
             <div className="form-row-2">
               <div className="form-group">
                 <label>Branch Office Location</label>
-                <input 
-                  type="text" 
-                  className="input-ctrl" 
+                <input
+                  type="text"
+                  className="input-ctrl"
                   value={branch}
                   onChange={e => setBranch(e.target.value)}
                   placeholder="e.g. Kandy, Colombo, Galle"
@@ -510,9 +536,9 @@ export default function BankAccounts() {
 
               <div className="form-group">
                 <label>Account Number</label>
-                <input 
-                  type="text" 
-                  className="input-ctrl" 
+                <input
+                  type="text"
+                  className="input-ctrl"
                   value={accountNumber}
                   onChange={e => setAccountNumber(e.target.value)}
                   placeholder="e.g. 8012345678"
@@ -524,8 +550,8 @@ export default function BankAccounts() {
             <div className="form-row-2">
               <div className="form-group">
                 <label>Card Color Theme</label>
-                <select 
-                  className="input-ctrl" 
+                <select
+                  className="input-ctrl"
                   value={cardColor}
                   onChange={e => setCardColor(e.target.value)}
                 >
@@ -538,16 +564,17 @@ export default function BankAccounts() {
               {!editId && (
                 <div className="form-group">
                   <label>Starting Balance (Rs.)</label>
-                  <input 
-                    type="number" 
-                    className="input-ctrl" 
+                  <input
+                    type="number"
+                    className="input-ctrl"
                     value={initialDeposit}
                     onChange={e => setInitialDeposit(e.target.value)}
-                    placeholder="0.00"
+                    placeholder="0"
                     min="0"
+                    step="0.01"
                   />
                 </div>
-            )}
+              )}
             </div>
 
             {/* Debit Card Details Section (Optional) */}
@@ -726,8 +753,8 @@ export default function BankAccounts() {
                   {revealVaultPin ? selectedVaultAccount.cardPin : '••••'}
                 </div>
               </div>
-              <button 
-                type="button" 
+              <button
+                type="button"
                 className="btn btn-secondary"
                 style={{ fontSize: '0.8rem', padding: '8px 14px' }}
                 onClick={() => setRevealVaultPin(!revealVaultPin)}
@@ -741,6 +768,136 @@ export default function BankAccounts() {
           <button type="button" className="btn btn-primary" onClick={() => setIsCardVaultOpen(false)}>Done</button>
         </div>
       </Modal>
+
+      {/* MODAL: TRANSACTION DETAILS & INSPECTOR */}
+      <Modal isOpen={!!selectedTx} onClose={() => setSelectedTx(null)} title="Transaction Details">
+        {selectedTx && (() => {
+          const sourceAcc = accounts.find(a => a.id === selectedTx.bankId);
+          const targetAcc = accounts.find(a => a.id === selectedTx.targetBankId);
+          const isOutflow = ['Expense', 'Withdrawal', 'online payment', 'Online Payment', 'Online/Account cash transfer', 'Bill & Payment'].includes(selectedTx.type) && selectedTx.bankId === sourceAcc?.id;
+          const salaryRec = findSalaryRecord(selectedTx);
+
+          return (
+            <div>
+              <div className="modal-body" style={{ maxHeight: '60vh', overflowY: 'auto' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
+                  <div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Date</div>
+                    <div style={{ fontWeight: 600, fontSize: '0.95rem', marginTop: '2px' }}>{selectedTx.date}</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Payment Type</div>
+                    <div style={{ marginTop: '2px' }}>
+                      <span className={`badge ${selectedTx.type === 'Online/Account cash transfer' ? 'badge-transfer' : (isOutflow ? 'badge-expense' : 'badge-income')}`} style={{ fontSize: '0.85rem' }}>{selectedTx.type}</span>
+                    </div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Bank Account</div>
+                    <div style={{ fontWeight: 600, fontSize: '0.95rem', marginTop: '2px' }}>
+                      {selectedTx.type === 'Online/Account cash transfer' ? (
+                        <span>From {sourceAcc ? sourceAcc.bankName : 'Unknown'} to {targetAcc ? targetAcc.bankName : 'Unknown'}</span>
+                      ) : (
+                        sourceAcc ? sourceAcc.bankName : 'Unknown'
+                      )}
+                    </div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Category</div>
+                    <div style={{ fontWeight: 600, fontSize: '0.95rem', marginTop: '2px' }}>{selectedTx.category}</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Payee / Recipient</div>
+                    <div style={{ fontWeight: 600, fontSize: '0.95rem', marginTop: '2px' }}>{selectedTx.payee || 'N/A'}</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Transaction Amount</div>
+                    <div style={{ fontWeight: 800, fontSize: '1.2rem', color: isOutflow ? '#f43f5e' : '#10b981', marginTop: '2px' }}>
+                      {isOutflow ? '-' : '+'}{formatCurrency(selectedTx.amount, settings.currency)}
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ marginBottom: '20px' }}>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Description</div>
+                  <div style={{ background: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '12px', marginTop: '4px', fontStyle: 'italic', fontSize: '0.95rem' }}>
+                    {selectedTx.description || 'No description provided.'}
+                  </div>
+                </div>
+
+                {salaryRec && (
+                  <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '20px', marginTop: '20px' }}>
+                    <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" fill="none" strokeWidth="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+                      Linked Salary Paystub Breakdown
+                    </h3>
+                    
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px', fontSize: '0.85rem' }}>
+                      <div><strong>Company:</strong> {salaryRec.company}</div>
+                      <div><strong>Position:</strong> {salaryRec.position}</div>
+                      <div><strong>Pay Period:</strong> {salaryRec.month} {salaryRec.year}</div>
+                      <div><strong>Employer ID:</strong> {salaryRec.employerId || 'N/A'}</div>
+                    </div>
+
+                    <div style={{ marginBottom: '16px' }}>
+                      <h4 style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '6px' }}>Earnings Details</h4>
+                      <div className="deduction-item" style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '4px', fontSize: '0.85rem' }}>
+                        <span>Basic Salary</span>
+                        <span style={{ fontWeight: 600 }}>{formatCurrency(salaryRec.basicSalary, settings.currency)}</span>
+                      </div>
+                      <div className="deduction-item" style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '4px', paddingTop: '4px', fontSize: '0.85rem' }}>
+                        <span>Allowances</span>
+                        <span style={{ fontWeight: 600 }}>{formatCurrency(salaryRec.allowances, settings.currency)}</span>
+                      </div>
+                      <div className="deduction-item" style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '4px', paddingTop: '4px', fontSize: '0.85rem' }}>
+                        <span>Overtime (OT) Pay</span>
+                        <span style={{ fontWeight: 600 }}>{formatCurrency(salaryRec.otPay, settings.currency)}</span>
+                      </div>
+                    </div>
+
+                    <div style={{ marginBottom: '16px' }}>
+                      <h4 style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '6px' }}>Deductions Details</h4>
+                      <div className="deduction-item" style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '4px', fontSize: '0.85rem' }}>
+                        <span>EPF Employee Share (8%)</span>
+                        <span style={{ fontWeight: 600, color: '#f43f5e' }}>-{formatCurrency(salaryRec.epfDeduction, settings.currency)}</span>
+                      </div>
+                      <div className="deduction-item" style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '4px', paddingTop: '4px', fontSize: '0.85rem' }}>
+                        <span>PAYE Tax Deducted</span>
+                        <span style={{ fontWeight: 600, color: '#f43f5e' }}>-{formatCurrency(salaryRec.payeTaxDeduction, settings.currency)}</span>
+                      </div>
+                      <div className="deduction-item" style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '4px', paddingTop: '4px', fontSize: '0.85rem' }}>
+                        <span>Other Deductions (No-Pay etc.)</span>
+                        <span style={{ fontWeight: 600, color: '#f43f5e' }}>-{formatCurrency(salaryRec.otherDeductions, settings.currency)}</span>
+                      </div>
+                    </div>
+
+                    <div style={{ background: 'rgba(16, 185, 129, 0.05)', border: '1px solid rgba(16, 185, 129, 0.1)', padding: '12px', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Net Disbursed Take-home Salary</div>
+                        <div style={{ fontWeight: 800, fontSize: '1.2rem', color: '#10b981', marginTop: '2px' }}>
+                          {formatCurrency(salaryRec.netSalary, settings.currency)}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-secondary" onClick={() => setSelectedTx(null)}>Close</button>
+              </div>
+            </div>
+          );
+        })()}
+      </Modal>
+
+      <ConfirmModal
+        isOpen={confirmState.isOpen}
+        onClose={() => setConfirmState(prev => ({ ...prev, isOpen: false }))}
+        onConfirm={confirmState.onConfirm}
+        title={confirmState.title}
+        message={confirmState.message}
+        type={confirmState.type}
+        requireTextInput={confirmState.requireTextInput}
+      />
     </div>
   );
 }

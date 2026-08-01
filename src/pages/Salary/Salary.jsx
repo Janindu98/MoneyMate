@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useDatabase } from '../../hooks/useDatabase';
 import { useToast } from '../../components/Toast';
 import Modal from '../../components/Modal';
+import ConfirmModal from '../../components/ConfirmModal';
 import { formatCurrency } from '../../utils/format';
 import { api } from '../../services/api';
 
@@ -16,6 +17,11 @@ export default function Salary() {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedSalary, setSelectedSalary] = useState(null);
+  const [confirmState, setConfirmState] = useState({ isOpen: false, title: '', message: '', onConfirm: null, type: 'danger', requireTextInput: '' });
+
+  const showConfirm = (title, message, onConfirm, type = 'danger', requireTextInput = '') => {
+    setConfirmState({ isOpen: true, title, message, onConfirm, type, requireTextInput });
+  };
 
   // Form Fields
   const [employerId, setEmployerId] = useState('');
@@ -228,11 +234,15 @@ export default function Salary() {
   };
 
   const handleDelete = (id, month, year) => {
-    if (confirm(`Delete salary record for ${month} ${year}?`)) {
-      deleteSalaryRecord(id);
-      if (selectedSalary?.id === id) setSelectedSalary(null);
-      showToast('Salary record deleted.');
-    }
+    showConfirm(
+      'Delete Salary Record',
+      `Delete salary record for ${month} ${year}?`,
+      () => {
+        deleteSalaryRecord(id);
+        if (selectedSalary?.id === id) setSelectedSalary(null);
+        showToast('Salary record deleted.');
+      }
+    );
   };
 
   // --- STATS CALCULATIONS ---
@@ -688,6 +698,16 @@ export default function Salary() {
           </div>
         </form>
       </Modal>
+
+      <ConfirmModal
+        isOpen={confirmState.isOpen}
+        onClose={() => setConfirmState(prev => ({ ...prev, isOpen: false }))}
+        onConfirm={confirmState.onConfirm}
+        title={confirmState.title}
+        message={confirmState.message}
+        type={confirmState.type}
+        requireTextInput={confirmState.requireTextInput}
+      />
     </div>
   );
 }

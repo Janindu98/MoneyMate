@@ -11,8 +11,8 @@ export default class Database {
     return {
       accounts: [
         {
-          id: 'acc_commercial_bank',
-          bankName: 'Commercial Bank',
+          id: 'acc_national_bank',
+          bankName: 'National Bank',
           accountName: 'Personal Savings',
           accountNumber: '5678',
           branch: 'Kandy',
@@ -33,9 +33,9 @@ export default class Database {
       ],
       transactions: [
         {
-          id: 'tx_init_commercial',
+          id: 'tx_init_national',
           date: new Date().toISOString().split('T')[0],
-          bankId: 'acc_commercial_bank',
+          bankId: 'acc_national_bank',
           type: 'Deposit',
           category: 'Other',
           payee: 'Self',
@@ -67,14 +67,16 @@ export default class Database {
           'Insurance',
           'Credit cards',
           'Rent',
+          'Alert Charges',
+          'Debit Card Annual Fee',
           'Other'
         ],
         'Income': ['Salary', 'Bonus', 'Interest', 'Refund', 'Other'],
-        'Expense': ['Food', 'Fuel', 'Shopping', 'Transportations', 'Other'],
+        'Expense': ['Food', 'Fuel', 'Shopping', 'Transportations', 'Alert Charges', 'Debit Card Annual Fee', 'Other'],
         'Online/Account cash transfer': ['Money Transfer'],
         'Deposit': ['Salary', 'Bonus', 'Interest', 'Refund', 'Other'],
         'Withdrawal': ['Cash Withdrawal', 'ATM Withdrawal', 'Other'],
-        'Online Payment': ['Food', 'Fuel', 'Shopping', 'Transportations', 'Other'],
+        'Online Payment': ['Food', 'Fuel', 'Shopping', 'Transportations', 'Transaction Charges', 'Other'],
         'Bill & Payment': [
           'Electricity',
           'Water',

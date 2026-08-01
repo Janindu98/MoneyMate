@@ -168,7 +168,7 @@ export function DatabaseProvider({ children }) {
           const currentCats = mergedData.categories || {};
           const paymentTypes = ['Income', 'Expense', 'Online/Account cash transfer', 'Deposit', 'Withdrawal', 'Online Payment', 'Bill & Payment'];
           const initialIncome = ['Salary', 'Bonus', 'Interest', 'Refund', 'Other'];
-          const initialExpense = ['Food', 'Fuel', 'Shopping', 'Transportations', 'Other'];
+          const initialExpense = ['Food', 'Fuel', 'Shopping', 'Transportations', 'Alert Charges', 'Debit Card Annual Fee', 'Other'];
           const initialBills = ['Electricity', 'Water', 'Internet', 'Mobile phone', 'Insurance', 'Credit cards', 'Rent', 'Other'];
 
           paymentTypes.forEach(pt => {
@@ -178,10 +178,42 @@ export function DatabaseProvider({ children }) {
               else if (pt === 'Deposit') currentCats[pt] = currentCats.income || initialIncome;
               else if (pt === 'Withdrawal') currentCats[pt] = ['Cash Withdrawal', 'ATM Withdrawal', 'Other'];
               else if (pt === 'Online/Account cash transfer') currentCats[pt] = ['Money Transfer'];
-              else if (pt === 'Online Payment') currentCats[pt] = currentCats.expense || initialExpense;
+              else if (pt === 'Online Payment') currentCats[pt] = ['Food', 'Fuel', 'Shopping', 'Transportations', 'Transaction Charges', 'Other'];
               else if (pt === 'Bill & Payment') currentCats[pt] = initialBills;
             }
           });
+
+          // Ensure Expense and Online Payment contain our new categories if already initialized
+          if (Array.isArray(currentCats['Expense'])) {
+            const hasAlert = currentCats['Expense'].includes('Alert Charges');
+            const hasDebit = currentCats['Expense'].includes('Debit Card Annual Fee');
+            if (!hasAlert || !hasDebit) {
+              const otherIdx = currentCats['Expense'].indexOf('Other');
+              const newCats = [...currentCats['Expense']];
+              const insertList = [];
+              if (!hasAlert) insertList.push('Alert Charges');
+              if (!hasDebit) insertList.push('Debit Card Annual Fee');
+              if (otherIdx !== -1) {
+                newCats.splice(otherIdx, 0, ...insertList);
+              } else {
+                newCats.push(...insertList);
+              }
+              currentCats['Expense'] = newCats;
+            }
+          }
+          if (Array.isArray(currentCats['Online Payment'])) {
+            const hasCharges = currentCats['Online Payment'].includes('Transaction Charges');
+            if (!hasCharges) {
+              const otherIdx = currentCats['Online Payment'].indexOf('Other');
+              const newCats = [...currentCats['Online Payment']];
+              if (otherIdx !== -1) {
+                newCats.splice(otherIdx, 0, 'Transaction Charges');
+              } else {
+                newCats.push('Transaction Charges');
+              }
+              currentCats['Online Payment'] = newCats;
+            }
+          }
           mergedData.categories = currentCats;
 
           // Subscriptions Auto-Renewal Check

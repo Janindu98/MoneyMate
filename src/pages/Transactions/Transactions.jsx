@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useDatabase } from '../../hooks/useDatabase';
 import { useToast } from '../../components/Toast';
 import Modal from '../../components/Modal';
+import ConfirmModal from '../../components/ConfirmModal';
 import { formatCurrency } from '../../utils/format';
 import { api } from '../../services/api';
 
@@ -24,6 +25,11 @@ export default function Transactions() {
   const [isCatModalOpen, setIsCatModalOpen] = useState(false);
   const [editId, setEditId] = useState(null);
   const [selectedTx, setSelectedTx] = useState(null);
+  const [confirmState, setConfirmState] = useState({ isOpen: false, title: '', message: '', onConfirm: null, type: 'danger', requireTextInput: '' });
+
+  const showConfirm = (title, message, onConfirm, type = 'danger', requireTextInput = '') => {
+    setConfirmState({ isOpen: true, title, message, onConfirm, type, requireTextInput });
+  };
 
   const findSalaryRecord = (tx) => {
     if (!tx) return null;
@@ -191,10 +197,14 @@ export default function Transactions() {
   };
 
   const handleDeleteTx = (id, desc) => {
-    if (confirm(`Are you sure you want to delete transaction "${desc}"?`)) {
-      deleteTransaction(id);
-      showToast('Transaction deleted.');
-    }
+    showConfirm(
+      'Delete Transaction',
+      `Are you sure you want to delete transaction "${desc}"?`,
+      () => {
+        deleteTransaction(id);
+        showToast('Transaction deleted.');
+      }
+    );
   };
 
   // Filter Ledger
@@ -718,6 +728,16 @@ export default function Transactions() {
           );
         })()}
       </Modal>
+
+      <ConfirmModal
+        isOpen={confirmState.isOpen}
+        onClose={() => setConfirmState(prev => ({ ...prev, isOpen: false }))}
+        onConfirm={confirmState.onConfirm}
+        title={confirmState.title}
+        message={confirmState.message}
+        type={confirmState.type}
+        requireTextInput={confirmState.requireTextInput}
+      />
     </div>
   );
 }
