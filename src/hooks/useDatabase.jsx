@@ -24,7 +24,7 @@ function processSubscriptionRenewals(data) {
           date: nextRenewal,
           bankId: sub.bankAccountId || (data.accounts[0]?.id || ''),
           type: 'Bill & Payment',
-          category: 'Other',
+          category: 'Subscriptions',
           payee: sub.name,
           amount: sub.cost,
           description: `Subscription Auto-Renewal: ${sub.name}`
@@ -75,12 +75,14 @@ export function DatabaseProvider({ children }) {
       currency: 'LKR',
       theme: 'dark',
       budgetLimits: {
-        Food: 35000,
+        FoodDining: 20000,
+        Groceries: 15000,
+        Transportation: 5000,
         Fuel: 20000,
-        Bills: 18000,
+        HealthcareMedical: 10000,
         Shopping: 15000,
-        Others: 12000,
-        Transportations: 5000
+        Education: 10000,
+        Others: 12000
       },
       billLimits: {
         Electricity: 8000,
@@ -132,12 +134,14 @@ export function DatabaseProvider({ children }) {
               currency: 'LKR',
               theme: 'dark',
               budgetLimits: {
-                Food: 35000,
+                FoodDining: 20000,
+                Groceries: 15000,
+                Transportation: 5000,
                 Fuel: 20000,
-                Bills: 18000,
+                HealthcareMedical: 10000,
                 Shopping: 15000,
-                Others: 12000,
-                Transportations: 5000
+                Education: 10000,
+                Others: 12000
               },
               billLimits: {
                 Electricity: 8000,
@@ -168,39 +172,85 @@ export function DatabaseProvider({ children }) {
           const currentCats = mergedData.categories || {};
           const paymentTypes = ['Income', 'Expense', 'Online/Account cash transfer', 'Deposit', 'Withdrawal', 'Online Payment', 'Bill & Payment'];
           const initialIncome = ['Salary', 'Bonus', 'Interest', 'Refund', 'Other'];
-          const initialExpense = ['Food', 'Fuel', 'Shopping', 'Transportations', 'Alert Charges', 'Debit Card Annual Fee', 'Other'];
-          const initialBills = ['Electricity', 'Water', 'Internet', 'Mobile phone', 'Insurance', 'Credit cards', 'Rent', 'Other'];
+          const initialExpense = [
+            'Food & Dining',
+            'Groceries',
+            'Transportation',
+            'Fuel',
+            'Healthcare & Medical',
+            'Shopping',
+            'Family & Gifts',
+            'Education',
+            'Other'
+          ];
+          const initialBills = [
+            'Electricity',
+            'Water',
+            'Internet',
+            'Mobile phone',
+            'Insurance',
+            'Credit cards',
+            'Rent',
+            'Alert Charges',
+            'Debit Card Annual Fee',
+            'Subscriptions',
+            'Government Payment',
+            'Other'
+          ];
+          const initialDeposit = ['Cash Deposit', 'Bank Deposit', 'Other Deposit'];
 
           paymentTypes.forEach(pt => {
             if (!Array.isArray(currentCats[pt])) {
               if (pt === 'Income') currentCats[pt] = currentCats.income || initialIncome;
               else if (pt === 'Expense') currentCats[pt] = currentCats.expense || initialExpense;
-              else if (pt === 'Deposit') currentCats[pt] = currentCats.income || initialIncome;
+              else if (pt === 'Deposit') currentCats[pt] = initialDeposit;
               else if (pt === 'Withdrawal') currentCats[pt] = ['Cash Withdrawal', 'ATM Withdrawal', 'Other'];
-              else if (pt === 'Online/Account cash transfer') currentCats[pt] = ['Money Transfer'];
+              else if (pt === 'Online/Account cash transfer') currentCats[pt] = ['Money Transfer', 'Wallet Transfer'];
               else if (pt === 'Online Payment') currentCats[pt] = ['Food', 'Fuel', 'Shopping', 'Transportations', 'Transaction Charges', 'Other'];
               else if (pt === 'Bill & Payment') currentCats[pt] = initialBills;
             }
           });
 
-          // Ensure Expense and Online Payment contain our new categories if already initialized
+          // Migrate Expense lists (replace old defaults with new ones, keeping custom entries)
+          const oldExpense = ['Food', 'Fuel', 'Shopping', 'Transportations', 'Alert Charges', 'Debit Card Annual Fee', 'Other', 'Electricity', 'Water', 'Internet', 'Mobile phone', 'Insurance', 'Credit cards', 'Rent', 'Subscriptions'];
           if (Array.isArray(currentCats['Expense'])) {
-            const hasAlert = currentCats['Expense'].includes('Alert Charges');
-            const hasDebit = currentCats['Expense'].includes('Debit Card Annual Fee');
-            if (!hasAlert || !hasDebit) {
-              const otherIdx = currentCats['Expense'].indexOf('Other');
-              const newCats = [...currentCats['Expense']];
-              const insertList = [];
-              if (!hasAlert) insertList.push('Alert Charges');
-              if (!hasDebit) insertList.push('Debit Card Annual Fee');
-              if (otherIdx !== -1) {
-                newCats.splice(otherIdx, 0, ...insertList);
-              } else {
-                newCats.push(...insertList);
-              }
-              currentCats['Expense'] = newCats;
+            const custom = currentCats['Expense'].filter(c => !oldExpense.includes(c));
+            currentCats['Expense'] = [...initialExpense.filter(c => c !== 'Other'), ...custom, 'Other'].filter((v, i, a) => a.indexOf(v) === i);
+          }
+          if (Array.isArray(currentCats['expense'])) {
+            const custom = currentCats['expense'].filter(c => !oldExpense.includes(c));
+            currentCats['expense'] = [...initialExpense.filter(c => c !== 'Other'), ...custom, 'Other'].filter((v, i, a) => a.indexOf(v) === i);
+          }
+
+          // Migrate Deposit list
+          const oldDeposit = ['Salary', 'Bonus', 'Interest', 'Refund', 'Other'];
+          if (Array.isArray(currentCats['Deposit'])) {
+            const custom = currentCats['Deposit'].filter(c => !oldDeposit.includes(c));
+            currentCats['Deposit'] = [...initialDeposit, ...custom].filter((v, i, a) => a.indexOf(v) === i);
+          }
+
+          // Migrate Transfer list
+          if (Array.isArray(currentCats['Online/Account cash transfer'])) {
+            if (!currentCats['Online/Account cash transfer'].includes('Wallet Transfer')) {
+              currentCats['Online/Account cash transfer'] = ['Money Transfer', 'Wallet Transfer', ...currentCats['Online/Account cash transfer'].filter(c => c !== 'Money Transfer' && c !== 'Wallet Transfer')];
             }
           }
+
+          // Migrate Bill & Payment list
+          if (Array.isArray(currentCats['Bill & Payment'])) {
+            const list = ['Alert Charges', 'Debit Card Annual Fee', 'Subscriptions', 'Government Payment'];
+            list.forEach(c => {
+              if (!currentCats['Bill & Payment'].includes(c)) {
+                const otherIdx = currentCats['Bill & Payment'].indexOf('Other');
+                if (otherIdx !== -1) {
+                  currentCats['Bill & Payment'].splice(otherIdx, 0, c);
+                } else {
+                  currentCats['Bill & Payment'].push(c);
+                }
+              }
+            });
+          }
+
           if (Array.isArray(currentCats['Online Payment'])) {
             const hasCharges = currentCats['Online Payment'].includes('Transaction Charges');
             if (!hasCharges) {
@@ -328,6 +378,37 @@ export function DatabaseProvider({ children }) {
     return true;
   };
 
+  const deleteCategory = (type, categoryName) => {
+    const defaults = {
+      'Income': ['Salary', 'Bonus', 'Interest', 'Refund', 'Other'],
+      'Expense': ['Food & Dining', 'Groceries', 'Transportation', 'Fuel', 'Healthcare & Medical', 'Shopping', 'Family & Gifts', 'Education', 'Other'],
+      'Online/Account cash transfer': ['Money Transfer', 'Wallet Transfer'],
+      'Deposit': ['Cash Deposit', 'Bank Deposit', 'Other Deposit'],
+      'Withdrawal': ['Cash Withdrawal', 'ATM Withdrawal', 'Other'],
+      'Online Payment': ['Food', 'Fuel', 'Shopping', 'Transportations', 'Transaction Charges', 'Other'],
+      'Bill & Payment': ['Electricity', 'Water', 'Internet', 'Mobile phone', 'Insurance', 'Credit cards', 'Rent', 'Alert Charges', 'Debit Card Annual Fee', 'Subscriptions', 'Government Payment', 'Other']
+    };
+    const defaultList = defaults[type] || [];
+    if (defaultList.includes(categoryName)) return false;
+
+    updateDbState(prev => {
+      const currentList = prev.categories[type] || [];
+      const updatedList = currentList.filter(c => c !== categoryName);
+      const updatedCategories = {
+        ...prev.categories,
+        [type]: updatedList
+      };
+      if (type === 'Income') {
+        updatedCategories.income = (prev.categories.income || []).filter(c => c !== categoryName);
+      }
+      if (type === 'Expense') {
+        updatedCategories.expense = (prev.categories.expense || []).filter(c => c !== categoryName);
+      }
+      return { ...prev, categories: updatedCategories };
+    });
+    return true;
+  };
+
   // Salary CRUD
   const addSalaryRecord = (sal) => {
     updateDbState(prev => {
@@ -421,6 +502,7 @@ export function DatabaseProvider({ children }) {
       editTransaction,
       deleteTransaction,
       addCategory,
+      deleteCategory,
       addSalaryRecord,
       deleteSalaryRecord,
       addSubscription,

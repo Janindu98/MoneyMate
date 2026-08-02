@@ -15,6 +15,7 @@ export default function Transactions() {
     editTransaction,
     deleteTransaction,
     addCategory,
+    deleteCategory,
     settings,
     salaryHistory
   } = useDatabase();
@@ -85,7 +86,7 @@ export default function Transactions() {
     const opts = getCategoryOptions(type);
     
     if (type === 'Online/Account cash transfer') {
-      setTxCategory('Money Transfer');
+      setTxCategory(opts[0] || 'Money Transfer');
       const defaultTarget = txTargetBankId || (accounts.find(a => a.id !== txBankId)?.id || '');
       setTxTargetBankId(defaultTarget);
       const targetAcc = accounts.find(a => a.id === defaultTarget);
@@ -162,7 +163,7 @@ export default function Transactions() {
       bankId: txBankId,
       targetBankId: txType === 'Online/Account cash transfer' ? txTargetBankId : '',
       type: txType,
-      category: txType === 'Online/Account cash transfer' ? 'Money Transfer' : txCategory,
+      category: txCategory,
       payee: txType === 'Online/Account cash transfer' 
         ? (accounts.find(a => a.id === txTargetBankId)?.accountName || 'Self') 
         : txPayee.trim(),
@@ -194,6 +195,30 @@ export default function Transactions() {
     } else {
       showToast('This category already exists.', 'error');
     }
+  };
+
+  const isDefaultCategory = (type, catName) => {
+    const defaults = {
+      'Income': ['Salary', 'Bonus', 'Interest', 'Refund', 'Other'],
+      'Expense': ['Food & Dining', 'Groceries', 'Transportation', 'Fuel', 'Healthcare & Medical', 'Shopping', 'Family & Gifts', 'Education', 'Other'],
+      'Online/Account cash transfer': ['Money Transfer', 'Wallet Transfer'],
+      'Deposit': ['Cash Deposit', 'Bank Deposit', 'Other Deposit'],
+      'Withdrawal': ['Cash Withdrawal', 'ATM Withdrawal', 'Other'],
+      'Online Payment': ['Food', 'Fuel', 'Shopping', 'Transportations', 'Transaction Charges', 'Other'],
+      'Bill & Payment': ['Electricity', 'Water', 'Internet', 'Mobile phone', 'Insurance', 'Credit cards', 'Rent', 'Alert Charges', 'Debit Card Annual Fee', 'Subscriptions', 'Government Payment', 'Other']
+    };
+    return (defaults[type] || []).includes(catName);
+  };
+
+  const handleDeleteCategory = (type, catName) => {
+    showConfirm(
+      'Delete Category',
+      `Are you sure you want to remove the category "${catName}" from ${type} types?`,
+      () => {
+        deleteCategory(type, catName);
+        showToast(`Category "${catName}" deleted.`);
+      }
+    );
   };
 
   const handleDeleteTx = (id, desc) => {
@@ -444,15 +469,11 @@ export default function Transactions() {
             <div className="form-row-2">
               <div className="form-group">
                 <label>Category</label>
-                {txType === 'Online/Account cash transfer' ? (
-                  <input type="text" className="input-ctrl" value="Money Transfer" disabled />
-                ) : (
-                  <select className="input-ctrl" value={txCategory} onChange={e => setTxCategory(e.target.value)} required>
-                    {getCategoryOptions(txType).map(c => (
-                      <option key={c} value={c}>{c}</option>
-                    ))}
-                  </select>
-                )}
+                <select className="input-ctrl" value={txCategory} onChange={e => setTxCategory(e.target.value)} required>
+                  {getCategoryOptions(txType).map(c => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
               </div>
               <div className="form-group">
                 <label>Payee / Recipient</label>
@@ -519,15 +540,46 @@ export default function Transactions() {
               {(categories[newCatType] || []).length === 0 ? (
                 <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>No categories defined.</span>
               ) : (
-                (categories[newCatType] || []).map(cat => (
-                  <span 
-                    key={cat} 
-                    className="badge badge-secondary" 
-                    style={{ fontSize: '0.85rem', padding: '6px 10px', background: 'rgba(255,255,255,0.05)' }}
-                  >
-                    {cat}
-                  </span>
-                ))
+                (categories[newCatType] || []).map(cat => {
+                  const isDefault = isDefaultCategory(newCatType, cat);
+                  return (
+                    <span 
+                      key={cat} 
+                      className="badge badge-secondary" 
+                      style={{ 
+                        fontSize: '0.85rem', 
+                        padding: '6px 10px', 
+                        background: 'rgba(255,255,255,0.05)',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px'
+                      }}
+                    >
+                      {cat}
+                      {!isDefault && (
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteCategory(newCatType, cat)}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            color: '#f43f5e',
+                            cursor: 'pointer',
+                            padding: 0,
+                            display: 'flex',
+                            alignItems: 'center'
+                          }}
+                          title="Remove Category"
+                        >
+                          <svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" fill="none" strokeWidth="2.5">
+                            <line x1="18" y1="6" x2="6" y2="18" />
+                            <line x1="6" y1="6" x2="18" y2="18" />
+                          </svg>
+                        </button>
+                      )}
+                    </span>
+                  );
+                })
               )}
             </div>
           </div>
