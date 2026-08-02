@@ -2,6 +2,7 @@ import { contextBridge, ipcRenderer } from 'electron';
 
 contextBridge.exposeInMainWorld('api', {
   loadData: () => ipcRenderer.invoke('db:load'),
+  unlockData: (pinOrPassword) => ipcRenderer.invoke('db:unlock', pinOrPassword),
   saveData: (data) => ipcRenderer.invoke('db:save', data),
   exportBackup: () => ipcRenderer.invoke('db:export-backup'),
   importBackup: () => ipcRenderer.invoke('db:import-backup'),

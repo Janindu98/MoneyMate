@@ -27,7 +27,7 @@ export default function App() {
 
 function AppContent() {
   const [activeTab, setActiveTab] = useState('dashboard');
-  const { settings, loading } = useDatabase();
+  const { settings, loading, unlockDatabase } = useDatabase();
   const [unlocked, setUnlocked] = useState(false);
 
   useEffect(() => {
@@ -104,7 +104,7 @@ function AppContent() {
   const isLocked = settings && (settings.securityType === 'pin' || settings.securityType === 'password') && !unlocked;
 
   if (isLocked) {
-    return <LockScreen settings={settings} onUnlock={() => setUnlocked(true)} />;
+    return <LockScreen settings={settings} onUnlock={() => setUnlocked(true)} unlockDatabase={unlockDatabase} />;
   }
 
   return (

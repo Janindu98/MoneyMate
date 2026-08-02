@@ -55,6 +55,15 @@ app.whenReady().then(() => {
     return db.load();
   });
 
+  ipcMain.handle('db:unlock', (event, pinOrPassword) => {
+    const success = db.unlock(pinOrPassword);
+    if (success) {
+      return { success: true, data: db.getData() };
+    } else {
+      return { success: false, error: 'Incorrect PIN or Password.' };
+    }
+  });
+
   ipcMain.handle('db:save', (event, newData) => {
     const success = db.setData(newData);
     if (success) {
