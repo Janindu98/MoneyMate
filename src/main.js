@@ -30,6 +30,7 @@ const createWindow = () => {
 
   mainWindow.once('ready-to-show', () => {
     mainWindow.show();
+    // mainWindow.webContents.openDevTools();
   });
 
   // Remove default menu to look like a clean modern app
