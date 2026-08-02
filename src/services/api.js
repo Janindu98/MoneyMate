@@ -3,6 +3,9 @@ export const api = {
   loadData: async () => {
     return await window.api.loadData();
   },
+  unlockData: async (pinOrPassword) => {
+    return await window.api.unlockData(pinOrPassword);
+  },
   saveData: async (data) => {
     return await window.api.saveData(data);
   },

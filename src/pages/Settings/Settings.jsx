@@ -146,7 +146,7 @@ export default function Settings() {
                 transactions: [],
                 categories: {
                   income: ['Salary', 'Bonus', 'Interest', 'Refund', 'Other'],
-                  expense: ['Food', 'Fuel', 'Bills', 'Insurance', 'Rent', 'Shopping', 'Medical', 'Entertainment', 'Investment', 'Loan', 'Other']
+                  expense: ['Food & Dining', 'Groceries', 'Fuel', 'Bills', 'Insurance', 'Rent', 'Shopping', 'Healthcare & Medical', 'Education', 'Entertainment', 'Investment', 'Loan', 'Other']
                 },
                 salaryHistory: [],
                 settings: { currency: 'LKR', theme: 'dark' }

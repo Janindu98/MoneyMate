@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import logoImg from '../../images/logo.png';
 
-export default function LockScreen({ settings, onUnlock }) {
+export default function LockScreen({ settings, onUnlock, unlockDatabase }) {
   const securityType = settings.securityType; // 'pin' or 'password'
   const [pin, setPin] = useState('');
   const [password, setPassword] = useState('');
@@ -47,22 +47,44 @@ export default function LockScreen({ settings, onUnlock }) {
     }, 500);
   };
 
-  const handlePinVerify = () => {
-    if (pin === correctPin) {
-      onUnlock();
+  const handlePinVerify = async () => {
+    if (unlockDatabase) {
+      setError(false);
+      const res = await unlockDatabase(pin);
+      if (res.success) {
+        onUnlock();
+      } else {
+        triggerShake();
+        setPin('');
+      }
     } else {
-      triggerShake();
-      setPin('');
+      if (pin === correctPin) {
+        onUnlock();
+      } else {
+        triggerShake();
+        setPin('');
+      }
     }
   };
 
-  const handlePasswordSubmit = (e) => {
+  const handlePasswordSubmit = async (e) => {
     e.preventDefault();
-    if (password === correctPassword) {
-      onUnlock();
+    if (unlockDatabase) {
+      setError(false);
+      const res = await unlockDatabase(password);
+      if (res.success) {
+        onUnlock();
+      } else {
+        triggerShake();
+        setPassword('');
+      }
     } else {
-      triggerShake();
-      setPassword('');
+      if (password === correctPassword) {
+        onUnlock();
+      } else {
+        triggerShake();
+        setPassword('');
+      }
     }
   };
 

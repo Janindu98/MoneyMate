@@ -1,10 +1,38 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
+function encryptData(data, key) {
+  const json = JSON.stringify(data);
+  let encrypted = "";
+  for (let i = 0; i < json.length; i++) {
+    const charCode = json.charCodeAt(i) ^ key.charCodeAt(i % key.length);
+    encrypted += String.fromCharCode(charCode);
+  }
+  return btoa(unescape(encodeURIComponent(encrypted)));
+}
+
+function decryptData(encryptedStr, key) {
+  try {
+    const decoded = decodeURIComponent(escape(atob(encryptedStr)));
+    let decrypted = "";
+    for (let i = 0; i < decoded.length; i++) {
+      const charCode = decoded.charCodeAt(i) ^ key.charCodeAt(i % key.length);
+      decrypted += String.fromCharCode(charCode);
+    }
+    return JSON.parse(decrypted);
+  } catch (e) {
+    return null;
+  }
+}
+
 export default class Database {
   constructor(filePath) {
     this.filePath = filePath;
     this.data = this.getInitialState();
+    this.isEncrypted = false;
+    this.securityType = 'none';
+    this.encryptedData = '';
+    this.encryptionKey = null;
   }
 
   getInitialState() {
@@ -81,7 +109,7 @@ export default class Database {
         'Online/Account cash transfer': ['Money Transfer', 'Wallet Transfer'],
         'Deposit': ['Cash Deposit', 'Bank Deposit', 'Other Deposit'],
         'Withdrawal': ['Cash Withdrawal', 'ATM Withdrawal', 'Other'],
-        'Online Payment': ['Food', 'Fuel', 'Shopping', 'Transportations', 'Transaction Charges', 'Other'],
+        'Online Payment': ['Food & Dining', 'Groceries', 'Fuel', 'Shopping', 'Transportations', 'Healthcare & Medical', 'Education', 'Transaction Charges', 'Other'],
         'Bill & Payment': [
           'Electricity',
           'Water',
@@ -141,8 +169,31 @@ export default class Database {
     try {
       if (fs.existsSync(this.filePath)) {
         const fileContent = fs.readFileSync(this.filePath, 'utf8');
-        this.data = JSON.parse(fileContent);
-        this.ensureSchema();
+        let parsed;
+        try {
+          parsed = JSON.parse(fileContent);
+        } catch (e) {
+          parsed = null;
+        }
+
+        if (parsed && parsed.encrypted === true) {
+          this.isEncrypted = true;
+          this.securityType = parsed.securityType;
+          this.encryptedData = parsed.data;
+          this.data = {
+            settings: {
+              securityType: parsed.securityType
+            }
+          };
+        } else if (parsed) {
+          this.isEncrypted = false;
+          this.data = parsed;
+          this.encryptionKey = null;
+          this.ensureSchema();
+        } else {
+          this.data = this.getInitialState();
+          this.ensureSchema();
+        }
       } else {
         // Create directory and initial file
         const dir = path.dirname(this.filePath);
@@ -216,12 +267,49 @@ export default class Database {
       if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir, { recursive: true });
       }
-      fs.writeFileSync(this.filePath, JSON.stringify(this.data, null, 2), 'utf8');
+
+      let contentToWrite;
+      const securityType = this.data?.settings?.securityType || 'none';
+
+      if (securityType === 'pin' || securityType === 'password') {
+        const key = this.encryptionKey || (securityType === 'pin' ? this.data.settings.securityPin : this.data.settings.securityPassword);
+        if (key) {
+          this.encryptionKey = key;
+          const encryptedPayload = encryptData(this.data, key);
+          contentToWrite = JSON.stringify({
+            encrypted: true,
+            securityType: securityType,
+            data: encryptedPayload
+          }, null, 2);
+        } else {
+          contentToWrite = JSON.stringify(this.data, null, 2);
+        }
+      } else {
+        this.encryptionKey = null;
+        contentToWrite = JSON.stringify(this.data, null, 2);
+      }
+
+      fs.writeFileSync(this.filePath, contentToWrite, 'utf8');
       return true;
     } catch (error) {
       console.error('Error saving database:', error);
       return false;
     }
+  }
+
+  unlock(pinOrPassword) {
+    if (!this.isEncrypted) {
+      return true;
+    }
+    const decrypted = decryptData(this.encryptedData, pinOrPassword);
+    if (decrypted && decrypted.accounts && decrypted.transactions && decrypted.settings) {
+      this.data = decrypted;
+      this.isEncrypted = false;
+      this.encryptionKey = pinOrPassword;
+      this.ensureSchema();
+      return true;
+    }
+    return false;
   }
 
   getData() {
