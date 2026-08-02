@@ -102,19 +102,19 @@ export default function Budgets() {
   currentMonthExpenses.forEach(tx => {
     const category = tx.category.toLowerCase();
 
-    if (category.includes('food & dining') || category === 'food' || category === 'dining' || category === 'food & dining') {
+    if (category.includes('food & dining') || category === 'food' || category === 'dining') {
       foodDiningSpent += tx.amount;
     } else if (category.includes('groceries')) {
       groceriesSpent += tx.amount;
-    } else if (category.includes('transportation') || category === 'transport' || category === 'transportations') {
+    } else if (category.includes('transportation') || category === 'transport' || category === 'transportations' || category.includes('commute') || category.includes('uber') || category.includes('pickme') || category.includes('bus') || category.includes('train')) {
       transportationSpent += tx.amount;
     } else if (category.includes('fuel')) {
       fuelSpent += tx.amount;
-    } else if (category.includes('healthcare & medical') || category.includes('healthcare') || category.includes('medical') || category.includes('medicine') || category.includes('pharmacy')) {
+    } else if (category.includes('healthcare & medical') || category.includes('healthcare') || category.includes('medical') || category.includes('medicine') || category.includes('pharmacy') || category.includes('hospital') || category.includes('clinic')) {
       healthcareMedicalSpent += tx.amount;
-    } else if (category.includes('shopping')) {
+    } else if (category.includes('shopping') || category.includes('clothes') || category.includes('store')) {
       shoppingSpent += tx.amount;
-    } else if (category.includes('education')) {
+    } else if (category.includes('education') || category.includes('school') || category.includes('college') || category.includes('university') || category.includes('tuition') || category.includes('course') || category.includes('class')) {
       educationSpent += tx.amount;
     } else {
       othersSpent += tx.amount;
@@ -128,11 +128,11 @@ export default function Budgets() {
 
   const scorecard = [
     { name: 'Food & Dining', targetPct: Math.round((limitFoodDining / baseIncomeForLimits) * 100), actualAmt: foodDiningSpent, targetAmt: limitFoodDining },
-    { name: 'Groceries', targetPct: Math.round((limitGroceries / baseIncomeForLimits) * 100), actualAmt: groceriesSpent, targetAmt: limitGroceries },
-    { name: 'Transportation', targetPct: Math.round((limitTransportation / baseIncomeForLimits) * 100), actualAmt: transportationSpent, targetAmt: limitTransportation },
     { name: 'Fuel', targetPct: Math.round((limitFuel / baseIncomeForLimits) * 100), actualAmt: fuelSpent, targetAmt: limitFuel },
     { name: 'Healthcare & Medical', targetPct: Math.round((limitHealthcareMedical / baseIncomeForLimits) * 100), actualAmt: healthcareMedicalSpent, targetAmt: limitHealthcareMedical },
     { name: 'Shopping', targetPct: Math.round((limitShopping / baseIncomeForLimits) * 100), actualAmt: shoppingSpent, targetAmt: limitShopping },
+    { name: 'Transportation', targetPct: Math.round((limitTransportation / baseIncomeForLimits) * 100), actualAmt: transportationSpent, targetAmt: limitTransportation },
+    { name: 'Groceries', targetPct: Math.round((limitGroceries / baseIncomeForLimits) * 100), actualAmt: groceriesSpent, targetAmt: limitGroceries },
     { name: 'Education', targetPct: Math.round((limitEducation / baseIncomeForLimits) * 100), actualAmt: educationSpent, targetAmt: limitEducation },
     { name: 'Others', targetPct: 0, actualAmt: othersSpent, targetAmt: limitOthers }
   ];
@@ -217,21 +217,21 @@ export default function Budgets() {
         labels: hasExpenseData
           ? [
             `Food & Dining (${foodDiningPct}%)`,
-            `Groceries (${groceriesPct}%)`,
-            `Transportation (${transportationPct}%)`,
             `Fuel (${fuelPct}%)`,
             `Healthcare & Medical (${healthcareMedicalPct}%)`,
             `Shopping (${shoppingPct}%)`,
+            `Transportation (${transportationPct}%)`,
+            `Groceries (${groceriesPct}%)`,
             `Education (${educationPct}%)`,
             `Others (${othersPct}%)`
           ]
           : ['No expense logged'],
         datasets: [{
           data: hasExpenseData
-            ? [foodDiningSpent, groceriesSpent, transportationSpent, fuelSpent, healthcareMedicalSpent, shoppingSpent, educationSpent, othersSpent]
+            ? [foodDiningSpent, fuelSpent, healthcareMedicalSpent, shoppingSpent, transportationSpent, groceriesSpent, educationSpent, othersSpent]
             : [1],
           backgroundColor: hasExpenseData
-            ? ['#ec4899', '#10b981', '#06b6d4', '#f59e0b', '#3b82f6', '#7c3aed', '#db2777', '#64748b']
+            ? ['#ec4899', '#f97316', '#3b82f6', '#7c3aed', '#14b8a6', '#10b981', '#eab308', '#64748b']
             : ['rgba(255, 255, 255, 0.05)'],
           borderWidth: 0
         }]

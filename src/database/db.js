@@ -109,7 +109,7 @@ export default class Database {
         'Online/Account cash transfer': ['Money Transfer', 'Wallet Transfer'],
         'Deposit': ['Cash Deposit', 'Bank Deposit', 'Other Deposit'],
         'Withdrawal': ['Cash Withdrawal', 'ATM Withdrawal', 'Other'],
-        'Online Payment': ['Food', 'Fuel', 'Shopping', 'Transportations', 'Transaction Charges', 'Other'],
+        'Online Payment': ['Food & Dining', 'Groceries', 'Fuel', 'Shopping', 'Transportations', 'Healthcare & Medical', 'Education', 'Transaction Charges', 'Other'],
         'Bill & Payment': [
           'Electricity',
           'Water',

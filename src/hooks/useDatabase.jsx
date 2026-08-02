@@ -317,7 +317,7 @@ export function DatabaseProvider({ children }) {
               else if (pt === 'Deposit') currentCats[pt] = initialDeposit;
               else if (pt === 'Withdrawal') currentCats[pt] = ['Cash Withdrawal', 'ATM Withdrawal', 'Other'];
               else if (pt === 'Online/Account cash transfer') currentCats[pt] = ['Money Transfer', 'Wallet Transfer'];
-              else if (pt === 'Online Payment') currentCats[pt] = ['Food', 'Fuel', 'Shopping', 'Transportations', 'Transaction Charges', 'Other'];
+              else if (pt === 'Online Payment') currentCats[pt] = ['Food & Dining', 'Groceries', 'Fuel', 'Shopping', 'Transportations', 'Healthcare & Medical', 'Education', 'Transaction Charges', 'Other'];
               else if (pt === 'Bill & Payment') currentCats[pt] = initialBills;
             }
           });
