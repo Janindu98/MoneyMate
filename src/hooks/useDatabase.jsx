@@ -118,7 +118,8 @@ export function DatabaseProvider({ children }) {
             setDbState(prev => ({
               ...prev,
               settings: {
-                securityType: data.securityType
+                ...prev.settings,
+                securityType: data.securityType || (data.settings && data.settings.securityType)
               }
             }));
             setLoading(false);
@@ -714,25 +715,28 @@ export function DatabaseProvider({ children }) {
           transactions: migratedTransactions,
           subscriptions: data.subscriptions || [],
           settings: {
-            'Food & Dining': 35000,
-            Fuel: 20000,
-            'Healthcare & Medical': 18000,
-            Shopping: 15000,
-            Groceries: 25000,
-            Education: 15000,
-            Others: 12000,
-            Transportations: 5000,
+            currency: 'LKR',
+            theme: 'dark',
+            budgetLimits: {
+              FoodDining: 20000,
+              Groceries: 15000,
+              Transportation: 5000,
+              Fuel: 20000,
+              HealthcareMedical: 10000,
+              Shopping: 15000,
+              Education: 10000,
+              Others: 12000
+            },
+            billLimits: {
+              Electricity: 8000,
+              Water: 2000,
+              Internet: 5000,
+              Mobile: 3000,
+              Insurance: 15000,
+              CreditCards: 25000,
+              Rent: 45000
+            },
             ...(data.settings || {})
-          },
-          billLimits: {
-            Electricity: 8000,
-            Water: 2000,
-            Internet: 5000,
-            Mobile: 3000,
-            Insurance: 15000,
-            CreditCards: 25000,
-            Rent: 45000,
-            ...(data.settings?.billLimits || {})
           },
           profile: {
             name: '',

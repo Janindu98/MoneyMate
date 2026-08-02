@@ -181,6 +181,8 @@ export default class Database {
           this.securityType = parsed.securityType;
           this.encryptedData = parsed.data;
           this.data = {
+            encrypted: true,
+            securityType: parsed.securityType,
             settings: {
               securityType: parsed.securityType
             }
