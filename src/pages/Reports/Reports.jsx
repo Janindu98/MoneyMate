@@ -11,9 +11,19 @@ export default function Reports() {
   const { showToast } = useToast();
 
   const [period, setPeriod] = useState('this-month');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [accountId, setAccountId] = useState('all');
 
   const filterByDate = (dateStr) => {
+    if (!dateStr) return false;
+
+    if (period === 'custom') {
+      if (startDate && dateStr < startDate) return false;
+      if (endDate && dateStr > endDate) return false;
+      return true;
+    }
+
     const txDate = new Date(dateStr);
     const now = new Date();
     
@@ -146,7 +156,10 @@ export default function Reports() {
       doc.setFontSize(9);
       doc.setTextColor(100, 116, 139);
       doc.text(`Generated offline on: ${new Date().toLocaleString()}`, 14, 28);
-      doc.text(`Report Period: ${period.replace('-', ' ')} • Filter Account: ${accountId === 'all' ? 'All' : accounts.find(a => a.id === accountId)?.bankName}`, 14, 33);
+      const periodLabel = period === 'custom'
+        ? `Custom (${startDate || 'Start'} to ${endDate || 'End'})`
+        : period.replace(/-/g, ' ');
+      doc.text(`Report Period: ${periodLabel} • Filter Account: ${accountId === 'all' ? 'All' : accounts.find(a => a.id === accountId)?.bankName}`, 14, 33);
       doc.line(14, 37, 196, 37);
 
       // 1. Accounts Summary Section
@@ -282,6 +295,7 @@ export default function Reports() {
               <option value="last-6-months">Last 6 Months</option>
               <option value="this-year">This Year</option>
               <option value="all-time">All Records</option>
+              <option value="custom">Custom Period</option>
             </select>
           </div>
 
@@ -295,6 +309,29 @@ export default function Reports() {
             </select>
           </div>
         </div>
+
+        {period === 'custom' && (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '24px' }}>
+            <div className="form-group">
+              <label>Start Date</label>
+              <input
+                type="date"
+                className="input-ctrl"
+                value={startDate}
+                onChange={e => setStartDate(e.target.value)}
+              />
+            </div>
+            <div className="form-group">
+              <label>End Date</label>
+              <input
+                type="date"
+                className="input-ctrl"
+                value={endDate}
+                onChange={e => setEndDate(e.target.value)}
+              />
+            </div>
+          </div>
+        )}
 
         <div style={{ display: 'flex', gap: '16px', justifyContent: 'flex-end', borderTop: '1px solid var(--border-color)', paddingTop: '16px' }}>
           <button className="btn btn-primary" onClick={handleExportExcel}>

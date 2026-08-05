@@ -132,6 +132,7 @@ export default class Database {
         theme: 'dark',
         budgetLimits: {
           FoodDining: 20000,
+          BillPayment: 30000,
           Groceries: 15000,
           Transportation: 5000,
           Fuel: 20000,

@@ -13,6 +13,7 @@ export default function Budgets() {
   // Target limits (User Specs for Expenses)
   const budgetLimits = settings?.budgetLimits || {
     FoodDining: 20000,
+    BillPayment: 30000,
     Groceries: 15000,
     Transportation: 5000,
     Fuel: 20000,
@@ -24,6 +25,7 @@ export default function Budgets() {
 
   const [isLimitsModalOpen, setIsLimitsModalOpen] = useState(false);
   const [limitFoodDining, setLimitFoodDining] = useState(budgetLimits.FoodDining || 20000);
+  const [limitBillPayment, setLimitBillPayment] = useState(budgetLimits.BillPayment || 30000);
   const [limitGroceries, setLimitGroceries] = useState(budgetLimits.Groceries || 15000);
   const [limitTransportation, setLimitTransportation] = useState(budgetLimits.Transportation || 5000);
   const [limitFuel, setLimitFuel] = useState(budgetLimits.Fuel || 20000);
@@ -36,6 +38,7 @@ export default function Budgets() {
   useEffect(() => {
     if (settings?.budgetLimits) {
       setLimitFoodDining(settings.budgetLimits.FoodDining || 0);
+      setLimitBillPayment(settings.budgetLimits.BillPayment !== undefined ? settings.budgetLimits.BillPayment : 30000);
       setLimitGroceries(settings.budgetLimits.Groceries || 0);
       setLimitTransportation(settings.budgetLimits.Transportation || 0);
       setLimitFuel(settings.budgetLimits.Fuel || 0);
@@ -51,6 +54,7 @@ export default function Budgets() {
     updateSettings({
       budgetLimits: {
         FoodDining: parseFloat(limitFoodDining) || 0,
+        BillPayment: parseFloat(limitBillPayment) || 0,
         Groceries: parseFloat(limitGroceries) || 0,
         Transportation: parseFloat(limitTransportation) || 0,
         Fuel: parseFloat(limitFuel) || 0,
@@ -91,6 +95,7 @@ export default function Budgets() {
 
   // Calculate actual category spending
   let foodDiningSpent = 0;
+  let billPaymentSpent = 0;
   let groceriesSpent = 0;
   let transportationSpent = 0;
   let fuelSpent = 0;
@@ -102,7 +107,9 @@ export default function Budgets() {
   currentMonthExpenses.forEach(tx => {
     const category = tx.category.toLowerCase();
 
-    if (category.includes('food & dining') || category === 'food' || category === 'dining') {
+    if (tx.type === 'Bill & Payment') {
+      billPaymentSpent += tx.amount;
+    } else if (category.includes('food & dining') || category === 'food' || category === 'dining') {
       foodDiningSpent += tx.amount;
     } else if (category.includes('groceries')) {
       groceriesSpent += tx.amount;
@@ -121,19 +128,20 @@ export default function Budgets() {
     }
   });
 
-  const totalExpense = foodDiningSpent + groceriesSpent + transportationSpent + fuelSpent + healthcareMedicalSpent + shoppingSpent + educationSpent + othersSpent;
+  const totalExpense = foodDiningSpent + billPaymentSpent + groceriesSpent + transportationSpent + fuelSpent + healthcareMedicalSpent + shoppingSpent + educationSpent + othersSpent;
   const monthlySavings = Math.max(0, monthlyIncome - totalExpense);
 
   const baseIncomeForLimits = monthlyIncome > 0 ? monthlyIncome : 100000;
 
   const scorecard = [
     { name: 'Food & Dining', targetPct: Math.round((limitFoodDining / baseIncomeForLimits) * 100), actualAmt: foodDiningSpent, targetAmt: limitFoodDining },
-    { name: 'Fuel', targetPct: Math.round((limitFuel / baseIncomeForLimits) * 100), actualAmt: fuelSpent, targetAmt: limitFuel },
+    { name: 'Bill & Payment', targetPct: Math.round((limitBillPayment / baseIncomeForLimits) * 100), actualAmt: billPaymentSpent, targetAmt: limitBillPayment },
     { name: 'Healthcare & Medical', targetPct: Math.round((limitHealthcareMedical / baseIncomeForLimits) * 100), actualAmt: healthcareMedicalSpent, targetAmt: limitHealthcareMedical },
     { name: 'Shopping', targetPct: Math.round((limitShopping / baseIncomeForLimits) * 100), actualAmt: shoppingSpent, targetAmt: limitShopping },
     { name: 'Transportation', targetPct: Math.round((limitTransportation / baseIncomeForLimits) * 100), actualAmt: transportationSpent, targetAmt: limitTransportation },
     { name: 'Groceries', targetPct: Math.round((limitGroceries / baseIncomeForLimits) * 100), actualAmt: groceriesSpent, targetAmt: limitGroceries },
     { name: 'Education', targetPct: Math.round((limitEducation / baseIncomeForLimits) * 100), actualAmt: educationSpent, targetAmt: limitEducation },
+    { name: 'Fuel', targetPct: Math.round((limitFuel / baseIncomeForLimits) * 100), actualAmt: fuelSpent, targetAmt: limitFuel },
     { name: 'Others', targetPct: 0, actualAmt: othersSpent, targetAmt: limitOthers }
   ];
 
@@ -177,12 +185,13 @@ export default function Budgets() {
 
     // Calculate category percentages
     const foodDiningPct = totalExpense > 0 ? ((foodDiningSpent / totalExpense) * 100).toFixed(1) : '0.0';
-    const groceriesPct = totalExpense > 0 ? ((groceriesSpent / totalExpense) * 100).toFixed(1) : '0.0';
-    const transportationPct = totalExpense > 0 ? ((transportationSpent / totalExpense) * 100).toFixed(1) : '0.0';
-    const fuelPct = totalExpense > 0 ? ((fuelSpent / totalExpense) * 100).toFixed(1) : '0.0';
+    const billPaymentPct = totalExpense > 0 ? ((billPaymentSpent / totalExpense) * 100).toFixed(1) : '0.0';
     const healthcareMedicalPct = totalExpense > 0 ? ((healthcareMedicalSpent / totalExpense) * 100).toFixed(1) : '0.0';
     const shoppingPct = totalExpense > 0 ? ((shoppingSpent / totalExpense) * 100).toFixed(1) : '0.0';
+    const transportationPct = totalExpense > 0 ? ((transportationSpent / totalExpense) * 100).toFixed(1) : '0.0';
+    const groceriesPct = totalExpense > 0 ? ((groceriesSpent / totalExpense) * 100).toFixed(1) : '0.0';
     const educationPct = totalExpense > 0 ? ((educationSpent / totalExpense) * 100).toFixed(1) : '0.0';
+    const fuelPct = totalExpense > 0 ? ((fuelSpent / totalExpense) * 100).toFixed(1) : '0.0';
     const othersPct = totalExpense > 0 ? ((othersSpent / totalExpense) * 100).toFixed(1) : '0.0';
 
     const centerTextPlugin = {
@@ -217,21 +226,22 @@ export default function Budgets() {
         labels: hasExpenseData
           ? [
             `Food & Dining (${foodDiningPct}%)`,
-            `Fuel (${fuelPct}%)`,
+            `Bill & Payment (${billPaymentPct}%)`,
             `Healthcare & Medical (${healthcareMedicalPct}%)`,
             `Shopping (${shoppingPct}%)`,
             `Transportation (${transportationPct}%)`,
             `Groceries (${groceriesPct}%)`,
             `Education (${educationPct}%)`,
+            `Fuel (${fuelPct}%)`,
             `Others (${othersPct}%)`
           ]
           : ['No expense logged'],
         datasets: [{
           data: hasExpenseData
-            ? [foodDiningSpent, fuelSpent, healthcareMedicalSpent, shoppingSpent, transportationSpent, groceriesSpent, educationSpent, othersSpent]
+            ? [foodDiningSpent, billPaymentSpent, healthcareMedicalSpent, shoppingSpent, transportationSpent, groceriesSpent, educationSpent, fuelSpent, othersSpent]
             : [1],
           backgroundColor: hasExpenseData
-            ? ['#ec4899', '#f97316', '#3b82f6', '#7c3aed', '#14b8a6', '#10b981', '#eab308', '#64748b']
+            ? ['#ec4899', '#6366f1', '#3b82f6', '#7c3aed', '#14b8a6', '#10b981', '#eab308', '#f97316', '#64748b']
             : ['rgba(255, 255, 255, 0.05)'],
           borderWidth: 0
         }]
@@ -313,7 +323,7 @@ export default function Budgets() {
       pieChart.destroy();
       barChart.destroy();
     };
-  }, [transactions, settings.theme, settings.currency, totalExpense, foodDiningSpent, groceriesSpent, transportationSpent, fuelSpent, healthcareMedicalSpent, shoppingSpent, educationSpent, othersSpent, selectedMonth, selectedYear]);
+  }, [transactions, settings.theme, settings.currency, totalExpense, foodDiningSpent, billPaymentSpent, groceriesSpent, transportationSpent, fuelSpent, healthcareMedicalSpent, shoppingSpent, educationSpent, othersSpent, selectedMonth, selectedYear]);
 
   return (
     <div className="page active">
@@ -448,40 +458,13 @@ export default function Budgets() {
                 />
               </div>
               <div className="form-group">
-                <label>Groceries Limit (Rs.)</label>
+                <label>Bill & Payment Limit (Rs.)</label>
                 <input
                   type="number"
                   className="input-ctrl"
-                  value={limitGroceries}
-                  onChange={e => setLimitGroceries(e.target.value)}
-                  placeholder="15000"
-                  min="0"
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="form-row-2">
-              <div className="form-group">
-                <label>Transportation Limit (Rs.)</label>
-                <input
-                  type="number"
-                  className="input-ctrl"
-                  value={limitTransportation}
-                  onChange={e => setLimitTransportation(e.target.value)}
-                  placeholder="5000"
-                  min="0"
-                  required
-                />
-              </div>
-              <div className="form-group">
-                <label>Fuel Limit (Rs.)</label>
-                <input
-                  type="number"
-                  className="input-ctrl"
-                  value={limitFuel}
-                  onChange={e => setLimitFuel(e.target.value)}
-                  placeholder="20000"
+                  value={limitBillPayment}
+                  onChange={e => setLimitBillPayment(e.target.value)}
+                  placeholder="30000"
                   min="0"
                   required
                 />
@@ -517,6 +500,33 @@ export default function Budgets() {
 
             <div className="form-row-2">
               <div className="form-group">
+                <label>Transportation Limit (Rs.)</label>
+                <input
+                  type="number"
+                  className="input-ctrl"
+                  value={limitTransportation}
+                  onChange={e => setLimitTransportation(e.target.value)}
+                  placeholder="5000"
+                  min="0"
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>Groceries Limit (Rs.)</label>
+                <input
+                  type="number"
+                  className="input-ctrl"
+                  value={limitGroceries}
+                  onChange={e => setLimitGroceries(e.target.value)}
+                  placeholder="15000"
+                  min="0"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="form-row-2">
+              <div className="form-group">
                 <label>Education Limit (Rs.)</label>
                 <input
                   type="number"
@@ -528,6 +538,21 @@ export default function Budgets() {
                   required
                 />
               </div>
+              <div className="form-group">
+                <label>Fuel Limit (Rs.)</label>
+                <input
+                  type="number"
+                  className="input-ctrl"
+                  value={limitFuel}
+                  onChange={e => setLimitFuel(e.target.value)}
+                  placeholder="20000"
+                  min="0"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="form-row-2">
               <div className="form-group">
                 <label>Others Limit (Rs.)</label>
                 <input
