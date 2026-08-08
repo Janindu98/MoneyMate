@@ -97,3 +97,7 @@ out/
 dist/
 /dist
 /dist/assets
+
+#
+src-native/
+build-native/
