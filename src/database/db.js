@@ -139,6 +139,7 @@ export default class Database {
           HealthcareMedical: 10000,
           Shopping: 15000,
           Education: 10000,
+          Withdrawal: 10000,
           Others: 12000
         },
         billLimits: {

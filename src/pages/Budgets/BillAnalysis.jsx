@@ -5,7 +5,7 @@ import Chart from 'chart.js/auto';
 import Modal from '../../components/Modal';
 
 export default function BillAnalysis() {
-  const { transactions, settings, updateSettings } = useDatabase();
+  const { transactions, settings, updateSettings, categories } = useDatabase();
   
   const pieChartRef = useRef(null);
   const lineChartRef = useRef(null);
@@ -32,6 +32,9 @@ export default function BillAnalysis() {
   const [limitRent, setLimitRent] = useState(billLimits.Rent);
   const [limitSubscriptions, setLimitSubscriptions] = useState(billLimits.Subscriptions || 0);
 
+  const [customBillLimits, setCustomBillLimits] = useState({});
+  const [selectedNewCat, setSelectedNewCat] = useState('');
+
   // Sync state if settings load later
   useEffect(() => {
     if (settings?.billLimits) {
@@ -43,6 +46,15 @@ export default function BillAnalysis() {
       setLimitCreditCards(settings.billLimits.CreditCards || 0);
       setLimitRent(settings.billLimits.Rent || 0);
       setLimitSubscriptions(settings.billLimits.Subscriptions || 0);
+
+      // Collect custom bill categories limits
+      const customs = {};
+      Object.keys(settings.billLimits).forEach(key => {
+        if (!['Electricity', 'Water', 'Internet', 'Mobile', 'Insurance', 'CreditCards', 'Rent', 'Subscriptions'].includes(key)) {
+          customs[key] = settings.billLimits[key];
+        }
+      });
+      setCustomBillLimits(customs);
     }
   }, [settings]);
 
@@ -57,7 +69,8 @@ export default function BillAnalysis() {
         Insurance: parseFloat(limitInsurance) || 0,
         CreditCards: parseFloat(limitCreditCards) || 0,
         Rent: parseFloat(limitRent) || 0,
-        Subscriptions: parseFloat(limitSubscriptions) || 0
+        Subscriptions: parseFloat(limitSubscriptions) || 0,
+        ...customBillLimits
       }
     });
     setIsLimitsModalOpen(false);
@@ -100,6 +113,11 @@ export default function BillAnalysis() {
   let subscriptionsSpent = 0;
   let othersSpent = 0;
 
+  const customSpent = {};
+  Object.keys(customBillLimits).forEach(cat => {
+    customSpent[cat] = 0;
+  });
+
   currentMonthExpenses.forEach(tx => {
     const category = tx.category.toLowerCase();
     
@@ -120,11 +138,17 @@ export default function BillAnalysis() {
     } else if (category.includes('rent') || category.includes('lease') || category.includes('boarding')) {
       rentSpent += tx.amount;
     } else {
-      othersSpent += tx.amount;
+      const matchedCustom = Object.keys(customBillLimits).find(c => c.toLowerCase() === tx.category.toLowerCase());
+      if (matchedCustom) {
+        customSpent[matchedCustom] += tx.amount;
+      } else {
+        othersSpent += tx.amount;
+      }
     }
   });
 
-  const totalExpense = electricitySpent + waterSpent + internetSpent + mobileSpent + insuranceSpent + creditCardsSpent + rentSpent + subscriptionsSpent + othersSpent;
+  const totalCustomExpense = Object.values(customSpent).reduce((acc, curr) => acc + curr, 0);
+  const totalExpense = electricitySpent + waterSpent + internetSpent + mobileSpent + insuranceSpent + creditCardsSpent + rentSpent + subscriptionsSpent + othersSpent + totalCustomExpense;
   const baseIncomeForLimits = monthlyIncome > 0 ? monthlyIncome : 100000;
   
   const scorecard = [
@@ -136,6 +160,12 @@ export default function BillAnalysis() {
     { name: 'Credit cards', targetPct: Math.round((limitCreditCards / baseIncomeForLimits) * 100), actualAmt: creditCardsSpent, targetAmt: limitCreditCards },
     { name: 'Rent', targetPct: Math.round((limitRent / baseIncomeForLimits) * 100), actualAmt: rentSpent, targetAmt: limitRent },
     { name: 'Subscriptions', targetPct: Math.round((limitSubscriptions / baseIncomeForLimits) * 100), actualAmt: subscriptionsSpent, targetAmt: limitSubscriptions },
+    ...Object.keys(customBillLimits).map(cat => ({
+      name: cat,
+      targetPct: Math.round((customBillLimits[cat] / baseIncomeForLimits) * 100),
+      actualAmt: customSpent[cat] || 0,
+      targetAmt: customBillLimits[cat]
+    })),
     { name: 'Others', targetPct: 0, actualAmt: othersSpent, targetAmt: 0 }
   ];
 
@@ -191,16 +221,29 @@ export default function BillAnalysis() {
     const pieCtx = pieChartRef.current.getContext('2d');
     const hasExpenseData = totalExpense > 0;
 
-    // Calculate category percentages
-    const electPct = totalExpense > 0 ? ((electricitySpent / totalExpense) * 100).toFixed(1) : '0.0';
-    const waterPct = totalExpense > 0 ? ((waterSpent / totalExpense) * 100).toFixed(1) : '0.0';
-    const internetPct = totalExpense > 0 ? ((internetSpent / totalExpense) * 100).toFixed(1) : '0.0';
-    const mobilePct = totalExpense > 0 ? ((mobileSpent / totalExpense) * 100).toFixed(1) : '0.0';
-    const insurancePct = totalExpense > 0 ? ((insuranceSpent / totalExpense) * 100).toFixed(1) : '0.0';
-    const cardsPct = totalExpense > 0 ? ((creditCardsSpent / totalExpense) * 100).toFixed(1) : '0.0';
-    const rentPct = totalExpense > 0 ? ((rentSpent / totalExpense) * 100).toFixed(1) : '0.0';
-    const subscriptionsPct = totalExpense > 0 ? ((subscriptionsSpent / totalExpense) * 100).toFixed(1) : '0.0';
-    const othersPct = totalExpense > 0 ? ((othersSpent / totalExpense) * 100).toFixed(1) : '0.0';
+    const pieLabels = [];
+    const pieData = [];
+    const pieColors = [];
+    const baseColors = ['#ef4444', '#06b6d4', '#3b82f6', '#f59e0b', '#10b981', '#8b5cf6', '#ec4899', '#db2777', '#ff4d4d', '#ff8533', '#33cc33', '#33cccc', '#3333cc', '#cc33cc'];
+    let colorIdx = 0;
+
+    scorecard.forEach(item => {
+      const isDefault = [
+        'Electricity', 'Water', 'Internet', 'Mobile phone',
+        'Insurance', 'Credit cards', 'Rent', 'Subscriptions', 'Others'
+      ].includes(item.name);
+      if (item.actualAmt > 0 || isDefault) {
+        const pct = totalExpense > 0 ? ((item.actualAmt / totalExpense) * 100).toFixed(1) : '0.0';
+        pieLabels.push(`${item.name} (${pct}%)`);
+        pieData.push(item.actualAmt);
+        if (item.name === 'Others') {
+          pieColors.push('#64748b');
+        } else {
+          pieColors.push(baseColors[colorIdx % baseColors.length]);
+          colorIdx++;
+        }
+      }
+    });
     
     const centerTextPlugin = {
       id: 'centerText',
@@ -231,26 +274,10 @@ export default function BillAnalysis() {
     const pieChart = new Chart(pieCtx, {
       type: 'doughnut',
       data: {
-        labels: hasExpenseData 
-          ? [
-              `Electricity (${electPct}%)`,
-              `Water (${waterPct}%)`,
-              `Internet (${internetPct}%)`,
-              `Mobile phone (${mobilePct}%)`,
-              `Insurance (${insurancePct}%)`,
-              `Credit cards (${cardsPct}%)`,
-              `Rent (${rentPct}%)`,
-              `Subscriptions (${subscriptionsPct}%)`,
-              `Others (${othersPct}%)`
-            ]
-          : ['No bills logged'],
+        labels: hasExpenseData ? pieLabels : ['No bills logged'],
         datasets: [{
-          data: hasExpenseData 
-            ? [electricitySpent, waterSpent, internetSpent, mobileSpent, insuranceSpent, creditCardsSpent, rentSpent, subscriptionsSpent, othersSpent] 
-            : [1],
-          backgroundColor: hasExpenseData 
-            ? ['#ef4444', '#06b6d4', '#3b82f6', '#f59e0b', '#10b981', '#8b5cf6', '#ec4899', '#db2777', '#64748b'] 
-            : ['rgba(255, 255, 255, 0.05)'],
+          data: hasExpenseData ? pieData : [1],
+          backgroundColor: hasExpenseData ? pieColors : ['rgba(255, 255, 255, 0.05)'],
           borderWidth: 0
         }]
       },
@@ -370,7 +397,27 @@ export default function BillAnalysis() {
       pieChart.destroy();
       lineChart.destroy();
     };
-  }, [transactions, settings.theme, settings.currency, totalExpense, electricitySpent, waterSpent, internetSpent, mobileSpent, insuranceSpent, creditCardsSpent, rentSpent, othersSpent, selectedMonth, selectedYear]);
+  }, [transactions, settings.theme, settings.currency, totalExpense, scorecard, selectedMonth, selectedYear]);
+
+  const defaultBillNames = [
+    'electricity', 'power', 'ceb', 'leco',
+    'water', 'nwsdb', 'h2o',
+    'internet', 'wifi', 'slt', 'dialog home', 'broadband',
+    'mobile', 'phone', 'sim', 'reload', 'telecom', 'mobile phone',
+    'insurance', 'lic', 'premium',
+    'credit card', 'card payment', 'credit', 'mastercard', 'visa', 'credit cards',
+    'rent', 'lease', 'boarding',
+    'subscriptions',
+    'others', 'other'
+  ];
+
+  const allBillCats = categories?.['Bill & Payment'] || [];
+  const filteredCatsForSelect = allBillCats.filter(cat => {
+    const catLower = cat.toLowerCase();
+    if (defaultBillNames.includes(catLower)) return false;
+    if (Object.keys(customBillLimits).some(k => k.toLowerCase() === catLower)) return false;
+    return true;
+  });
 
   return (
     <div className="page active">
@@ -598,6 +645,76 @@ export default function BillAnalysis() {
                 />
               </div>
             </div>
+
+            {Object.keys(customBillLimits).length > 0 && (
+              <div style={{ marginTop: '16px', borderTop: '1px solid var(--border-color)', paddingTop: '12px' }}>
+                <h4 style={{ fontSize: '0.9rem', fontWeight: 700, marginBottom: '8px' }}>Custom Bill Limits</h4>
+                {Object.keys(customBillLimits).map(catName => (
+                  <div className="form-row-2" key={catName} style={{ alignItems: 'flex-end', marginTop: '8px' }}>
+                    <div className="form-group" style={{ flexGrow: 1 }}>
+                      <label>{catName} Limit (Rs.)</label>
+                      <input
+                        type="number"
+                        className="input-ctrl"
+                        value={customBillLimits[catName]}
+                        onChange={e => {
+                          const val = parseFloat(e.target.value) || 0;
+                          setCustomBillLimits(prev => ({ ...prev, [catName]: val }));
+                        }}
+                        min="0"
+                        required
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      onClick={() => {
+                        setCustomBillLimits(prev => {
+                          const copy = { ...prev };
+                          delete copy[catName];
+                          return copy;
+                        });
+                      }}
+                      style={{ marginBottom: '4px', height: '36px', padding: '0 12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {filteredCatsForSelect.length > 0 && (
+              <div style={{ marginTop: '16px', borderTop: '1px solid var(--border-color)', paddingTop: '12px' }}>
+                <h4 style={{ fontSize: '0.9rem', fontWeight: 700, marginBottom: '8px' }}>Add Custom Bill Limit</h4>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  <select
+                    className="input-ctrl"
+                    value={selectedNewCat}
+                    onChange={e => setSelectedNewCat(e.target.value)}
+                    style={{ flexGrow: 1 }}
+                  >
+                    <option value="">-- Select Category --</option>
+                    {filteredCatsForSelect.map(c => (
+                      <option key={c} value={c}>{c}</option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={() => {
+                      if (selectedNewCat) {
+                        setCustomBillLimits(prev => ({ ...prev, [selectedNewCat]: 0 }));
+                        setSelectedNewCat('');
+                      }
+                    }}
+                    style={{ whiteSpace: 'nowrap', height: '36px' }}
+                  >
+                    Add Category
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
           <div className="modal-footer">
             <button type="button" className="btn btn-secondary" onClick={() => setIsLimitsModalOpen(false)}>Cancel</button>
