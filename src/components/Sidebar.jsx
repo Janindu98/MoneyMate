@@ -1,7 +1,9 @@
 import React from 'react';
 import logoImg from '../../images/logo.png';
+import { useDatabase } from '../hooks/useDatabase';
 
 export default function Sidebar({ activeTab, onTabChange }) {
+  const { isPro } = useDatabase();
   const tabs = [
     {
       id: 'dashboard',
@@ -130,17 +132,40 @@ export default function Sidebar({ activeTab, onTabChange }) {
         <div className="brand-name">MoneyMate</div>
       </div>
       <nav className="nav-links">
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            className={`nav-item ${activeTab === tab.id ? 'active' : ''}`}
-            onClick={() => onTabChange(tab.id)}
-            style={{ border: 'none', textAlign: 'left', width: '100%' }}
-          >
-            {tab.icon}
-            {tab.label}
-          </button>
-        ))}
+        {tabs.map((tab) => {
+          const isPremiumTab = ['bills', 'subscriptions', 'backup'].includes(tab.id);
+          return (
+            <button
+              key={tab.id}
+              className={`nav-item ${activeTab === tab.id ? 'active' : ''}`}
+              onClick={() => onTabChange(tab.id)}
+              style={{ border: 'none', textAlign: 'left', width: '100%', display: 'flex', alignItems: 'center' }}
+            >
+              {tab.icon}
+              <span>{tab.label}</span>
+              {isPremiumTab && !isPro && (
+                <span style={{
+                  marginLeft: 'auto',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  background: 'rgba(245, 158, 11, 0.12)',
+                  color: '#fbbf24',
+                  padding: '2px 6px',
+                  borderRadius: '4px',
+                  fontSize: '0.6rem',
+                  fontWeight: 700,
+                  border: '1px solid rgba(245, 158, 11, 0.25)',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                  lineHeight: '1'
+                }}>
+                  Pro
+                </span>
+              )}
+            </button>
+          );
+        })}
       </nav>
       <div className="sidebar-footer">
         <p>MoneyMate v1.4.0</p>

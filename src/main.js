@@ -3,6 +3,11 @@ import path from 'node:path';
 import fs from 'node:fs';
 import started from 'electron-squirrel-startup';
 import Database from './database/db.js';
+import { validateLicenseKey } from './utils/licensing.js';
+import { execFile } from 'node:child_process';
+import util from 'node:util';
+
+const execFileAsync = util.promisify(execFile);
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (started) {
@@ -346,6 +351,142 @@ app.whenReady().then(() => {
       }
     }
     return { success: false, canceled: true };
+  });
+
+  async function runStoreHelper(action, hwndStr = '0') {
+    const isPackaged = app.isPackaged;
+    const baseDir = isPackaged ? process.resourcesPath : app.getAppPath();
+    const helperPath = path.join(baseDir, 'build-native', 'StoreHelper.exe');
+    
+    if (!fs.existsSync(helperPath)) {
+      console.warn('StoreHelper.exe not found at:', helperPath);
+      return { isPro: false, success: false, error: 'StoreHelper binary not found.' };
+    }
+
+    try {
+      const { stdout } = await execFileAsync(helperPath, [action, hwndStr]);
+      return JSON.parse(stdout.trim());
+    } catch (err) {
+      console.error('Error running StoreHelper:', err);
+      return { isPro: false, success: false, error: err.message };
+    }
+  }
+
+  ipcMain.handle('license:check', async () => {
+    const license = db.getData()?.license || { status: 'free', type: 'none', key: '', purchaseToken: '', isProDevOverride: false };
+    
+    // Dev Mode Override
+    if (license.isProDevOverride) {
+      return { status: 'pro', type: 'dev_override', isPro: true, license };
+    }
+    
+    // Standalone key validation
+    if (license.type === 'license_key' && validateLicenseKey(license.key)) {
+      return { status: 'pro', type: 'license_key', isPro: true, key: license.key, license };
+    }
+    
+    // Microsoft Store Purchase Verification (Real call)
+    const storeRes = await runStoreHelper('check');
+    if (storeRes && storeRes.isPro) {
+      if (license.status !== 'pro' || license.type !== 'microsoft_store') {
+        const data = db.getData();
+        data.license = {
+          status: 'pro',
+          type: 'microsoft_store',
+          key: '',
+          purchaseToken: 'microsoft_store_verified',
+          isProDevOverride: data.license?.isProDevOverride || false
+        };
+        db.setData(data);
+        return { status: 'pro', type: 'microsoft_store', isPro: true, purchaseToken: 'microsoft_store_verified', license: data.license };
+      }
+      return { status: 'pro', type: 'microsoft_store', isPro: true, purchaseToken: 'microsoft_store_verified', license };
+    } else {
+      // Revert from Microsoft Store Pro if active previously but no longer entitled
+      if (license.type === 'microsoft_store' && license.status === 'pro') {
+        const data = db.getData();
+        data.license = {
+          status: 'free',
+          type: 'none',
+          key: '',
+          purchaseToken: '',
+          isProDevOverride: data.license?.isProDevOverride || false
+        };
+        db.setData(data);
+        return { status: 'free', type: 'none', isPro: false, license: data.license };
+      }
+    }
+    
+    // Otherwise fallback/expire
+    return { status: 'free', type: 'none', isPro: false, license };
+  });
+
+  ipcMain.handle('license:buy-microsoft', async () => {
+    const activeWindow = BrowserWindow.getFocusedWindow();
+    let hwndStr = '0';
+    if (activeWindow) {
+      const hwndBuffer = activeWindow.getNativeWindowHandle();
+      hwndStr = process.arch === 'x64' ? hwndBuffer.readBigInt64LE().toString() : hwndBuffer.readInt32LE().toString();
+    }
+
+    // Run the real purchase flow in the C# helper
+    const storeRes = await runStoreHelper('purchase', hwndStr);
+    
+    if (storeRes && storeRes.success) {
+      const data = db.getData();
+      data.license = {
+        status: 'pro',
+        type: 'microsoft_store',
+        key: '',
+        purchaseToken: 'microsoft_store_verified',
+        isProDevOverride: data.license?.isProDevOverride || false
+      };
+      db.setData(data);
+      return { success: true, license: data.license };
+    } else {
+      return { success: false, error: storeRes?.error || 'Purchase declined or failed.' };
+    }
+  });
+
+  ipcMain.handle('license:activate-key', (event, key) => {
+    const isValid = validateLicenseKey(key);
+    if (isValid) {
+      const data = db.getData();
+      data.license = {
+        status: 'pro',
+        type: 'license_key',
+        key: key,
+        purchaseToken: '',
+        isProDevOverride: data.license?.isProDevOverride || false
+      };
+      db.setData(data);
+      return { success: true, license: data.license };
+    } else {
+      return { success: false, error: 'License key format incorrect or checksum verification failed.' };
+    }
+  });
+
+  ipcMain.handle('license:deactivate', () => {
+    const data = db.getData();
+    data.license = {
+      status: 'free',
+      type: 'none',
+      key: '',
+      purchaseToken: '',
+      isProDevOverride: data.license?.isProDevOverride || false
+    };
+    db.setData(data);
+    return { success: true, license: data.license };
+  });
+
+  ipcMain.handle('license:toggle-dev-override', (event, enabled) => {
+    const data = db.getData();
+    data.license = {
+      ...data.license,
+      isProDevOverride: enabled
+    };
+    db.setData(data);
+    return { success: true, license: data.license };
   });
 
   createWindow();

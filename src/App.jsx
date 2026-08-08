@@ -14,6 +14,7 @@ import Subscriptions from './pages/Subscriptions/Subscriptions';
 import Backup from './pages/Backup/Backup';
 import BillAnalysis from './pages/Budgets/BillAnalysis';
 import LockScreen from './components/LockScreen';
+import ProUpgrade from './pages/ProUpgrade/ProUpgrade';
 
 export default function App() {
   return (
@@ -27,7 +28,7 @@ export default function App() {
 
 function AppContent() {
   const [activeTab, setActiveTab] = useState('dashboard');
-  const { settings, loading, unlockDatabase } = useDatabase();
+  const { settings, loading, unlockDatabase, isPro } = useDatabase();
   const [unlocked, setUnlocked] = useState(false);
 
   useEffect(() => {
@@ -39,6 +40,11 @@ function AppContent() {
   }, [settings?.theme]);
 
   const renderActivePage = () => {
+    const isPremiumTab = ['bills', 'subscriptions', 'backup'].includes(activeTab);
+    if (isPremiumTab && !isPro) {
+      return <ProUpgrade activeTab={activeTab} />;
+    }
+
     switch (activeTab) {
       case 'dashboard':
         return <Dashboard onNavigate={setActiveTab} />;

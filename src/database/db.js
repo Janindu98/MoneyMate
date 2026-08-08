@@ -162,6 +162,13 @@ export default class Database {
         taxId: '',
         epfId: '',
         etfId: ''
+      },
+      license: {
+        status: 'free',
+        type: 'none',
+        key: '',
+        purchaseToken: '',
+        isProDevOverride: false
       }
     };
   }
@@ -261,6 +268,15 @@ export default class Database {
     if (!this.data.settings.billLimits) this.data.settings.billLimits = this.getInitialState().settings.billLimits;
     if (!this.data.profile) {
       this.data.profile = this.getInitialState().profile;
+    }
+    if (!this.data.license) {
+      this.data.license = {
+        status: 'free',
+        type: 'none',
+        key: '',
+        purchaseToken: '',
+        isProDevOverride: false
+      };
     }
   }
 

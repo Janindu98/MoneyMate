@@ -38,5 +38,20 @@ export const api = {
   },
   readEncryptedFile: async () => {
     return await window.api.readEncryptedFile();
+  },
+  checkLicense: async () => {
+    return await window.api.checkLicense();
+  },
+  purchaseMicrosoftStore: async () => {
+    return await window.api.purchaseMicrosoftStore();
+  },
+  activateLicenseKey: async (key) => {
+    return await window.api.activateLicenseKey(key);
+  },
+  deactivateLicense: async () => {
+    return await window.api.deactivateLicense();
+  },
+  toggleDevOverride: async (enabled) => {
+    return await window.api.toggleDevOverride(enabled);
   }
 };

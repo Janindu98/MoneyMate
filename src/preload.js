@@ -13,5 +13,10 @@ contextBridge.exposeInMainWorld('api', {
   syncGDrive: () => ipcRenderer.invoke('db:sync-gdrive'),
   syncCloudFolder: (backupPath) => ipcRenderer.invoke('db:sync-cloud-folder', backupPath),
   writeEncryptedFile: (content, defaultName) => ipcRenderer.invoke('db:write-encrypted-file', content, defaultName),
-  readEncryptedFile: () => ipcRenderer.invoke('db:read-encrypted-file')
+  readEncryptedFile: () => ipcRenderer.invoke('db:read-encrypted-file'),
+  checkLicense: () => ipcRenderer.invoke('license:check'),
+  purchaseMicrosoftStore: () => ipcRenderer.invoke('license:buy-microsoft'),
+  activateLicenseKey: (key) => ipcRenderer.invoke('license:activate-key', key),
+  deactivateLicense: () => ipcRenderer.invoke('license:deactivate'),
+  toggleDevOverride: (enabled) => ipcRenderer.invoke('license:toggle-dev-override', enabled)
 });
