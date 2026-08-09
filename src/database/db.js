@@ -130,6 +130,7 @@ export default class Database {
       settings: {
         currency: 'LKR',
         theme: 'dark',
+        fontSize: 'medium',
         budgetLimits: {
           FoodDining: 20000,
           BillPayment: 30000,
@@ -139,6 +140,7 @@ export default class Database {
           HealthcareMedical: 10000,
           Shopping: 15000,
           Education: 10000,
+          Withdrawal: 10000,
           Others: 12000
         },
         billLimits: {
@@ -161,7 +163,16 @@ export default class Database {
         accountNumber: '',
         taxId: '',
         epfId: '',
-        etfId: ''
+        etfId: '',
+        contributions: []
+      },
+      license: {
+        status: 'free',
+        type: 'none',
+        key: '',
+        purchaseToken: '',
+        isProDevOverride: false
+
       }
     };
   }
@@ -259,8 +270,21 @@ export default class Database {
     if (!this.data.settings.theme) this.data.settings.theme = 'dark';
     if (!this.data.settings.budgetLimits) this.data.settings.budgetLimits = this.getInitialState().settings.budgetLimits;
     if (!this.data.settings.billLimits) this.data.settings.billLimits = this.getInitialState().settings.billLimits;
+    if (!this.data.settings.fontSize) this.data.settings.fontSize = 'medium';
     if (!this.data.profile) {
       this.data.profile = this.getInitialState().profile;
+    }
+    if (!this.data.license) {
+      this.data.license = {
+        status: 'free',
+        type: 'none',
+        key: '',
+        purchaseToken: '',
+        isProDevOverride: false
+      };
+    }
+    if (!Array.isArray(this.data.profile.contributions)) {
+      this.data.profile.contributions = [];
     }
   }
 

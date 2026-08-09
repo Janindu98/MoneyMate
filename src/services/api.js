@@ -24,8 +24,17 @@ export const api = {
   selectFile: async () => {
     return await window.api.selectFile();
   },
+  selectImage: async () => {
+    return await window.api.selectImage();
+  },
   selectFolder: async () => {
     return await window.api.selectFolder();
+  },
+  saveTransactionImage: async (filePath) => {
+    return await window.api.saveTransactionImage(filePath);
+  },
+  readImageBase64: async (filePath) => {
+    return await window.api.readImageBase64(filePath);
   },
   syncGDrive: async () => {
     return await window.api.syncGDrive();
@@ -38,5 +47,20 @@ export const api = {
   },
   readEncryptedFile: async () => {
     return await window.api.readEncryptedFile();
+  },
+  checkLicense: async () => {
+    return await window.api.checkLicense();
+  },
+  purchaseMicrosoftStore: async () => {
+    return await window.api.purchaseMicrosoftStore();
+  },
+  activateLicenseKey: async (key) => {
+    return await window.api.activateLicenseKey(key);
+  },
+  deactivateLicense: async () => {
+    return await window.api.deactivateLicense();
+  },
+  toggleDevOverride: async (enabled) => {
+    return await window.api.toggleDevOverride(enabled);
   }
 };

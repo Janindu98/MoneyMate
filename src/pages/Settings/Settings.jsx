@@ -6,7 +6,18 @@ import Modal from '../../components/Modal';
 import ConfirmModal from '../../components/ConfirmModal';
 
 export default function Settings() {
-  const { settings, updateSettings, restoreDatabase, showToast: hookShowToast } = useDatabase();
+  const { 
+    settings, 
+    updateSettings, 
+    restoreDatabase, 
+    showToast: hookShowToast,
+    license,
+    isPro,
+    purchaseProMicrosoftStore,
+    activateLicenseKey,
+    deactivateLicense,
+    setProDevOverride
+  } = useDatabase();
   const { showToast } = useToast();
 
   const [confirmState, setConfirmState] = useState({ isOpen: false, title: '', message: '', onConfirm: null, type: 'danger', requireTextInput: '' });
@@ -26,6 +37,7 @@ export default function Settings() {
   const [verifyModalOpen, setVerifyModalOpen] = useState(false);
   const [verifyValue, setVerifyValue] = useState('');
   const [pendingType, setPendingType] = useState('');
+  const [settingsLicenseKey, setSettingsLicenseKey] = useState('');
 
   const handleSecurityChange = (e) => {
     const val = e.target.value;
@@ -131,6 +143,12 @@ export default function Settings() {
     showToast(`App theme set to: ${val === 'light' ? 'Light Theme' : 'Dark Theme'}`);
   };
 
+  const handleFontSizeChange = (e) => {
+    const val = e.target.value;
+    updateSettings({ fontSize: val });
+    showToast(`App font size set to: ${val.charAt(0).toUpperCase() + val.slice(1)}`);
+  };
+
   const handleResetData = () => {
     showConfirm(
       'Reset Database?',
@@ -218,6 +236,26 @@ export default function Settings() {
           </div>
         </div>
 
+        {/* Font Size Options */}
+        <div className="settings-section">
+          <div className="settings-section-title">Font Size Customization</div>
+          <div className="settings-section-desc">Adjust the default sizing of the letters, numbers, and user interfaces.</div>
+          <div className="settings-row">
+            <div className="settings-row-info">
+              <div className="settings-row-title">App Font Size</div>
+              <div className="settings-row-desc">Currently active font size: <strong style={{ textTransform: 'capitalize' }}>{settings.fontSize || 'Medium'}</strong></div>
+            </div>
+            <div>
+              <select className="input-ctrl" value={settings.fontSize || 'medium'} onChange={handleFontSizeChange} style={{ width: '150px' }}>
+                <option value="small">Small</option>
+                <option value="medium">Medium (Default)</option>
+                <option value="large">Large</option>
+                <option value="xlarge">Extra Large</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
         {/* Security Lock Options */}
         <div className="settings-section">
           <div className="settings-section-title">Security & Vault Protection</div>
@@ -233,6 +271,95 @@ export default function Settings() {
                 <option value="pin">PIN Lock</option>
                 <option value="password">Password</option>
               </select>
+            </div>
+          </div>
+        </div>
+
+        {/* Licensing & Pro Features */}
+        <div className="settings-section">
+          <div className="settings-section-title">License & Subscription Tiers</div>
+          <div className="settings-section-desc">Manage your MoneyMate license key and unlock premium capabilities.</div>
+          <div className="settings-row" style={{ flexDirection: 'column', alignItems: 'stretch' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <div className="settings-row-info">
+                <div className="settings-row-title">Active License Status</div>
+                <div className="settings-row-desc">
+                  Current Status: <strong style={{ color: isPro ? '#34d399' : '#fbbf24' }}>{isPro ? 'Pro Mode Active' : 'Free Tier'}</strong>
+                  {isPro && license?.type === 'dev_override' && ' (Development Mode)'}
+                  {isPro && license?.type === 'microsoft_store' && ' (Microsoft Store App)'}
+                  {isPro && license?.type === 'license_key' && ' (Standalone License Key)'}
+                </div>
+              </div>
+              <div>
+                {isPro ? (
+                  <button className="btn btn-secondary" onClick={async () => {
+                    await deactivateLicense();
+                    showToast('License deactivated. Reverted to Free mode.');
+                  }}>Deactivate License</button>
+                ) : (
+                  <button className="btn btn-primary" onClick={async () => {
+                    const res = await purchaseProMicrosoftStore();
+                    if (res.success) {
+                      showToast('Microsoft Store purchase simulation succeeded! MoneyMate Pro activated.');
+                    } else if (res.error) {
+                      showToast(res.error, 'error');
+                    }
+                  }} style={{ background: 'linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%)', border: 'none' }}>
+                    Upgrade to Pro ($9.99)
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {!isPro && (
+              <div style={{ background: 'rgba(255, 255, 255, 0.03)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '16px', marginTop: '8px' }}>
+                <div style={{ fontSize: '0.85rem', fontWeight: 600, marginBottom: '10px' }}>Activate Standalone Offline Key</div>
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <input
+                    type="text"
+                    className="input-ctrl"
+                    placeholder="MM-XXXX-XXXX-XXXX-XXXX"
+                    value={settingsLicenseKey}
+                    onChange={e => setSettingsLicenseKey(e.target.value)}
+                    style={{ flex: 1, fontFamily: 'monospace', letterSpacing: '0.05em', color: '#fff', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border-color)', borderRadius: '6px', padding: '8px 12px' }}
+                  />
+                  <button className="btn btn-secondary" onClick={async () => {
+                    if (!settingsLicenseKey.trim()) {
+                      showToast('Please enter a key.', 'warning');
+                      return;
+                    }
+                    const res = await activateLicenseKey(settingsLicenseKey.trim());
+                    if (res.success) {
+                      showToast('License key activated! Welcome to MoneyMate Pro.');
+                      setSettingsLicenseKey('');
+                    } else {
+                      showToast(res.error || 'Invalid key checksum.', 'error');
+                    }
+                  }}>Activate Key</button>
+                </div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '8px' }}>
+                  Enter the standalone key purchased outside the store. Try valid keys: <code>MM-FREE-PROM-O26X-6F7B</code>
+                </div>
+              </div>
+            )}
+
+            {/* Development Override for Testers */}
+            <div style={{ borderTop: '1px dashed var(--border-color)', paddingTop: '16px', marginTop: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#f87171' }}>Local Development Override</div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Instantly switch Pro state offline during development or UI verification.</div>
+              </div>
+              <div>
+                <input
+                  type="checkbox"
+                  checked={!!license?.isProDevOverride}
+                  onChange={async (e) => {
+                    await setProDevOverride(e.target.checked);
+                    showToast(e.target.checked ? 'Development Mode Pro Override Enabled.' : 'Development Mode Pro Override Disabled.');
+                  }}
+                  style={{ width: '20px', height: '20px', cursor: 'pointer' }}
+                />
+              </div>
             </div>
           </div>
         </div>

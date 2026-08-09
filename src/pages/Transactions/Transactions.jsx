@@ -17,7 +17,8 @@ export default function Transactions() {
     addCategory,
     deleteCategory,
     settings,
-    salaryHistory
+    salaryHistory,
+    isPro
   } = useDatabase();
   const { showToast } = useToast();
 
@@ -60,6 +61,64 @@ export default function Transactions() {
   const [txPayee, setTxPayee] = useState('');
   const [txAmount, setTxAmount] = useState('');
   const [txDesc, setTxDesc] = useState('');
+  const [txImagePath, setTxImagePath] = useState('');
+  const [txImageName, setTxImageName] = useState('');
+  const [selectedTxImageBase64, setSelectedTxImageBase64] = useState('');
+
+  React.useEffect(() => {
+    if (selectedTx && selectedTx.imagePath) {
+      async function loadImage() {
+        const res = await api.readImageBase64(selectedTx.imagePath);
+        if (res.success) {
+          setSelectedTxImageBase64(res.base64);
+        } else {
+          console.error(res.error);
+          setSelectedTxImageBase64('');
+        }
+      }
+      loadImage();
+    } else {
+      setSelectedTxImageBase64('');
+    }
+  }, [selectedTx]);
+
+  const handleSelectImage = async () => {
+    if (!isPro) {
+      showToast('Attaching transaction images requires a MoneyMate Pro license.', 'warning');
+      return;
+    }
+    try {
+      const fileRes = await api.selectImage();
+      if (!fileRes.canceled && fileRes.filePath) {
+        setTxImagePath(fileRes.filePath);
+        const split = fileRes.filePath.split(/[\\/]/);
+        setTxImageName(split[split.length - 1]);
+        showToast('Image selected. It will be copied locally on submission.');
+      }
+    } catch (err) {
+      console.error(err);
+      showToast('Failed to select image.', 'error');
+    }
+  };
+
+  const handleOpenImage = async (path) => {
+    if (!isPro) {
+      showToast('Viewing receipt images requires a MoneyMate Pro license.', 'warning');
+      return;
+    }
+    if (!path) return;
+    try {
+      const res = await api.openFile(path);
+      if (res.success) {
+        showToast('Opening transaction image...');
+      } else {
+        showToast(`Failed to open image: ${res.error}`, 'error');
+      }
+    } catch (err) {
+      console.error(err);
+      showToast('Error launching image viewer.', 'error');
+    }
+  };
 
   // Category Form Fields
   const [newCatType, setNewCatType] = useState('Expense');
@@ -124,6 +183,8 @@ export default function Transactions() {
     setTxPayee('');
     setTxAmount('');
     setTxDesc('');
+    setTxImagePath('');
+    setTxImageName('');
     setIsTxModalOpen(true);
   };
 
@@ -137,11 +198,18 @@ export default function Transactions() {
     setTxPayee(tx.payee || '');
     setTxAmount(tx.amount.toString());
     setTxDesc(tx.description || '');
+    setTxImagePath(tx.imagePath || '');
+    if (tx.imagePath) {
+      const split = tx.imagePath.split(/[\\/]/);
+      setTxImageName(split[split.length - 1]);
+    } else {
+      setTxImageName('');
+    }
     setIsTxModalOpen(true);
   };
 
   // Submit transaction
-  const handleTxSubmit = (e) => {
+  const handleTxSubmit = async (e) => {
     e.preventDefault();
     const amountVal = parseFloat(txAmount) || 0;
 
@@ -158,6 +226,17 @@ export default function Transactions() {
       return;
     }
 
+    let finalImagePath = txImagePath;
+    if (txImagePath && !txImagePath.includes('transaction_images')) {
+      const copyRes = await api.saveTransactionImage(txImagePath);
+      if (copyRes.success) {
+        finalImagePath = copyRes.filePath;
+      } else {
+        showToast(`Failed to archive transaction image: ${copyRes.error}`, 'error');
+        return;
+      }
+    }
+
     const payload = {
       date: txDate,
       bankId: txBankId,
@@ -168,7 +247,8 @@ export default function Transactions() {
         ? (accounts.find(a => a.id === txTargetBankId)?.accountName || 'Self') 
         : txPayee.trim(),
       amount: amountVal,
-      description: txDesc.trim() || `${txType} - ${txCategory}`
+      description: txDesc.trim() || `${txType} - ${txCategory}`,
+      imagePath: finalImagePath
     };
 
     if (editId) {
@@ -498,6 +578,34 @@ export default function Transactions() {
                 placeholder="Details of the payment (e.g. Weekly Groceries)"
               />
             </div>
+
+            <div className="form-group" style={{ marginTop: '16px' }}>
+              <label>Transaction Image (Optional Receipt / Invoice)</label>
+              <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginTop: '6px' }}>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={handleSelectImage}
+                  style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 12px', fontSize: '0.85rem', opacity: isPro ? 1 : 0.6 }}
+                >
+                  <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                  {isPro ? (txImagePath ? 'Change Image' : 'Select Image') : 'Select Image (Pro Only)'}
+                </button>
+                {txImagePath && (
+                  <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'rgba(255,255,255,0.03)', padding: '6px 12px', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
+                    {txImageName}
+                    <button
+                      type="button"
+                      onClick={() => { setTxImagePath(''); setTxImageName(''); }}
+                      style={{ background: 'none', border: 'none', color: '#f43f5e', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center' }}
+                      title="Remove Attachment"
+                    >
+                      <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                  </span>
+                )}
+              </div>
+            </div>
           </div>
           <div className="modal-footer">
             <button type="button" className="btn btn-secondary" onClick={() => setIsTxModalOpen(false)}>Cancel</button>
@@ -677,6 +785,60 @@ export default function Transactions() {
                   </div>
                 </div>
 
+                {selectedTx.imagePath ? (
+                  <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '20px', marginTop: '20px' }}>
+                    <h3 style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                      Attached Receipt / Invoice
+                    </h3>
+                    {!isPro ? (
+                      <div style={{
+                        background: 'rgba(99, 102, 241, 0.03)',
+                        border: '1px dashed rgba(99, 102, 241, 0.2)',
+                        borderRadius: '8px',
+                        padding: '16px',
+                        textAlign: 'center'
+                      }}>
+                        <div style={{ fontSize: '1.2rem', marginBottom: '6px' }}>🔒</div>
+                        <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)' }}>MoneyMate Pro Feature</div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
+                          Viewing attached transaction receipts is restricted to Pro users. Upgrade to Pro in Settings to access receipt attachments.
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        {selectedTxImageBase64 ? (
+                          <div style={{ position: 'relative', borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.2)', padding: '10px' }}>
+                            <img 
+                              src={selectedTxImageBase64} 
+                              alt="Transaction attachment" 
+                              style={{ width: '100%', maxHeight: '300px', objectFit: 'contain', display: 'block', cursor: 'pointer', borderRadius: '4px' }}
+                              onClick={() => handleOpenImage(selectedTx.imagePath)}
+                              title="Click to open image in system viewer"
+                            />
+                          </div>
+                        ) : (
+                          <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Loading attachment image...</div>
+                        )}
+                        <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'center' }}>
+                          <button type="button" className="btn btn-secondary" onClick={() => handleOpenImage(selectedTx.imagePath)} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '0.85rem', padding: '8px' }}>
+                            <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" strokeWidth="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                            Open Original Image file
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                ) : (
+                  <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '20px', marginTop: '20px' }}>
+                    <h3 style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                      Attached Receipt / Invoice
+                    </h3>
+                    <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem', fontStyle: 'italic' }}>No receipt or image attached to this transaction.</div>
+                  </div>
+                )}
+
                 {/* salary details if linked */}
                 {salaryRec && (
                   <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '20px', marginTop: '20px' }}>
@@ -722,20 +884,49 @@ export default function Transactions() {
                       )}
                     </div>
 
-                    <div style={{ marginBottom: '16px' }}>
+                     <div style={{ marginBottom: '16px' }}>
                       <h4 style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '6px' }}>Deductions & Statutory</h4>
-                      <div className="deduction-item" style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '4px', fontSize: '0.85rem' }}>
-                        <span>EPF Employee contribution (8%)</span>
-                        <span>{formatCurrency(salaryRec.epfEmployee || 0, settings.currency)}</span>
-                      </div>
-                      <div className="deduction-item" style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '4px', paddingTop: '4px', fontSize: '0.85rem' }}>
-                        <span>EPF Company contribution (12%)</span>
-                        <span>{formatCurrency(salaryRec.epfCompany || 0, settings.currency)}</span>
-                      </div>
-                      <div className="deduction-item" style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '4px', paddingTop: '4px', fontSize: '0.85rem' }}>
-                        <span>ETF Company contribution (3%)</span>
-                        <span>{formatCurrency(salaryRec.etfCompany || 0, settings.currency)}</span>
-                      </div>
+                      
+                      {salaryRec.contributions && salaryRec.contributions.length > 0 ? (
+                        salaryRec.contributions.map(c => (
+                          <React.Fragment key={c.id || c.name}>
+                            {c.employeeContribution > 0 && (
+                              <div className="deduction-item" style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '4px', paddingTop: '4px', fontSize: '0.85rem' }}>
+                                <span>{c.name} Employee ({c.employeeRate}%)</span>
+                                <span>{formatCurrency(c.employeeContribution, settings.currency)}</span>
+                              </div>
+                            )}
+                            {c.employerContribution > 0 && (
+                              <div className="deduction-item" style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '4px', paddingTop: '4px', fontSize: '0.85rem' }}>
+                                <span>{c.name} Employer ({c.employerRate}%)</span>
+                                <span>{formatCurrency(c.employerContribution, settings.currency)}</span>
+                              </div>
+                            )}
+                          </React.Fragment>
+                        ))
+                      ) : (
+                        <>
+                          {salaryRec.epfEmployee > 0 && (
+                            <div className="deduction-item" style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '4px', fontSize: '0.85rem' }}>
+                              <span>EPF Employee contribution (8%)</span>
+                              <span>{formatCurrency(salaryRec.epfEmployee, settings.currency)}</span>
+                            </div>
+                          )}
+                          {salaryRec.epfCompany > 0 && (
+                            <div className="deduction-item" style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '4px', paddingTop: '4px', fontSize: '0.85rem' }}>
+                              <span>EPF Company contribution (12%)</span>
+                              <span>{formatCurrency(salaryRec.epfCompany, settings.currency)}</span>
+                            </div>
+                          )}
+                          {salaryRec.etfCompany > 0 && (
+                            <div className="deduction-item" style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '4px', paddingTop: '4px', fontSize: '0.85rem' }}>
+                              <span>ETF Company contribution (3%)</span>
+                              <span>{formatCurrency(salaryRec.etfCompany, settings.currency)}</span>
+                            </div>
+                          )}
+                        </>
+                      )}
+
                       {(salaryRec.tax > 0) && (
                         <div className="deduction-item" style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '4px', paddingTop: '4px', fontSize: '0.85rem' }}>
                           <span>Tax ({salaryRec.taxType})</span>

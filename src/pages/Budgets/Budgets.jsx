@@ -5,7 +5,7 @@ import Chart from 'chart.js/auto';
 import Modal from '../../components/Modal';
 
 export default function Budgets() {
-  const { transactions, settings, updateSettings } = useDatabase();
+  const { transactions, settings, updateSettings, categories, isPro } = useDatabase();
 
   const pieChartRef = useRef(null);
   const barChartRef = useRef(null);
@@ -20,6 +20,7 @@ export default function Budgets() {
     HealthcareMedical: 10000,
     Shopping: 15000,
     Education: 10000,
+    Withdrawal: 10000,
     Others: 12000
   };
 
@@ -32,7 +33,11 @@ export default function Budgets() {
   const [limitHealthcareMedical, setLimitHealthcareMedical] = useState(budgetLimits.HealthcareMedical || 10000);
   const [limitShopping, setLimitShopping] = useState(budgetLimits.Shopping || 15000);
   const [limitEducation, setLimitEducation] = useState(budgetLimits.Education || 10000);
+  const [limitWithdrawal, setLimitWithdrawal] = useState(budgetLimits.Withdrawal !== undefined ? budgetLimits.Withdrawal : 10000);
   const [limitOthers, setLimitOthers] = useState(budgetLimits.Others || 12000);
+  
+  const [customLimits, setCustomLimits] = useState({});
+  const [selectedNewCat, setSelectedNewCat] = useState('');
 
   // Sync state if settings load later
   useEffect(() => {
@@ -45,7 +50,17 @@ export default function Budgets() {
       setLimitHealthcareMedical(settings.budgetLimits.HealthcareMedical || 0);
       setLimitShopping(settings.budgetLimits.Shopping || 0);
       setLimitEducation(settings.budgetLimits.Education || 0);
+      setLimitWithdrawal(settings.budgetLimits.Withdrawal !== undefined ? settings.budgetLimits.Withdrawal : 10000);
       setLimitOthers(settings.budgetLimits.Others || 0);
+
+      // Collect custom categories limits
+      const customs = {};
+      Object.keys(settings.budgetLimits).forEach(key => {
+        if (!['FoodDining', 'BillPayment', 'Groceries', 'Transportation', 'Fuel', 'HealthcareMedical', 'Shopping', 'Education', 'Others', 'Withdrawal'].includes(key)) {
+          customs[key] = settings.budgetLimits[key];
+        }
+      });
+      setCustomLimits(customs);
     }
   }, [settings]);
 
@@ -61,7 +76,9 @@ export default function Budgets() {
         HealthcareMedical: parseFloat(limitHealthcareMedical) || 0,
         Shopping: parseFloat(limitShopping) || 0,
         Education: parseFloat(limitEducation) || 0,
-        Others: parseFloat(limitOthers) || 0
+        Withdrawal: parseFloat(limitWithdrawal) || 0,
+        Others: parseFloat(limitOthers) || 0,
+        ...customLimits
       }
     });
     setIsLimitsModalOpen(false);
@@ -102,7 +119,13 @@ export default function Budgets() {
   let healthcareMedicalSpent = 0;
   let shoppingSpent = 0;
   let educationSpent = 0;
+  let withdrawalSpent = 0;
   let othersSpent = 0;
+
+  const customSpent = {};
+  Object.keys(customLimits).forEach(cat => {
+    customSpent[cat] = 0;
+  });
 
   currentMonthExpenses.forEach(tx => {
     const category = tx.category.toLowerCase();
@@ -123,12 +146,20 @@ export default function Budgets() {
       shoppingSpent += tx.amount;
     } else if (category.includes('education') || category.includes('school') || category.includes('college') || category.includes('university') || category.includes('tuition') || category.includes('course') || category.includes('class')) {
       educationSpent += tx.amount;
+    } else if (tx.type === 'Withdrawal' || category.includes('withdrawal')) {
+      withdrawalSpent += tx.amount;
     } else {
-      othersSpent += tx.amount;
+      const matchedCustom = Object.keys(customLimits).find(c => c.toLowerCase() === tx.category.toLowerCase());
+      if (matchedCustom) {
+        customSpent[matchedCustom] += tx.amount;
+      } else {
+        othersSpent += tx.amount;
+      }
     }
   });
 
-  const totalExpense = foodDiningSpent + billPaymentSpent + groceriesSpent + transportationSpent + fuelSpent + healthcareMedicalSpent + shoppingSpent + educationSpent + othersSpent;
+  const totalCustomExpense = Object.values(customSpent).reduce((acc, curr) => acc + curr, 0);
+  const totalExpense = foodDiningSpent + billPaymentSpent + groceriesSpent + transportationSpent + fuelSpent + healthcareMedicalSpent + shoppingSpent + educationSpent + withdrawalSpent + othersSpent + totalCustomExpense;
   const monthlySavings = Math.max(0, monthlyIncome - totalExpense);
 
   const baseIncomeForLimits = monthlyIncome > 0 ? monthlyIncome : 100000;
@@ -142,6 +173,13 @@ export default function Budgets() {
     { name: 'Groceries', targetPct: Math.round((limitGroceries / baseIncomeForLimits) * 100), actualAmt: groceriesSpent, targetAmt: limitGroceries },
     { name: 'Education', targetPct: Math.round((limitEducation / baseIncomeForLimits) * 100), actualAmt: educationSpent, targetAmt: limitEducation },
     { name: 'Fuel', targetPct: Math.round((limitFuel / baseIncomeForLimits) * 100), actualAmt: fuelSpent, targetAmt: limitFuel },
+    { name: 'Withdrawal', targetPct: Math.round((limitWithdrawal / baseIncomeForLimits) * 100), actualAmt: withdrawalSpent, targetAmt: limitWithdrawal },
+    ...Object.keys(customLimits).map(cat => ({
+      name: cat,
+      targetPct: Math.round((customLimits[cat] / baseIncomeForLimits) * 100),
+      actualAmt: customSpent[cat] || 0,
+      targetAmt: customLimits[cat]
+    })),
     { name: 'Others', targetPct: 0, actualAmt: othersSpent, targetAmt: limitOthers }
   ];
 
@@ -183,16 +221,29 @@ export default function Budgets() {
     const pieCtx = pieChartRef.current.getContext('2d');
     const hasExpenseData = totalExpense > 0;
 
-    // Calculate category percentages
-    const foodDiningPct = totalExpense > 0 ? ((foodDiningSpent / totalExpense) * 100).toFixed(1) : '0.0';
-    const billPaymentPct = totalExpense > 0 ? ((billPaymentSpent / totalExpense) * 100).toFixed(1) : '0.0';
-    const healthcareMedicalPct = totalExpense > 0 ? ((healthcareMedicalSpent / totalExpense) * 100).toFixed(1) : '0.0';
-    const shoppingPct = totalExpense > 0 ? ((shoppingSpent / totalExpense) * 100).toFixed(1) : '0.0';
-    const transportationPct = totalExpense > 0 ? ((transportationSpent / totalExpense) * 100).toFixed(1) : '0.0';
-    const groceriesPct = totalExpense > 0 ? ((groceriesSpent / totalExpense) * 100).toFixed(1) : '0.0';
-    const educationPct = totalExpense > 0 ? ((educationSpent / totalExpense) * 100).toFixed(1) : '0.0';
-    const fuelPct = totalExpense > 0 ? ((fuelSpent / totalExpense) * 100).toFixed(1) : '0.0';
-    const othersPct = totalExpense > 0 ? ((othersSpent / totalExpense) * 100).toFixed(1) : '0.0';
+    const pieLabels = [];
+    const pieData = [];
+    const pieColors = [];
+    const baseColors = ['#ec4899', '#6366f1', '#3b82f6', '#7c3aed', '#14b8a6', '#10b981', '#eab308', '#f97316', '#ff4d4d', '#ff8533', '#33cc33', '#33cccc', '#3333cc', '#cc33cc'];
+    let colorIdx = 0;
+
+    scorecard.forEach(item => {
+      const isDefault = [
+        'Food & Dining', 'Bill & Payment', 'Healthcare & Medical', 'Shopping',
+        'Transportation', 'Groceries', 'Education', 'Fuel', 'Withdrawal', 'Others'
+      ].includes(item.name);
+      if (item.actualAmt > 0 || isDefault) {
+        const pct = totalExpense > 0 ? ((item.actualAmt / totalExpense) * 100).toFixed(1) : '0.0';
+        pieLabels.push(`${item.name} (${pct}%)`);
+        pieData.push(item.actualAmt);
+        if (item.name === 'Others') {
+          pieColors.push('#64748b');
+        } else {
+          pieColors.push(baseColors[colorIdx % baseColors.length]);
+          colorIdx++;
+        }
+      }
+    });
 
     const centerTextPlugin = {
       id: 'centerText',
@@ -223,26 +274,10 @@ export default function Budgets() {
     const pieChart = new Chart(pieCtx, {
       type: 'doughnut',
       data: {
-        labels: hasExpenseData
-          ? [
-            `Food & Dining (${foodDiningPct}%)`,
-            `Bill & Payment (${billPaymentPct}%)`,
-            `Healthcare & Medical (${healthcareMedicalPct}%)`,
-            `Shopping (${shoppingPct}%)`,
-            `Transportation (${transportationPct}%)`,
-            `Groceries (${groceriesPct}%)`,
-            `Education (${educationPct}%)`,
-            `Fuel (${fuelPct}%)`,
-            `Others (${othersPct}%)`
-          ]
-          : ['No expense logged'],
+        labels: hasExpenseData ? pieLabels : ['No expense logged'],
         datasets: [{
-          data: hasExpenseData
-            ? [foodDiningSpent, billPaymentSpent, healthcareMedicalSpent, shoppingSpent, transportationSpent, groceriesSpent, educationSpent, fuelSpent, othersSpent]
-            : [1],
-          backgroundColor: hasExpenseData
-            ? ['#ec4899', '#6366f1', '#3b82f6', '#7c3aed', '#14b8a6', '#10b981', '#eab308', '#f97316', '#64748b']
-            : ['rgba(255, 255, 255, 0.05)'],
+          data: hasExpenseData ? pieData : [1],
+          backgroundColor: hasExpenseData ? pieColors : ['rgba(255, 255, 255, 0.05)'],
           borderWidth: 0
         }]
       },
@@ -323,7 +358,35 @@ export default function Budgets() {
       pieChart.destroy();
       barChart.destroy();
     };
-  }, [transactions, settings.theme, settings.currency, totalExpense, foodDiningSpent, billPaymentSpent, groceriesSpent, transportationSpent, fuelSpent, healthcareMedicalSpent, shoppingSpent, educationSpent, othersSpent, selectedMonth, selectedYear]);
+  }, [transactions, settings.theme, settings.currency, totalExpense, scorecard, selectedMonth, selectedYear]);
+
+  const allAvailableCats = Array.from(new Set([
+    ...(categories?.['Expense'] || []),
+    ...(categories?.['Online Payment'] || [])
+  ]));
+
+  const billPayCats = (categories?.['Bill & Payment'] || []).map(c => c.toLowerCase());
+
+  const defaultBudgetNames = [
+    'food & dining', 'food', 'dining',
+    'bill & payment',
+    'groceries',
+    'transportation', 'transport', 'transportations', 'commute', 'uber', 'pickme', 'bus', 'train',
+    'fuel',
+    'healthcare & medical', 'healthcare', 'medical', 'medicine', 'pharmacy', 'hospital', 'clinic',
+    'shopping', 'clothes', 'store',
+    'education', 'school', 'college', 'university', 'tuition', 'course', 'class',
+    'withdrawal', 'cash withdrawal', 'atm withdrawal',
+    'others', 'other'
+  ];
+
+  const filteredCatsForSelect = allAvailableCats.filter(cat => {
+    const catLower = cat.toLowerCase();
+    if (billPayCats.includes(catLower)) return false;
+    if (defaultBudgetNames.includes(catLower)) return false;
+    if (Object.keys(customLimits).some(k => k.toLowerCase() === catLower)) return false;
+    return true;
+  });
 
   return (
     <div className="page active">
@@ -443,7 +506,7 @@ export default function Budgets() {
       {/* MODAL: CONFIGURE BUDGET LIMITS */}
       <Modal isOpen={isLimitsModalOpen} onClose={() => setIsLimitsModalOpen(false)} title="Configure Budget Limits">
         <form onSubmit={handleSaveLimits}>
-          <div className="modal-body">
+          <div className="modal-body" style={{ maxHeight: '75vh', overflowY: 'auto' }}>
             <div className="form-row-2">
               <div className="form-group">
                 <label>Food & Dining Limit (Rs.)</label>
@@ -554,6 +617,18 @@ export default function Budgets() {
 
             <div className="form-row-2">
               <div className="form-group">
+                <label>Withdrawal Limit (Rs.)</label>
+                <input
+                  type="number"
+                  className="input-ctrl"
+                  value={limitWithdrawal}
+                  onChange={e => setLimitWithdrawal(e.target.value)}
+                  placeholder="10000"
+                  min="0"
+                  required
+                />
+              </div>
+              <div className="form-group">
                 <label>Others Limit (Rs.)</label>
                 <input
                   type="number"
@@ -565,6 +640,101 @@ export default function Budgets() {
                   required
                 />
               </div>
+            </div>
+
+            {/* Pro Custom Category Limits Section */}
+            <div style={{ marginTop: '16px', borderTop: '1px solid var(--border-color)', paddingTop: '12px' }}>
+              <h4 style={{ fontSize: '0.9rem', fontWeight: 700, marginBottom: '8px', color: isPro ? 'var(--text-primary)' : 'var(--text-muted)' }}>
+                Custom Category Limits {!isPro && ' (Pro Only)'}
+              </h4>
+              
+              {!isPro ? (
+                <div style={{
+                  background: 'rgba(99, 102, 241, 0.05)',
+                  border: '1px dashed rgba(99, 102, 241, 0.3)',
+                  borderRadius: '10px',
+                  padding: '16px',
+                  textAlign: 'center',
+                  marginTop: '10px'
+                }}>
+                  <div style={{ fontSize: '1.2rem', marginBottom: '8px' }}>🔒</div>
+                  <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)' }}>Custom Category Limits</div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '4px', lineHeight: '1.4' }}>
+                    Custom category budgets are only available to MoneyMate Pro users. Upgrade in settings to set budgets for any custom expense category.
+                  </div>
+                </div>
+              ) : (
+                <>
+                  {Object.keys(customLimits).length > 0 && (
+                    <div style={{ marginBottom: '16px' }}>
+                      {Object.keys(customLimits).map(catName => (
+                        <div className="form-row-2" key={catName} style={{ alignItems: 'flex-end', marginTop: '8px' }}>
+                          <div className="form-group" style={{ flexGrow: 1 }}>
+                            <label>{catName} Limit (Rs.)</label>
+                            <input
+                              type="number"
+                              className="input-ctrl"
+                              value={customLimits[catName]}
+                              onChange={e => {
+                                const val = parseFloat(e.target.value) || 0;
+                                setCustomLimits(prev => ({ ...prev, [catName]: val }));
+                              }}
+                              min="0"
+                              required
+                            />
+                          </div>
+                          <button
+                            type="button"
+                            className="btn btn-secondary"
+                            onClick={() => {
+                              setCustomLimits(prev => {
+                                const copy = { ...prev };
+                                delete copy[catName];
+                                return copy;
+                              });
+                            }}
+                            style={{ marginBottom: '4px', height: '36px', padding: '0 12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {filteredCatsForSelect.length > 0 && (
+                    <div style={{ marginTop: '16px', borderTop: '1px solid var(--border-color)', paddingTop: '12px' }}>
+                      <h5 style={{ fontSize: '0.8rem', fontWeight: 700, marginBottom: '8px', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Add Custom Category Limit</h5>
+                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                        <select
+                          className="input-ctrl"
+                          value={selectedNewCat}
+                          onChange={e => setSelectedNewCat(e.target.value)}
+                          style={{ flexGrow: 1 }}
+                        >
+                          <option value="">-- Select Category --</option>
+                          {filteredCatsForSelect.map(c => (
+                            <option key={c} value={c}>{c}</option>
+                          ))}
+                        </select>
+                        <button
+                          type="button"
+                          className="btn btn-secondary"
+                          onClick={() => {
+                            if (selectedNewCat) {
+                              setCustomLimits(prev => ({ ...prev, [selectedNewCat]: 0 }));
+                              setSelectedNewCat('');
+                            }
+                          }}
+                          style={{ whiteSpace: 'nowrap', height: '36px' }}
+                        >
+                          Add Category
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
             </div>
           </div>
           <div className="modal-footer">

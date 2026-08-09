@@ -64,4 +64,19 @@ module.exports = {
       [FuseV1Options.OnlyLoadAppFromAsar]: true,
     }),
   ],
+  hooks: {
+    postPackage: async (forgeConfig, packageResult) => {
+      const fs = require('node:fs');
+      const path = require('node:path');
+      for (const outputPath of packageResult.outputPaths) {
+        const dest = path.join(outputPath, 'resources', 'build-native');
+        const src = path.join(__dirname, 'build-native');
+        if (fs.existsSync(src)) {
+          fs.mkdirSync(dest, { recursive: true });
+          fs.cpSync(src, dest, { recursive: true });
+          console.log(`Copied build-native to ${dest}`);
+        }
+      }
+    }
+  }
 };

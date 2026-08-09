@@ -45,6 +45,7 @@ export default function Salary() {
   const [bankAccountId, setBankAccountId] = useState('');
   const [payslipPath, setPayslipPath] = useState('');
   const [payslipName, setPayslipName] = useState('');
+  const [salaryContributions, setSalaryContributions] = useState({});
 
   // Prefill states when profile/accounts change
   useEffect(() => {
@@ -65,23 +66,27 @@ export default function Salary() {
     }
   }, [profile, accounts, isModalOpen]);
 
-  // Dropdown options
-  const developerPositions = [
-    'Intern Software Developer',
-    'Junior Software Engineer',
-    'Associate Software Engineer',
-    'Software Engineer',
-    'Senior Software Engineer',
-    'Tech Lead',
-    'Tech Architect',
-    'Project Manager',
-    'Engineering Manager'
-  ];
+
 
   // Statutory suggestion math based on Basic Salary
   const handleBasicSalaryChange = (val) => {
     setBasicSalary(val);
     const basic = parseFloat(val) || 0;
+    
+    // Auto-suggest values for custom contributions
+    const updatedContribs = { ...salaryContributions };
+    if (profile && Array.isArray(profile.contributions)) {
+      profile.contributions.forEach(c => {
+        const empRate = parseFloat(c.employeeRate) || 0;
+        const emrRate = parseFloat(c.employerRate) || 0;
+        updatedContribs[c.id] = {
+          employee: basic > 0 ? (basic * empRate / 100).toFixed(2) : '',
+          employer: basic > 0 ? (basic * emrRate / 100).toFixed(2) : ''
+        };
+      });
+    }
+    setSalaryContributions(updatedContribs);
+
     if (basic > 0) {
       setEpfEmployee((basic * 0.08).toFixed(2));
       setEpfCompany((basic * 0.12).toFixed(2));
@@ -155,16 +160,37 @@ export default function Salary() {
     const bonusVal = parseFloat(bonus) || 0;
     const otVal = parseFloat(overtime) || 0;
     
-    const epfEmpVal = parseFloat(epfEmployee) || 0;
-    const epfCompVal = parseFloat(epfCompany) || 0;
-    const etfCompVal = parseFloat(etfCompany) || 0;
+    // Calculate dynamic contributions
+    let employeeContributionsSum = 0;
+    const salarySlipContributions = (profile?.contributions || []).map(c => {
+      const empContrib = parseFloat(salaryContributions[c.id]?.employee) || 0;
+      const emrContrib = parseFloat(salaryContributions[c.id]?.employer) || 0;
+      employeeContributionsSum += empContrib;
+      return {
+        id: c.id,
+        name: c.name,
+        memberId: c.memberId,
+        employeeRate: parseFloat(c.employeeRate) || 0,
+        employerRate: parseFloat(c.employerRate) || 0,
+        employeeContribution: empContrib,
+        employerContribution: emrContrib
+      };
+    });
+
+    const epfContrib = salarySlipContributions.find(c => c.name.toLowerCase().includes('epf'));
+    const etfContrib = salarySlipContributions.find(c => c.name.toLowerCase().includes('etf'));
+
+    const epfEmpVal = epfContrib ? epfContrib.employeeContribution : 0;
+    const epfCompVal = epfContrib ? epfContrib.employerContribution : 0;
+    const etfCompVal = etfContrib ? etfContrib.employerContribution : 0;
+
     const taxVal = parseFloat(tax) || 0;
     const loanVal = parseFloat(loanDeduction) || 0;
     const otherDedVal = parseFloat(otherDeduction) || 0;
 
     // Auto calculations
     const grossEarnings = basic + fixedAllow + otherAllow + bonusVal + otVal;
-    const totalDeductions = epfEmpVal + epfCompVal + etfCompVal + taxVal + loanVal + otherDedVal;
+    const totalDeductions = taxVal + loanVal + otherDedVal + employeeContributionsSum;
     const netSalary = grossEarnings - totalDeductions;
     const netAllowance = fixedAllow + otherAllow;
 
@@ -211,7 +237,8 @@ export default function Salary() {
       paymentDate,
       bankName,
       bankAccount: bankAccountId,
-      payslipPath: finalPayslipPath
+      payslipPath: finalPayslipPath,
+      contributions: salarySlipContributions
     };
 
     const salaryId = `sal_${Date.now()}`;
@@ -256,8 +283,26 @@ export default function Salary() {
 
   const bonusEarned = salaryHistory.reduce((sum, s) => sum + (s.bonus || 0), 0);
   const overtimeEarned = salaryHistory.reduce((sum, s) => sum + (s.overtime || 0), 0);
-  const totalEPF = salaryHistory.reduce((sum, s) => sum + (s.epfEmployee || 0) + (s.epfCompany || 0), 0);
-  const totalETF = salaryHistory.reduce((sum, s) => sum + (s.etfCompany || 0), 0);
+  
+  const totalEPF = salaryHistory.reduce((sum, s) => {
+    if (s.contributions && s.contributions.length > 0) {
+      const epf = s.contributions.find(c => c.name.toLowerCase().includes('epf'));
+      if (epf) {
+        return sum + (epf.employeeContribution || 0) + (epf.employerContribution || 0);
+      }
+    }
+    return sum + (s.epfEmployee || 0) + (s.epfCompany || 0);
+  }, 0);
+
+  const totalETF = salaryHistory.reduce((sum, s) => {
+    if (s.contributions && s.contributions.length > 0) {
+      const etf = s.contributions.find(c => c.name.toLowerCase().includes('etf'));
+      if (etf) {
+        return sum + (etf.employerContribution || 0);
+      }
+    }
+    return sum + (s.etfCompany || 0);
+  }, 0);
 
   // Set default selected salary as the most recent record on mount
   useEffect(() => {
@@ -292,6 +337,15 @@ export default function Salary() {
             setOtherDeduction('');
             setPayslipPath('');
             setPayslipName('');
+            
+            const initialContribs = {};
+            if (profile && Array.isArray(profile.contributions)) {
+              profile.contributions.forEach(c => {
+                initialContribs[c.id] = { employee: '', employer: '' };
+              });
+            }
+            setSalaryContributions(initialContribs);
+
             const today = new Date().toISOString().split('T')[0];
             setPaymentDate(today);
             const parts = today.split('-');
@@ -450,18 +504,27 @@ export default function Salary() {
               {/* Deductions */}
               <div style={{ marginBottom: '16px' }}>
                 <h3 style={{ fontSize: '0.85rem', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px' }}>Deductions</h3>
-                <div className="deduction-item">
-                  <span className="deduction-label">EPF Employee Contribution (8%)</span>
-                  <span className="deduction-val">{formatCurrency(selectedSalary.epfEmployee || 0, settings.currency)}</span>
-                </div>
-                <div className="deduction-item">
-                  <span className="deduction-label">EPF Company Contribution (12%)</span>
-                  <span className="deduction-val">{formatCurrency(selectedSalary.epfCompany || 0, settings.currency)}</span>
-                </div>
-                <div className="deduction-item">
-                  <span className="deduction-label">ETF Company Contribution (3%)</span>
-                  <span className="deduction-val">{formatCurrency(selectedSalary.etfCompany || 0, settings.currency)}</span>
-                </div>
+                
+                {selectedSalary.contributions && selectedSalary.contributions.length > 0 ? (
+                  selectedSalary.contributions.map(c => (
+                    c.employeeContribution > 0 && (
+                      <div key={c.id} className="deduction-item">
+                        <span className="deduction-label">{c.name} Employee ({c.employeeRate}%)</span>
+                        <span className="deduction-val">{formatCurrency(c.employeeContribution, settings.currency)}</span>
+                      </div>
+                    )
+                  ))
+                ) : (
+                  <>
+                    {selectedSalary.epfEmployee > 0 && (
+                      <div className="deduction-item">
+                        <span className="deduction-label">EPF Employee (8%)</span>
+                        <span className="deduction-val">{formatCurrency(selectedSalary.epfEmployee, settings.currency)}</span>
+                      </div>
+                    )}
+                  </>
+                )}
+
                 <div className="deduction-item">
                   <span className="deduction-label">Tax ({selectedSalary.taxType})</span>
                   <span className="deduction-val">{formatCurrency(selectedSalary.tax || 0, settings.currency)}</span>
@@ -477,13 +540,38 @@ export default function Salary() {
               </div>
 
               {/* Company statutory contributions (informational) */}
-              <div style={{ background: 'rgba(255, 255, 255, 0.02)', border: '1px dashed var(--border-color)', borderRadius: '8px', padding: '12px', marginBottom: '16px' }}>
-                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', marginBottom: '6px' }}>Company Statutory Contributions</div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem' }}>
-                  <span>Employer EPF (12%): <strong>{formatCurrency(selectedSalary.epfCompany || 0, settings.currency)}</strong></span>
-                  <span>Employer ETF (3%): <strong>{formatCurrency(selectedSalary.etfCompany || 0, settings.currency)}</strong></span>
+              {((selectedSalary.contributions && selectedSalary.contributions.some(c => c.employerContribution > 0)) || selectedSalary.epfCompany > 0 || selectedSalary.etfCompany > 0) ? (
+                <div style={{ background: 'rgba(255, 255, 255, 0.02)', border: '1px dashed var(--border-color)', borderRadius: '8px', padding: '12px', marginBottom: '16px' }}>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', marginBottom: '6px' }}>Company Statutory Contributions</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.8rem' }}>
+                    {selectedSalary.contributions && selectedSalary.contributions.length > 0 ? (
+                      selectedSalary.contributions.map(c => (
+                        c.employerContribution > 0 && (
+                          <div key={c.id} style={{ display: 'flex', justifyContent: 'space-between' }}>
+                            <span>{c.name} Employer ({c.employerRate}%):</span>
+                            <strong>{formatCurrency(c.employerContribution, settings.currency)}</strong>
+                          </div>
+                        )
+                      ))
+                    ) : (
+                      <>
+                        {selectedSalary.epfCompany > 0 && (
+                          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                            <span>Employer EPF (12%):</span>
+                            <strong>{formatCurrency(selectedSalary.epfCompany, settings.currency)}</strong>
+                          </div>
+                        )}
+                        {selectedSalary.etfCompany > 0 && (
+                          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                            <span>Employer ETF (3%):</span>
+                            <strong>{formatCurrency(selectedSalary.etfCompany, settings.currency)}</strong>
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
                 </div>
-              </div>
+              ) : null}
 
               {/* Summary net pay */}
               <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid var(--border-color)', paddingTop: '12px', marginBottom: '20px' }}>
@@ -552,11 +640,14 @@ export default function Salary() {
             <div className="form-row-2">
               <div className="form-group">
                 <label>Position / Title</label>
-                <select className="input-ctrl" value={position} onChange={e => setPosition(e.target.value)}>
-                  {developerPositions.map(p => (
-                    <option key={p} value={p}>{p}</option>
-                  ))}
-                </select>
+                <input 
+                  type="text" 
+                  className="input-ctrl" 
+                  value={position} 
+                  onChange={e => setPosition(e.target.value)} 
+                  placeholder="e.g. Software Engineer, Sales Executive" 
+                  required 
+                />
               </div>
 
               <div className="form-group">
@@ -637,20 +728,46 @@ export default function Salary() {
               <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>Statutory Details (Auto Suggested)</span>
             </div>
 
-            <div className="form-row-3" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
-              <div className="form-group">
-                <label>Employee EPF (8% Deduct)</label>
-                <input type="number" className="input-ctrl" value={epfEmployee} onChange={e => setEpfEmployee(e.target.value)} placeholder="0.00" min="0" />
+            {(!profile || !Array.isArray(profile.contributions) || profile.contributions.length === 0) ? (
+              <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontStyle: 'italic', marginBottom: '14px' }}>
+                No custom contributions configured in your profile.
               </div>
-              <div className="form-group">
-                <label>Company EPF (12%)</label>
-                <input type="number" className="input-ctrl" value={epfCompany} onChange={e => setEpfCompany(e.target.value)} placeholder="0.00" min="0" />
-              </div>
-              <div className="form-group">
-                <label>Company ETF (3%)</label>
-                <input type="number" className="input-ctrl" value={etfCompany} onChange={e => setEtfCompany(e.target.value)} placeholder="0.00" min="0" />
-              </div>
-            </div>
+            ) : (
+              profile.contributions.map(c => (
+                <div key={c.id} className="form-row-2" style={{ marginBottom: '12px' }}>
+                  <div className="form-group">
+                    <label>{c.name} Employee ({c.employeeRate}%)</label>
+                    <input 
+                      type="number" 
+                      className="input-ctrl" 
+                      value={salaryContributions[c.id]?.employee || ''} 
+                      onChange={e => setSalaryContributions(prev => ({
+                        ...prev,
+                        [c.id]: { ...prev[c.id], employee: e.target.value }
+                      }))} 
+                      placeholder="0.00" 
+                      min="0" 
+                      step="0.01"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>{c.name} Employer ({c.employerRate}%)</label>
+                    <input 
+                      type="number" 
+                      className="input-ctrl" 
+                      value={salaryContributions[c.id]?.employer || ''} 
+                      onChange={e => setSalaryContributions(prev => ({
+                        ...prev,
+                        [c.id]: { ...prev[c.id], employer: e.target.value }
+                      }))} 
+                      placeholder="0.00" 
+                      min="0" 
+                      step="0.01"
+                    />
+                  </div>
+                </div>
+              ))
+            )}
 
             <div className="form-row-3" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', marginTop: '10px' }}>
               <div className="form-group">

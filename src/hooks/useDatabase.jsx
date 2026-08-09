@@ -82,6 +82,7 @@ export function DatabaseProvider({ children }) {
         HealthcareMedical: 10000,
         Shopping: 15000,
         Education: 10000,
+        Withdrawal: 10000,
         Others: 12000
       },
       billLimits: {
@@ -104,6 +105,13 @@ export function DatabaseProvider({ children }) {
       taxId: '',
       epfId: '',
       etfId: ''
+    },
+    license: {
+      status: 'free',
+      type: 'none',
+      key: '',
+      purchaseToken: '',
+      isProDevOverride: false
     }
   });
   const [loading, setLoading] = useState(true);
@@ -277,6 +285,14 @@ export function DatabaseProvider({ children }) {
               epfId: '',
               etfId: '',
               ...(data.profile || {})
+            },
+            license: {
+              status: 'free',
+              type: 'none',
+              key: '',
+              purchaseToken: '',
+              isProDevOverride: false,
+              ...(data.license || {})
             }
           };
 
@@ -749,6 +765,14 @@ export function DatabaseProvider({ children }) {
             epfId: '',
             etfId: '',
             ...(data.profile || {})
+          },
+          license: {
+            status: 'free',
+            type: 'none',
+            key: '',
+            purchaseToken: '',
+            isProDevOverride: false,
+            ...(data.license || {})
           }
         };
 
@@ -865,6 +889,76 @@ export function DatabaseProvider({ children }) {
     }
   };
 
+  const isPro = dbState.license?.status === 'pro' || !!dbState.license?.isProDevOverride;
+
+  const purchaseProMicrosoftStore = async () => {
+    try {
+      const res = await api.purchaseMicrosoftStore();
+      if (res && res.success) {
+        setDbState(prev => ({
+          ...prev,
+          license: res.license
+        }));
+        return { success: true };
+      }
+      return { success: false, error: res?.error || 'Transaction failed or cancelled.' };
+    } catch (e) {
+      console.error(e);
+      return { success: false, error: e.message };
+    }
+  };
+
+  const activateLicenseKey = async (key) => {
+    try {
+      const res = await api.activateLicenseKey(key);
+      if (res && res.success) {
+        setDbState(prev => ({
+          ...prev,
+          license: res.license
+        }));
+        return { success: true };
+      }
+      return { success: false, error: res?.error || 'Validation failed.' };
+    } catch (e) {
+      console.error(e);
+      return { success: false, error: e.message };
+    }
+  };
+
+  const deactivateLicense = async () => {
+    try {
+      const res = await api.deactivateLicense();
+      if (res && res.success) {
+        setDbState(prev => ({
+          ...prev,
+          license: res.license
+        }));
+        return { success: true };
+      }
+      return { success: false };
+    } catch (e) {
+      console.error(e);
+      return { success: false };
+    }
+  };
+
+  const setProDevOverride = async (enabled) => {
+    try {
+      const res = await api.toggleDevOverride(enabled);
+      if (res && res.success) {
+        setDbState(prev => ({
+          ...prev,
+          license: res.license
+        }));
+        return { success: true };
+      }
+      return { success: false };
+    } catch (e) {
+      console.error(e);
+      return { success: false };
+    }
+  };
+
   // Calculate card balances dynamically based on the ledger history
   const activeAccounts = calculateAccountBalances(dbState.accounts, dbState.transactions);
 
@@ -878,6 +972,12 @@ export function DatabaseProvider({ children }) {
       subscriptions: dbState.subscriptions || [],
       settings: dbState.settings,
       profile: dbState.profile,
+      license: dbState.license,
+      isPro,
+      purchaseProMicrosoftStore,
+      activateLicenseKey,
+      deactivateLicense,
+      setProDevOverride,
       loading,
       addAccount,
       editAccount,
