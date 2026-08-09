@@ -24,8 +24,17 @@ export const api = {
   selectFile: async () => {
     return await window.api.selectFile();
   },
+  selectImage: async () => {
+    return await window.api.selectImage();
+  },
   selectFolder: async () => {
     return await window.api.selectFolder();
+  },
+  saveTransactionImage: async (filePath) => {
+    return await window.api.saveTransactionImage(filePath);
+  },
+  readImageBase64: async (filePath) => {
+    return await window.api.readImageBase64(filePath);
   },
   syncGDrive: async () => {
     return await window.api.syncGDrive();
