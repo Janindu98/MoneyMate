@@ -162,7 +162,8 @@ export default class Database {
         accountNumber: '',
         taxId: '',
         epfId: '',
-        etfId: ''
+        etfId: '',
+        contributions: []
       }
     };
   }
@@ -262,6 +263,9 @@ export default class Database {
     if (!this.data.settings.billLimits) this.data.settings.billLimits = this.getInitialState().settings.billLimits;
     if (!this.data.profile) {
       this.data.profile = this.getInitialState().profile;
+    }
+    if (!Array.isArray(this.data.profile.contributions)) {
+      this.data.profile.contributions = [];
     }
   }
 

@@ -934,18 +934,47 @@ export default function BankAccounts() {
 
                     <div style={{ marginBottom: '16px' }}>
                       <h4 style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '6px' }}>Deductions Details</h4>
-                      <div className="deduction-item" style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '4px', fontSize: '0.85rem' }}>
-                        <span>EPF Employee Share (8%)</span>
-                        <span style={{ fontWeight: 600, color: '#f43f5e' }}>-{formatCurrency(salaryRec.epfDeduction, settings.currency)}</span>
-                      </div>
-                      <div className="deduction-item" style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '4px', paddingTop: '4px', fontSize: '0.85rem' }}>
-                        <span>PAYE Tax Deducted</span>
-                        <span style={{ fontWeight: 600, color: '#f43f5e' }}>-{formatCurrency(salaryRec.payeTaxDeduction, settings.currency)}</span>
-                      </div>
-                      <div className="deduction-item" style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '4px', paddingTop: '4px', fontSize: '0.85rem' }}>
-                        <span>Other Deductions (No-Pay etc.)</span>
-                        <span style={{ fontWeight: 600, color: '#f43f5e' }}>-{formatCurrency(salaryRec.otherDeductions, settings.currency)}</span>
-                      </div>
+                      
+                      {salaryRec.contributions && salaryRec.contributions.length > 0 ? (
+                        salaryRec.contributions.map(c => (
+                          <React.Fragment key={c.id || c.name}>
+                            {c.employeeContribution > 0 && (
+                              <div className="deduction-item" style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '4px', fontSize: '0.85rem' }}>
+                                <span>{c.name} Employee ({c.employeeRate}%)</span>
+                                <span style={{ fontWeight: 600, color: '#f43f5e' }}>-{formatCurrency(c.employeeContribution, settings.currency)}</span>
+                              </div>
+                            )}
+                            {c.employerContribution > 0 && (
+                              <div className="deduction-item" style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '4px', paddingTop: '4px', fontSize: '0.85rem' }}>
+                                <span>{c.name} Employer ({c.employerRate}%)</span>
+                                <span style={{ fontWeight: 600 }}>{formatCurrency(c.employerContribution, settings.currency)}</span>
+                              </div>
+                            )}
+                          </React.Fragment>
+                        ))
+                      ) : (
+                        <>
+                          {(salaryRec.epfDeduction > 0 || salaryRec.epfEmployee > 0) && (
+                            <div className="deduction-item" style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '4px', fontSize: '0.85rem' }}>
+                              <span>EPF Employee Share</span>
+                              <span style={{ fontWeight: 600, color: '#f43f5e' }}>-{formatCurrency(salaryRec.epfDeduction || salaryRec.epfEmployee, settings.currency)}</span>
+                            </div>
+                          )}
+                        </>
+                      )}
+
+                      {(salaryRec.payeTaxDeduction > 0 || salaryRec.tax > 0) && (
+                        <div className="deduction-item" style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '4px', paddingTop: '4px', fontSize: '0.85rem' }}>
+                          <span>PAYE Tax Deducted</span>
+                          <span style={{ fontWeight: 600, color: '#f43f5e' }}>-{formatCurrency(salaryRec.payeTaxDeduction || salaryRec.tax, settings.currency)}</span>
+                        </div>
+                      )}
+                      {(salaryRec.otherDeductions > 0 || salaryRec.otherDeduction > 0 || salaryRec.loanDeduction > 0) && (
+                        <div className="deduction-item" style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '4px', paddingTop: '4px', fontSize: '0.85rem' }}>
+                          <span>Other Deductions</span>
+                          <span style={{ fontWeight: 600, color: '#f43f5e' }}>-{formatCurrency(salaryRec.otherDeductions || salaryRec.otherDeduction || salaryRec.loanDeduction || 0, settings.currency)}</span>
+                        </div>
+                      )}
                     </div>
 
                     <div style={{ background: 'rgba(16, 185, 129, 0.05)', border: '1px solid rgba(16, 185, 129, 0.1)', padding: '12px', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
