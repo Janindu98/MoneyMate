@@ -108,7 +108,11 @@ export default function Settings() {
     if (verifyValue === correctValue) {
       setVerifyModalOpen(false);
 
-      if (pendingType === 'none') {
+      if (pendingType === 'reset') {
+        setTimeout(() => {
+          executeResetDatabase();
+        }, 150);
+      } else if (pendingType === 'none') {
         updateSettings({
           securityType: 'none',
           securityPin: '',
@@ -149,7 +153,7 @@ export default function Settings() {
     showToast(`App font size set to: ${val.charAt(0).toUpperCase() + val.slice(1)}`);
   };
 
-  const handleResetData = () => {
+  const executeResetDatabase = () => {
     showConfirm(
       'Reset Database?',
       'Are you sure you want to delete ALL records? This deletes ledger history, salary plans and accounts.',
@@ -178,6 +182,16 @@ export default function Settings() {
         }, 150);
       }
     );
+  };
+
+  const handleResetData = () => {
+    if (settings.securityType && settings.securityType !== 'none') {
+      setPendingType('reset');
+      setVerifyValue('');
+      setVerifyModalOpen(true);
+    } else {
+      executeResetDatabase();
+    }
   };
 
   return (
@@ -452,7 +466,7 @@ export default function Settings() {
         <form onSubmit={handleVerifySubmit}>
           <div className="modal-body">
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '16px' }}>
-              For security reasons, please enter your current {settings.securityType === 'pin' ? '4-digit PIN' : 'password'} to authorize this settings change.
+              For security reasons, please enter your current {settings.securityType === 'pin' ? '4-digit PIN' : 'password'} to authorize this {pendingType === 'reset' ? 'database reset' : 'settings change'}.
             </p>
             <div className="form-group">
               <label>Current {settings.securityType === 'pin' ? 'PIN' : 'Password'}</label>
