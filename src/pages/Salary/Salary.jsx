@@ -12,7 +12,7 @@ const monthsList = [
 ];
 
 export default function Salary() {
-  const { accounts, salaryHistory, addSalaryRecord, deleteSalaryRecord, settings, profile, addTransaction } = useDatabase();
+  const { accounts, salaryHistory, addSalaryRecord, deleteSalaryRecord, settings, profile, addTransaction, isPro } = useDatabase();
   const { showToast } = useToast();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -114,6 +114,10 @@ export default function Salary() {
 
   // Select File PDF Dialog
   const handleSelectPayslip = async () => {
+    if (!isPro) {
+      showToast('Payslip attachments require a MoneyMate Pro license.', 'warning');
+      return;
+    }
     try {
       const fileRes = await api.selectFile();
       if (!fileRes.canceled && fileRes.filePath) {
@@ -131,6 +135,10 @@ export default function Salary() {
 
   // Open Payslip file
   const handleOpenPayslip = async (path) => {
+    if (!isPro) {
+      showToast('Viewing payslip attachments requires a MoneyMate Pro license.', 'warning');
+      return;
+    }
     if (!path) return;
     try {
       const res = await api.openFile(path);
@@ -202,6 +210,10 @@ export default function Salary() {
     // Secure local copying of payslip if selected
     let finalPayslipPath = '';
     if (payslipPath) {
+      if (!isPro) {
+        showToast('Payslip attachments require a MoneyMate Pro license.', 'warning');
+        return;
+      }
       const copyRes = await api.savePayslip(payslipPath, finalMonth.toLowerCase(), finalYear);
       if (copyRes.success) {
         finalPayslipPath = copyRes.filePath;
@@ -592,10 +604,15 @@ export default function Salary() {
                 </button>
                 {selectedSalary.payslipPath ? (
                   <button className="btn btn-primary" onClick={() => handleOpenPayslip(selectedSalary.payslipPath)}>
-                    View Payslip Attachment (PDF)
+                    {!isPro ? (
+                      <svg viewBox="0 0 24 24" width="16" height="16" stroke="#fbbf24" fill="none" strokeWidth="2" style={{ marginRight: '6px' }}><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+                    ) : (
+                      <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" strokeWidth="2.5" style={{ marginRight: '6px' }}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                    )}
+                    View Payslip Attachment{!isPro && ' (Pro)'}
                   </button>
                 ) : (
-                  <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', alignSelf: 'center' }}>No PDF attachment linked.</span>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', alignSelf: 'center' }}>No attachment linked.</span>
                 )}
               </div>
             </div>
@@ -800,10 +817,15 @@ export default function Salary() {
               </div>
 
               <div className="form-group">
-                <label>Payslip PDF Attachment</label>
+                <label>Payslip Attachment (PDF / Image)</label>
                 <div style={{ display: 'flex', gap: '8px' }}>
                   <button type="button" className="btn btn-secondary" style={{ flexGrow: 1 }} onClick={handleSelectPayslip}>
-                    {payslipName ? payslipName : 'Browse File...'}
+                    {!isPro ? (
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                        <svg viewBox="0 0 24 24" width="14" height="14" stroke="#fbbf24" fill="none" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+                        Pro Feature
+                      </span>
+                    ) : payslipName ? payslipName : 'Browse File...'}
                   </button>
                 </div>
               </div>

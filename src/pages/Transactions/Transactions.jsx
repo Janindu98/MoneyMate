@@ -724,6 +724,10 @@ export default function Transactions() {
           const salaryRec = findSalaryRecord(selectedTx);
 
           const handleOpenPayslip = async (path) => {
+            if (!isPro) {
+              showToast('Viewing payslip attachments requires a MoneyMate Pro license.', 'warning');
+              return;
+            }
             if (!path) return;
             try {
               const res = await api.openFile(path);
@@ -955,7 +959,7 @@ export default function Transactions() {
                     {salaryRec.payslipPath && (
                       <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'center' }}>
                         <button type="button" className="btn btn-primary" onClick={() => handleOpenPayslip(salaryRec.payslipPath)} style={{ width: '100%' }}>
-                          📄 Open Attached Payslip Document
+                          📄 Open Attached Payslip Document{!isPro && ' (Pro)'}
                         </button>
                       </div>
                     )}

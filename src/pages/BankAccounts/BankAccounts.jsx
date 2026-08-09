@@ -206,6 +206,10 @@ export default function BankAccounts() {
   ];
 
   const handleOpenAddModal = () => {
+    if (!isPro && accounts.length >= 4) {
+      showToast('Free tier users are limited to a maximum of 4 bank accounts. Upgrade to MoneyMate Pro for unlimited accounts.', 'warning');
+      return;
+    }
     setEditId(null);
     setBankName('');
     setAccountName('');
@@ -271,6 +275,10 @@ export default function BankAccounts() {
       editAccount(editId, payload);
       showToast(`Account "${accountName}" updated.`);
     } else {
+      if (!isPro && accounts.length >= 4) {
+        showToast('Free tier users are limited to a maximum of 4 bank accounts. Upgrade to MoneyMate Pro for unlimited accounts.', 'warning');
+        return;
+      }
       const initialDepositVal = parseFloat(initialDeposit) || 0;
       addAccount(payload, initialDepositVal);
       showToast(`Account "${accountName}" created.`);
