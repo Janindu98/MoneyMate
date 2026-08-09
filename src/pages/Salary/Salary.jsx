@@ -12,11 +12,12 @@ const monthsList = [
 ];
 
 export default function Salary() {
-  const { accounts, salaryHistory, addSalaryRecord, deleteSalaryRecord, settings, profile, addTransaction } = useDatabase();
+  const { accounts, salaryHistory, addSalaryRecord, editSalaryRecord, deleteSalaryRecord, settings, profile, addTransaction } = useDatabase();
   const { showToast } = useToast();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedSalary, setSelectedSalary] = useState(null);
+  const [editingId, setEditingId] = useState(null);
   const [confirmState, setConfirmState] = useState({ isOpen: false, title: '', message: '', onConfirm: null, type: 'danger', requireTextInput: '' });
 
   const showConfirm = (title, message, onConfirm, type = 'danger', requireTextInput = '') => {
@@ -241,23 +242,30 @@ export default function Salary() {
       contributions: salarySlipContributions
     };
 
-    const salaryId = `sal_${Date.now()}`;
-    addSalaryRecord({ id: salaryId, ...payload });
+    if (editingId) {
+      editSalaryRecord(editingId, payload);
+      setSelectedSalary({ id: editingId, ...payload });
+      setIsModalOpen(false);
+      showToast('Monthly salary details updated.');
+    } else {
+      const salaryId = `sal_${Date.now()}`;
+      addSalaryRecord({ id: salaryId, ...payload });
 
-    // Auto-record as an Income transaction in the ledger
-    addTransaction({
-      date: paymentDate,
-      bankId: bankAccountId,
-      type: 'Income',
-      category: 'Salary',
-      payee: company.trim(),
-      amount: netSalary,
-      description: 'Salary Received',
-      salaryRecordId: salaryId
-    });
+      // Auto-record as an Income transaction in the ledger
+      addTransaction({
+        date: paymentDate,
+        bankId: bankAccountId,
+        type: 'Income',
+        category: 'Salary',
+        payee: company.trim(),
+        amount: netSalary,
+        description: 'Salary Received',
+        salaryRecordId: salaryId
+      });
 
-    setIsModalOpen(false);
-    showToast('Monthly salary details recorded.');
+      setIsModalOpen(false);
+      showToast('Monthly salary details recorded.');
+    }
   };
 
   const handleDelete = (id, month, year) => {
@@ -270,6 +278,50 @@ export default function Salary() {
         showToast('Salary record deleted.');
       }
     );
+  };
+
+  const handleEdit = (sal) => {
+    setEditingId(sal.id);
+    setCompany(sal.company || '');
+    setEmployerId(sal.employerId || '');
+    setPosition(sal.position || '');
+    setBankAccountId(sal.bankAccount || '');
+    setYear(sal.year || '');
+    setMonth(sal.month || '');
+    setBasicSalary(sal.basicSalary !== undefined ? sal.basicSalary.toString() : '');
+    setFixedAllowance(sal.fixedAllowance !== undefined ? sal.fixedAllowance.toString() : '');
+    setOtherAllowances(sal.otherAllowances !== undefined ? sal.otherAllowances.toString() : '');
+    setBonus(sal.bonus !== undefined ? sal.bonus.toString() : '');
+    setOvertime(sal.overtime !== undefined ? sal.overtime.toString() : '');
+    setEpfEmployee(sal.epfEmployee !== undefined ? sal.epfEmployee.toString() : '');
+    setEpfCompany(sal.epfCompany !== undefined ? sal.epfCompany.toString() : '');
+    setEtfCompany(sal.etfCompany !== undefined ? sal.etfCompany.toString() : '');
+    setTax(sal.tax !== undefined ? sal.tax.toString() : '');
+    setTaxType(sal.taxType || 'APIT');
+    setLoanDeduction(sal.loanDeduction !== undefined ? sal.loanDeduction.toString() : '');
+    setOtherDeduction(sal.otherDeduction !== undefined ? sal.otherDeduction.toString() : '');
+    setPaymentDate(sal.paymentDate || '');
+    setPayslipPath(sal.payslipPath || '');
+    if (sal.payslipPath) {
+      const split = sal.payslipPath.split(/[\\/]/);
+      setPayslipName(split[split.length - 1]);
+    } else {
+      setPayslipName('');
+    }
+
+    const contribs = {};
+    if (profile && Array.isArray(profile.contributions)) {
+      profile.contributions.forEach(c => {
+        const matchingContrib = sal.contributions?.find(sc => sc.id === c.id);
+        contribs[c.id] = {
+          employee: matchingContrib ? matchingContrib.employeeContribution.toString() : '',
+          employer: matchingContrib ? matchingContrib.employerContribution.toString() : ''
+        };
+      });
+    }
+    setSalaryContributions(contribs);
+
+    setIsModalOpen(true);
   };
 
   // --- STATS CALCULATIONS ---
@@ -322,6 +374,7 @@ export default function Salary() {
         </div>
         <div className="header-actions">
           <button className="btn btn-primary" onClick={() => {
+            setEditingId(null);
             setEmployerId('');
             setCompany('');
             setBasicSalary('');
@@ -447,8 +500,8 @@ export default function Salary() {
 
         {/* Right Column: Payslip inspector details */}
         <div className="panel">
-          <h2 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '4px' }}>Paystub Analyzer</h2>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '20px' }}>Detailed earnings breakdown and attachment links.</p>
+          <h2 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '4px' }}>Salary Statements</h2>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '20px' }}>Detailed salary breakdowns, earnings information, and related attachments.</p>
 
           {selectedSalary ? (
             <div>
@@ -590,6 +643,9 @@ export default function Salary() {
                 <button className="btn btn-danger" style={{ background: 'rgba(244, 63, 94, 0.15)', color: '#f43f5e' }} onClick={() => handleDelete(selectedSalary.id, selectedSalary.month, selectedSalary.year)}>
                   Delete Slip
                 </button>
+                <button className="btn btn-secondary" onClick={() => handleEdit(selectedSalary)}>
+                  Edit Details
+                </button>
                 {selectedSalary.payslipPath ? (
                   <button className="btn btn-primary" onClick={() => handleOpenPayslip(selectedSalary.payslipPath)}>
                     View Payslip Attachment (PDF)
@@ -608,8 +664,8 @@ export default function Salary() {
         </div>
       </div>
 
-      {/* MODAL: LOG SALARY HISTORY */}
-      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Log Monthly Salary Slip">
+      {/* MODAL: LOG/EDIT SALARY HISTORY */}
+      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingId ? "Edit Monthly Salary Slip" : "Log Monthly Salary Slip"}>
         <form onSubmit={handleSubmit}>
           <div className="modal-body">
             <div className="form-row-2">
@@ -811,7 +867,7 @@ export default function Salary() {
           </div>
           <div className="modal-footer">
             <button type="button" className="btn btn-secondary" onClick={() => setIsModalOpen(false)}>Cancel</button>
-            <button type="submit" className="btn btn-primary">Archive Record</button>
+            <button type="submit" className="btn btn-primary">{editingId ? "Save Changes" : "Archive Record"}</button>
           </div>
         </form>
       </Modal>

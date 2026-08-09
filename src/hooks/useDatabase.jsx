@@ -537,6 +537,25 @@ export function DatabaseProvider({ children }) {
     });
   };
 
+  const editSalaryRecord = (id, updated) => {
+    updateDbState(prev => {
+      const newSal = prev.salaryHistory.map(s => s.id === id ? { ...s, ...updated } : s);
+      const newTx = prev.transactions.map(t => {
+        if (t.salaryRecordId === id) {
+          return {
+            ...t,
+            date: updated.paymentDate || t.date,
+            bankId: updated.bankAccount || t.bankId,
+            payee: updated.company || t.payee,
+            amount: updated.netSalary !== undefined ? updated.netSalary : t.amount
+          };
+        }
+        return t;
+      });
+      return { ...prev, salaryHistory: newSal, transactions: newTx };
+    });
+  };
+
   // Subscriptions CRUD
   const addSubscription = (sub) => {
     updateDbState(prev => {
@@ -889,6 +908,7 @@ export function DatabaseProvider({ children }) {
       addCategory,
       deleteCategory,
       addSalaryRecord,
+      editSalaryRecord,
       deleteSalaryRecord,
       addSubscription,
       editSubscription,
