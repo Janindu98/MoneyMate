@@ -1,6 +1,7 @@
 import { app, BrowserWindow, ipcMain, Menu, dialog, shell } from 'electron';
 import path from 'node:path';
 import fs from 'node:fs';
+import os from 'node:os';
 import started from 'electron-squirrel-startup';
 import Database from './database/db.js';
 
@@ -45,11 +46,83 @@ const createWindow = () => {
   }
 };
 
+function encryptDataLocal(data, key = "moneymate_key") {
+  const json = JSON.stringify(data);
+  let encrypted = "";
+  for (let i = 0; i < json.length; i++) {
+    const charCode = json.charCodeAt(i) ^ key.charCodeAt(i % key.length);
+    encrypted += String.fromCharCode(charCode);
+  }
+  return Buffer.from(encrypted, 'utf8').toString('base64');
+}
+
+function runAutomatedGDriveBackup(appData) {
+  try {
+    if (!appData) return;
+
+    const settings = appData.settings;
+    const gdrivePath = settings?.gdriveBackupPath;
+
+    // The option must execute ONLY if the user has provided the Google Drive Sync Folder.
+    if (!gdrivePath || !fs.existsSync(gdrivePath)) {
+      console.log('[Automated Backup] Google Drive Sync Folder is not provided or does not exist. Skipping backup.');
+      return;
+    }
+
+    console.log(`[Automated Backup] Checking Google Drive folder at: ${gdrivePath}`);
+
+    // If backup file already exists in the location, delete it
+    const files = fs.readdirSync(gdrivePath);
+    const backupPattern = /^moneymate_vault_backup_gdrive.*\.enc$/i;
+
+    for (const file of files) {
+      if (backupPattern.test(file)) {
+        const filePath = path.join(gdrivePath, file);
+        try {
+          fs.unlinkSync(filePath);
+          console.log(`[Automated Backup] Deleted existing backup file: ${file}`);
+        } catch (unlinkErr) {
+          console.error(`[Automated Backup] Failed to delete existing backup file ${file}:`, unlinkErr);
+        }
+      }
+    }
+
+    // Build the payload (as done in Backup.jsx)
+    const appDataPayload = {
+      accounts: appData.accounts || [],
+      transactions: appData.transactions || [],
+      categories: appData.categories || {},
+      salaryHistory: appData.salaryHistory || [],
+      settings: appData.settings || {},
+      profile: appData.profile || {}
+    };
+
+    const encryptedString = encryptDataLocal(appDataPayload);
+
+    // Write actual encrypted file, replace and rename it
+    const currentDateStr = new Date().toISOString().split('T')[0];
+    const finalFileName = `moneymate_vault_backup_gdrive_${currentDateStr}.enc`;
+    const finalFilePath = path.join(gdrivePath, finalFileName);
+    const tempFilePath = path.join(gdrivePath, 'moneymate_vault_backup_gdrive.tmp');
+
+    // Create temp file first, then rename it to final file name
+    fs.writeFileSync(tempFilePath, encryptedString, 'utf8');
+    fs.renameSync(tempFilePath, finalFilePath);
+
+    console.log(`[Automated Backup] Backup successfully saved and renamed to: ${finalFileName}`);
+  } catch (err) {
+    console.error('[Automated Backup] Failed to execute automated Google Drive backup:', err);
+  }
+}
+
 app.whenReady().then(() => {
   // Initialize Database in the userData directory
   const dbPath = path.join(app.getPath('userData'), 'personal_finance_db.json');
   db = new Database(dbPath);
-  db.load();
+  const loadedData = db.load();
+  if (loadedData && !loadedData.encrypted) {
+    runAutomatedGDriveBackup(loadedData);
+  }
 
   // Setup IPC Handlers
   ipcMain.handle('db:load', () => {
@@ -59,7 +132,9 @@ app.whenReady().then(() => {
   ipcMain.handle('db:unlock', (event, pinOrPassword) => {
     const success = db.unlock(pinOrPassword);
     if (success) {
-      return { success: true, data: db.getData() };
+      const data = db.getData();
+      runAutomatedGDriveBackup(data);
+      return { success: true, data };
     } else {
       return { success: false, error: 'Incorrect PIN or Password.' };
     }
