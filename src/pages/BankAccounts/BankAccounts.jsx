@@ -4,6 +4,7 @@ import { useToast } from '../../components/Toast';
 import Modal from '../../components/Modal';
 import ConfirmModal from '../../components/ConfirmModal';
 import { formatCurrency } from '../../utils/format';
+import { api } from '../../services/api';
 
 export default function BankAccounts() {
   const { accounts, transactions, addAccount, editAccount, deleteAccount, settings, salaryHistory } = useDatabase();
@@ -44,6 +45,40 @@ export default function BankAccounts() {
   const [cardExpiry, setCardExpiry] = useState('');
   const [cardCvv, setCardCvv] = useState('');
   const [cardPin, setCardPin] = useState('');
+
+  const [selectedTxImageBase64, setSelectedTxImageBase64] = useState('');
+
+  React.useEffect(() => {
+    if (selectedTx && selectedTx.imagePath) {
+      async function loadImage() {
+        const res = await api.readImageBase64(selectedTx.imagePath);
+        if (res.success) {
+          setSelectedTxImageBase64(res.base64);
+        } else {
+          console.error(res.error);
+          setSelectedTxImageBase64('');
+        }
+      }
+      loadImage();
+    } else {
+      setSelectedTxImageBase64('');
+    }
+  }, [selectedTx]);
+
+  const handleOpenImage = async (path) => {
+    if (!path) return;
+    try {
+      const res = await api.openFile(path);
+      if (res.success) {
+        showToast('Opening transaction image...');
+      } else {
+        showToast(`Failed to open image: ${res.error}`, 'error');
+      }
+    } catch (err) {
+      console.error(err);
+      showToast('Error launching image viewer.', 'error');
+    }
+  };
 
   // Secure Card Vault Modal States
   const [isCardVaultOpen, setIsCardVaultOpen] = useState(false);
@@ -205,6 +240,11 @@ export default function BankAccounts() {
 
     if (!bankName.trim() || !accountName.trim()) {
       showToast('Please enter both Bank and Account Names.', 'error');
+      return;
+    }
+
+    if (cardPin.trim() && (cardPin.trim().length < 4 || cardPin.trim().length > 8)) {
+      showToast('Card PIN must be between 4 and 8 digits.', 'error');
       return;
     }
 
@@ -627,14 +667,14 @@ export default function BankAccounts() {
                   />
                 </div>
                 <div className="form-group">
-                  <label>Card PIN Number (4 Digits)</label>
+                  <label>Card PIN Number (4-8 Digits)</label>
                   <input
                     type="password"
                     className="input-ctrl"
                     value={cardPin}
-                    onChange={e => setCardPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
-                    placeholder="e.g. 9876"
-                    maxLength="4"
+                    onChange={e => setCardPin(e.target.value.replace(/\D/g, '').slice(0, 8))}
+                    placeholder="e.g. 987654"
+                    maxLength="8"
                   />
                 </div>
               </div>
@@ -752,7 +792,7 @@ export default function BankAccounts() {
               <div>
                 <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.5px' }}>Debit Card PIN</div>
                 <div style={{ fontSize: '1.5rem', fontWeight: 800, fontFamily: 'monospace', letterSpacing: '4px', color: '#f59e0b', marginTop: '4px', display: 'flex', alignItems: 'center' }}>
-                  {revealVaultPin ? selectedVaultAccount.cardPin : '••••'}
+                  {revealVaultPin ? selectedVaultAccount.cardPin : '•'.repeat(selectedVaultAccount.cardPin.length)}
                 </div>
               </div>
               <button
@@ -826,6 +866,42 @@ export default function BankAccounts() {
                   </div>
                 </div>
 
+                {selectedTx.imagePath ? (
+                  <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '20px', marginTop: '20px' }}>
+                    <h3 style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                      Attached Receipt / Invoice
+                    </h3>
+                    {selectedTxImageBase64 ? (
+                      <div style={{ position: 'relative', borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.2)', padding: '10px' }}>
+                        <img 
+                          src={selectedTxImageBase64} 
+                          alt="Transaction attachment" 
+                          style={{ width: '100%', maxHeight: '300px', objectFit: 'contain', display: 'block', cursor: 'pointer', borderRadius: '4px' }}
+                          onClick={() => handleOpenImage(selectedTx.imagePath)}
+                          title="Click to open image in system viewer"
+                        />
+                      </div>
+                    ) : (
+                      <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Loading attachment image...</div>
+                    )}
+                    <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'center' }}>
+                      <button type="button" className="btn btn-secondary" onClick={() => handleOpenImage(selectedTx.imagePath)} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '0.85rem', padding: '8px' }}>
+                        <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" strokeWidth="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                        Open Original Image file
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '20px', marginTop: '20px' }}>
+                    <h3 style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                      Attached Receipt / Invoice
+                    </h3>
+                    <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem', fontStyle: 'italic' }}>No receipt or image attached to this transaction.</div>
+                  </div>
+                )}
+
                 {salaryRec && (
                   <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '20px', marginTop: '20px' }}>
                     <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -858,18 +934,47 @@ export default function BankAccounts() {
 
                     <div style={{ marginBottom: '16px' }}>
                       <h4 style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '6px' }}>Deductions Details</h4>
-                      <div className="deduction-item" style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '4px', fontSize: '0.85rem' }}>
-                        <span>EPF Employee Share (8%)</span>
-                        <span style={{ fontWeight: 600, color: '#f43f5e' }}>-{formatCurrency(salaryRec.epfDeduction, settings.currency)}</span>
-                      </div>
-                      <div className="deduction-item" style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '4px', paddingTop: '4px', fontSize: '0.85rem' }}>
-                        <span>PAYE Tax Deducted</span>
-                        <span style={{ fontWeight: 600, color: '#f43f5e' }}>-{formatCurrency(salaryRec.payeTaxDeduction, settings.currency)}</span>
-                      </div>
-                      <div className="deduction-item" style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '4px', paddingTop: '4px', fontSize: '0.85rem' }}>
-                        <span>Other Deductions (No-Pay etc.)</span>
-                        <span style={{ fontWeight: 600, color: '#f43f5e' }}>-{formatCurrency(salaryRec.otherDeductions, settings.currency)}</span>
-                      </div>
+                      
+                      {salaryRec.contributions && salaryRec.contributions.length > 0 ? (
+                        salaryRec.contributions.map(c => (
+                          <React.Fragment key={c.id || c.name}>
+                            {c.employeeContribution > 0 && (
+                              <div className="deduction-item" style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '4px', fontSize: '0.85rem' }}>
+                                <span>{c.name} Employee ({c.employeeRate}%)</span>
+                                <span style={{ fontWeight: 600, color: '#f43f5e' }}>-{formatCurrency(c.employeeContribution, settings.currency)}</span>
+                              </div>
+                            )}
+                            {c.employerContribution > 0 && (
+                              <div className="deduction-item" style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '4px', paddingTop: '4px', fontSize: '0.85rem' }}>
+                                <span>{c.name} Employer ({c.employerRate}%)</span>
+                                <span style={{ fontWeight: 600 }}>{formatCurrency(c.employerContribution, settings.currency)}</span>
+                              </div>
+                            )}
+                          </React.Fragment>
+                        ))
+                      ) : (
+                        <>
+                          {(salaryRec.epfDeduction > 0 || salaryRec.epfEmployee > 0) && (
+                            <div className="deduction-item" style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '4px', fontSize: '0.85rem' }}>
+                              <span>EPF Employee Share</span>
+                              <span style={{ fontWeight: 600, color: '#f43f5e' }}>-{formatCurrency(salaryRec.epfDeduction || salaryRec.epfEmployee, settings.currency)}</span>
+                            </div>
+                          )}
+                        </>
+                      )}
+
+                      {(salaryRec.payeTaxDeduction > 0 || salaryRec.tax > 0) && (
+                        <div className="deduction-item" style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '4px', paddingTop: '4px', fontSize: '0.85rem' }}>
+                          <span>PAYE Tax Deducted</span>
+                          <span style={{ fontWeight: 600, color: '#f43f5e' }}>-{formatCurrency(salaryRec.payeTaxDeduction || salaryRec.tax, settings.currency)}</span>
+                        </div>
+                      )}
+                      {(salaryRec.otherDeductions > 0 || salaryRec.otherDeduction > 0 || salaryRec.loanDeduction > 0) && (
+                        <div className="deduction-item" style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '4px', paddingTop: '4px', fontSize: '0.85rem' }}>
+                          <span>Other Deductions</span>
+                          <span style={{ fontWeight: 600, color: '#f43f5e' }}>-{formatCurrency(salaryRec.otherDeductions || salaryRec.otherDeduction || salaryRec.loanDeduction || 0, settings.currency)}</span>
+                        </div>
+                      )}
                     </div>
 
                     <div style={{ background: 'rgba(16, 185, 129, 0.05)', border: '1px solid rgba(16, 185, 129, 0.1)', padding: '12px', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

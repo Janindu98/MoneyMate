@@ -39,6 +39,17 @@ function AppContent() {
     }
   }, [settings?.theme]);
 
+  useEffect(() => {
+    const fontSizeMap = {
+      small: '14px',
+      medium: '16px',
+      large: '18px',
+      xlarge: '20px'
+    };
+    const size = settings?.fontSize || 'medium';
+    document.documentElement.style.setProperty('--app-font-size', fontSizeMap[size] || '16px');
+  }, [settings?.fontSize]);
+
   const renderActivePage = () => {
     const isPremiumTab = ['bills', 'subscriptions', 'backup'].includes(activeTab);
     if (isPremiumTab && !isPro) {

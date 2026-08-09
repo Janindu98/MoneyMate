@@ -143,6 +143,12 @@ export default function Settings() {
     showToast(`App theme set to: ${val === 'light' ? 'Light Theme' : 'Dark Theme'}`);
   };
 
+  const handleFontSizeChange = (e) => {
+    const val = e.target.value;
+    updateSettings({ fontSize: val });
+    showToast(`App font size set to: ${val.charAt(0).toUpperCase() + val.slice(1)}`);
+  };
+
   const handleResetData = () => {
     showConfirm(
       'Reset Database?',
@@ -225,6 +231,26 @@ export default function Settings() {
               <select className="input-ctrl" value={settings.theme || 'dark'} onChange={handleThemeChange} style={{ width: '150px' }}>
                 <option value="dark">Dark Theme</option>
                 <option value="light">Light Theme</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        {/* Font Size Options */}
+        <div className="settings-section">
+          <div className="settings-section-title">Font Size Customization</div>
+          <div className="settings-section-desc">Adjust the default sizing of the letters, numbers, and user interfaces.</div>
+          <div className="settings-row">
+            <div className="settings-row-info">
+              <div className="settings-row-title">App Font Size</div>
+              <div className="settings-row-desc">Currently active font size: <strong style={{ textTransform: 'capitalize' }}>{settings.fontSize || 'Medium'}</strong></div>
+            </div>
+            <div>
+              <select className="input-ctrl" value={settings.fontSize || 'medium'} onChange={handleFontSizeChange} style={{ width: '150px' }}>
+                <option value="small">Small</option>
+                <option value="medium">Medium (Default)</option>
+                <option value="large">Large</option>
+                <option value="xlarge">Extra Large</option>
               </select>
             </div>
           </div>
