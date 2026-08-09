@@ -5,6 +5,7 @@ import { formatCurrency, currencySymbols } from '../../utils/format';
 import * as XLSX from 'xlsx';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import ProUpgradeModal from '../../components/ProUpgradeModal';
 
 export default function Reports() {
   const { accounts, transactions, salaryHistory, settings, isPro } = useDatabase();
@@ -14,6 +15,14 @@ export default function Reports() {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [accountId, setAccountId] = useState('all');
+
+  const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
+  const [upgradeReason, setUpgradeReason] = useState('');
+
+  const triggerUpgradeModal = (reason) => {
+    setUpgradeReason(reason);
+    setIsUpgradeModalOpen(true);
+  };
 
   const filterByDate = (dateStr) => {
     if (!dateStr) return false;
@@ -63,7 +72,7 @@ export default function Reports() {
   // Compile Excel Worksheet
   const handleExportExcel = () => {
     if (!isPro) {
-      showToast('Exporting Excel spreadsheets requires a MoneyMate Pro license.', 'warning');
+      triggerUpgradeModal('Exporting Excel spreadsheets requires a MoneyMate Pro license.');
       return;
     }
     const targetTx = getFilteredTransactions();
@@ -352,6 +361,11 @@ export default function Reports() {
           </button>
         </div>
       </div>
+      <ProUpgradeModal 
+        isOpen={isUpgradeModalOpen} 
+        onClose={() => setIsUpgradeModalOpen(false)} 
+        reason={upgradeReason} 
+      />
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { useDatabase } from '../../hooks/useDatabase';
 import { useToast } from '../../components/Toast';
 import Modal from '../../components/Modal';
 import ConfirmModal from '../../components/ConfirmModal';
+import ProUpgradeModal from '../../components/ProUpgradeModal';
 import { formatCurrency } from '../../utils/format';
 import { api } from '../../services/api';
 
@@ -28,6 +29,14 @@ export default function Transactions() {
   const [editId, setEditId] = useState(null);
   const [selectedTx, setSelectedTx] = useState(null);
   const [confirmState, setConfirmState] = useState({ isOpen: false, title: '', message: '', onConfirm: null, type: 'danger', requireTextInput: '' });
+
+  const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
+  const [upgradeReason, setUpgradeReason] = useState('');
+
+  const triggerUpgradeModal = (reason) => {
+    setUpgradeReason(reason);
+    setIsUpgradeModalOpen(true);
+  };
 
   const showConfirm = (title, message, onConfirm, type = 'danger', requireTextInput = '') => {
     setConfirmState({ isOpen: true, title, message, onConfirm, type, requireTextInput });
@@ -84,7 +93,7 @@ export default function Transactions() {
 
   const handleSelectImage = async () => {
     if (!isPro) {
-      showToast('Attaching transaction images requires a MoneyMate Pro license.', 'warning');
+      triggerUpgradeModal('Attaching transaction images requires a MoneyMate Pro license.');
       return;
     }
     try {
@@ -103,7 +112,7 @@ export default function Transactions() {
 
   const handleOpenImage = async (path) => {
     if (!isPro) {
-      showToast('Viewing receipt images requires a MoneyMate Pro license.', 'warning');
+      triggerUpgradeModal('Viewing receipt images requires a MoneyMate Pro license.');
       return;
     }
     if (!path) return;
@@ -725,7 +734,7 @@ export default function Transactions() {
 
           const handleOpenPayslip = async (path) => {
             if (!isPro) {
-              showToast('Viewing payslip attachments requires a MoneyMate Pro license.', 'warning');
+              triggerUpgradeModal('Viewing payslip attachments requires a MoneyMate Pro license.');
               return;
             }
             if (!path) return;
@@ -982,6 +991,11 @@ export default function Transactions() {
         message={confirmState.message}
         type={confirmState.type}
         requireTextInput={confirmState.requireTextInput}
+      />
+      <ProUpgradeModal 
+        isOpen={isUpgradeModalOpen} 
+        onClose={() => setIsUpgradeModalOpen(false)} 
+        reason={upgradeReason} 
       />
     </div>
   );
