@@ -130,6 +130,7 @@ export default class Database {
       settings: {
         currency: 'LKR',
         theme: 'dark',
+        fontSize: 'medium',
         budgetLimits: {
           FoodDining: 20000,
           BillPayment: 30000,
@@ -261,6 +262,7 @@ export default class Database {
     if (!this.data.settings.theme) this.data.settings.theme = 'dark';
     if (!this.data.settings.budgetLimits) this.data.settings.budgetLimits = this.getInitialState().settings.budgetLimits;
     if (!this.data.settings.billLimits) this.data.settings.billLimits = this.getInitialState().settings.billLimits;
+    if (!this.data.settings.fontSize) this.data.settings.fontSize = 'medium';
     if (!this.data.profile) {
       this.data.profile = this.getInitialState().profile;
     }
