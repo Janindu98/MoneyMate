@@ -5,7 +5,7 @@ import Chart from 'chart.js/auto';
 import Modal from '../../components/Modal';
 
 export default function Budgets() {
-  const { transactions, settings, updateSettings, categories } = useDatabase();
+  const { transactions, settings, updateSettings, categories, isPro } = useDatabase();
 
   const pieChartRef = useRef(null);
   const barChartRef = useRef(null);
@@ -642,75 +642,100 @@ export default function Budgets() {
               </div>
             </div>
 
-            {Object.keys(customLimits).length > 0 && (
-              <div style={{ marginTop: '16px', borderTop: '1px solid var(--border-color)', paddingTop: '12px' }}>
-                <h4 style={{ fontSize: '0.9rem', fontWeight: 700, marginBottom: '8px' }}>Custom Category Limits</h4>
-                {Object.keys(customLimits).map(catName => (
-                  <div className="form-row-2" key={catName} style={{ alignItems: 'flex-end', marginTop: '8px' }}>
-                    <div className="form-group" style={{ flexGrow: 1 }}>
-                      <label>{catName} Limit (Rs.)</label>
-                      <input
-                        type="number"
-                        className="input-ctrl"
-                        value={customLimits[catName]}
-                        onChange={e => {
-                          const val = parseFloat(e.target.value) || 0;
-                          setCustomLimits(prev => ({ ...prev, [catName]: val }));
-                        }}
-                        min="0"
-                        required
-                      />
-                    </div>
-                    <button
-                      type="button"
-                      className="btn btn-secondary"
-                      onClick={() => {
-                        setCustomLimits(prev => {
-                          const copy = { ...prev };
-                          delete copy[catName];
-                          return copy;
-                        });
-                      }}
-                      style={{ marginBottom: '4px', height: '36px', padding: '0 12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                    >
-                      Remove
-                    </button>
+            {/* Pro Custom Category Limits Section */}
+            <div style={{ marginTop: '16px', borderTop: '1px solid var(--border-color)', paddingTop: '12px' }}>
+              <h4 style={{ fontSize: '0.9rem', fontWeight: 700, marginBottom: '8px', color: isPro ? 'var(--text-primary)' : 'var(--text-muted)' }}>
+                Custom Category Limits {!isPro && ' (Pro Only)'}
+              </h4>
+              
+              {!isPro ? (
+                <div style={{
+                  background: 'rgba(99, 102, 241, 0.05)',
+                  border: '1px dashed rgba(99, 102, 241, 0.3)',
+                  borderRadius: '10px',
+                  padding: '16px',
+                  textAlign: 'center',
+                  marginTop: '10px'
+                }}>
+                  <div style={{ fontSize: '1.2rem', marginBottom: '8px' }}>🔒</div>
+                  <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)' }}>Custom Category Limits</div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '4px', lineHeight: '1.4' }}>
+                    Custom category budgets are only available to MoneyMate Pro users. Upgrade in settings to set budgets for any custom expense category.
                   </div>
-                ))}
-              </div>
-            )}
-
-            {filteredCatsForSelect.length > 0 && (
-              <div style={{ marginTop: '16px', borderTop: '1px solid var(--border-color)', paddingTop: '12px' }}>
-                <h4 style={{ fontSize: '0.9rem', fontWeight: 700, marginBottom: '8px' }}>Add Custom Category Limit</h4>
-                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                  <select
-                    className="input-ctrl"
-                    value={selectedNewCat}
-                    onChange={e => setSelectedNewCat(e.target.value)}
-                    style={{ flexGrow: 1 }}
-                  >
-                    <option value="">-- Select Category --</option>
-                    {filteredCatsForSelect.map(c => (
-                      <option key={c} value={c}>{c}</option>
-                    ))}
-                  </select>
-                  <button
-                    type="button"
-                    className="btn btn-secondary"
-                    onClick={() => {
-                      if (selectedNewCat) {
-                        setCustomLimits(prev => ({ ...prev, [selectedNewCat]: 0 }));
-                        setSelectedNewCat('');
-                      }
-                    }}
-                    style={{ whiteSpace: 'nowrap', height: '36px' }}
-                  >
-                    Add Category
-                  </button>
                 </div>
-              </div>
-            )}
+              ) : (
+                <>
+                  {Object.keys(customLimits).length > 0 && (
+                    <div style={{ marginBottom: '16px' }}>
+                      {Object.keys(customLimits).map(catName => (
+                        <div className="form-row-2" key={catName} style={{ alignItems: 'flex-end', marginTop: '8px' }}>
+                          <div className="form-group" style={{ flexGrow: 1 }}>
+                            <label>{catName} Limit (Rs.)</label>
+                            <input
+                              type="number"
+                              className="input-ctrl"
+                              value={customLimits[catName]}
+                              onChange={e => {
+                                const val = parseFloat(e.target.value) || 0;
+                                setCustomLimits(prev => ({ ...prev, [catName]: val }));
+                              }}
+                              min="0"
+                              required
+                            />
+                          </div>
+                          <button
+                            type="button"
+                            className="btn btn-secondary"
+                            onClick={() => {
+                              setCustomLimits(prev => {
+                                const copy = { ...prev };
+                                delete copy[catName];
+                                return copy;
+                              });
+                            }}
+                            style={{ marginBottom: '4px', height: '36px', padding: '0 12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {filteredCatsForSelect.length > 0 && (
+                    <div style={{ marginTop: '16px', borderTop: '1px solid var(--border-color)', paddingTop: '12px' }}>
+                      <h5 style={{ fontSize: '0.8rem', fontWeight: 700, marginBottom: '8px', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Add Custom Category Limit</h5>
+                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                        <select
+                          className="input-ctrl"
+                          value={selectedNewCat}
+                          onChange={e => setSelectedNewCat(e.target.value)}
+                          style={{ flexGrow: 1 }}
+                        >
+                          <option value="">-- Select Category --</option>
+                          {filteredCatsForSelect.map(c => (
+                            <option key={c} value={c}>{c}</option>
+                          ))}
+                        </select>
+                        <button
+                          type="button"
+                          className="btn btn-secondary"
+                          onClick={() => {
+                            if (selectedNewCat) {
+                              setCustomLimits(prev => ({ ...prev, [selectedNewCat]: 0 }));
+                              setSelectedNewCat('');
+                            }
+                          }}
+                          style={{ whiteSpace: 'nowrap', height: '36px' }}
+                        >
+                          Add Category
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
           </div>
           <div className="modal-footer">
             <button type="button" className="btn btn-secondary" onClick={() => setIsLimitsModalOpen(false)}>Cancel</button>

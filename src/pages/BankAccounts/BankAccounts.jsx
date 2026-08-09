@@ -7,7 +7,7 @@ import { formatCurrency } from '../../utils/format';
 import { api } from '../../services/api';
 
 export default function BankAccounts() {
-  const { accounts, transactions, addAccount, editAccount, deleteAccount, settings, salaryHistory } = useDatabase();
+  const { accounts, transactions, addAccount, editAccount, deleteAccount, settings, salaryHistory, isPro } = useDatabase();
   const { showToast } = useToast();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -66,6 +66,10 @@ export default function BankAccounts() {
   }, [selectedTx]);
 
   const handleOpenImage = async (path) => {
+    if (!isPro) {
+      showToast('Viewing receipt images requires a MoneyMate Pro license.', 'warning');
+      return;
+    }
     if (!path) return;
     try {
       const res = await api.openFile(path);
@@ -872,25 +876,43 @@ export default function BankAccounts() {
                       <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
                       Attached Receipt / Invoice
                     </h3>
-                    {selectedTxImageBase64 ? (
-                      <div style={{ position: 'relative', borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.2)', padding: '10px' }}>
-                        <img 
-                          src={selectedTxImageBase64} 
-                          alt="Transaction attachment" 
-                          style={{ width: '100%', maxHeight: '300px', objectFit: 'contain', display: 'block', cursor: 'pointer', borderRadius: '4px' }}
-                          onClick={() => handleOpenImage(selectedTx.imagePath)}
-                          title="Click to open image in system viewer"
-                        />
+                    {!isPro ? (
+                      <div style={{
+                        background: 'rgba(99, 102, 241, 0.03)',
+                        border: '1px dashed rgba(99, 102, 241, 0.2)',
+                        borderRadius: '8px',
+                        padding: '16px',
+                        textAlign: 'center'
+                      }}>
+                        <div style={{ fontSize: '1.2rem', marginBottom: '6px' }}>🔒</div>
+                        <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)' }}>MoneyMate Pro Feature</div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
+                          Viewing attached transaction receipts is restricted to Pro users. Upgrade to Pro in Settings to access receipt attachments.
+                        </div>
                       </div>
                     ) : (
-                      <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Loading attachment image...</div>
+                      <>
+                        {selectedTxImageBase64 ? (
+                          <div style={{ position: 'relative', borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.2)', padding: '10px' }}>
+                            <img 
+                              src={selectedTxImageBase64} 
+                              alt="Transaction attachment" 
+                              style={{ width: '100%', maxHeight: '300px', objectFit: 'contain', display: 'block', cursor: 'pointer', borderRadius: '4px' }}
+                              onClick={() => handleOpenImage(selectedTx.imagePath)}
+                              title="Click to open image in system viewer"
+                            />
+                          </div>
+                        ) : (
+                          <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Loading attachment image...</div>
+                        )}
+                        <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'center' }}>
+                          <button type="button" className="btn btn-secondary" onClick={() => handleOpenImage(selectedTx.imagePath)} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '0.85rem', padding: '8px' }}>
+                            <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" strokeWidth="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                            Open Original Image file
+                          </button>
+                        </div>
+                      </>
                     )}
-                    <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'center' }}>
-                      <button type="button" className="btn btn-secondary" onClick={() => handleOpenImage(selectedTx.imagePath)} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '0.85rem', padding: '8px' }}>
-                        <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" strokeWidth="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-                        Open Original Image file
-                      </button>
-                    </div>
                   </div>
                 ) : (
                   <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '20px', marginTop: '20px' }}>

@@ -282,6 +282,7 @@ export default class Database {
         purchaseToken: '',
         isProDevOverride: false
       };
+    }
     if (!Array.isArray(this.data.profile.contributions)) {
       this.data.profile.contributions = [];
     }
