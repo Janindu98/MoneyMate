@@ -5,7 +5,7 @@ import { useToast } from '../../components/Toast';
 export default function ProUpgrade({ activeTab }) {
   const { purchaseProMicrosoftStore, activateLicenseKey, setProDevOverride } = useDatabase();
   const { showToast } = useToast();
-  
+
   const [licenseKeyInput, setLicenseKeyInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
@@ -61,7 +61,7 @@ export default function ProUpgrade({ activeTab }) {
       showToast('Please enter a license key first.', 'warning');
       return;
     }
-    
+
     setLoading(true);
     setErrorMessage('');
     try {
@@ -90,8 +90,8 @@ export default function ProUpgrade({ activeTab }) {
   };
 
   return (
-    <div className="page active" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 'calc(100vh - 40px)', padding: '40px 20px', color: '#fff', background: '#0a0d1a' }}>
-      
+    <div className="page active" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', minHeight: 'calc(100vh - 100px)', marginBottom: '30px', padding: '40px 20px 40px 20px', color: '#fff' }}>
+
       {/* Premium Header Accent */}
       <div style={{ textAlign: 'center', maxWidth: '640px', marginBottom: '40px' }}>
         <div style={{
@@ -109,10 +109,10 @@ export default function ProUpgrade({ activeTab }) {
           letterSpacing: '0.05em',
           marginBottom: '16px'
         }}>
-          <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" strokeWidth="2.5"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+          <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" strokeWidth="2.5"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" /></svg>
           MoneyMate Premium Feature
         </div>
-        
+
         <h1 style={{ fontSize: '2.2rem', fontWeight: 800, letterSpacing: '-0.02em', background: 'linear-gradient(135deg, #fff 30%, #a5b4fc 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', marginBottom: '12px' }}>
           {getFeatureTitle()}
         </h1>
@@ -123,7 +123,7 @@ export default function ProUpgrade({ activeTab }) {
 
       {/* Grid Layout for Upgrade Options */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '30px', maxWidth: '840px', width: '100%', marginBottom: '40px' }}>
-        
+
         {/* Card 1: Microsoft Store Billing */}
         <div className="panel" style={{
           background: 'rgba(15, 23, 42, 0.6)',
@@ -145,34 +145,88 @@ export default function ProUpgrade({ activeTab }) {
                 border: '1px solid rgba(59, 130, 246, 0.2)'
               }}>
                 <svg viewBox="0 0 24 24" width="24" height="24" stroke="#60a5fa" fill="none" strokeWidth="2">
-                  <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82zM7 20H2v-5"/>
+                  <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82zM7 20H2v-5" />
                   <line x1="7" y1="7" x2="7.01" y2="7" />
                 </svg>
               </div>
               <div style={{ textAlign: 'right' }}>
                 <span style={{ fontSize: '0.8rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 600 }}>Lifetime Access</span>
-                <div style={{ fontSize: '1.8rem', fontWeight: 800, color: '#fff', marginTop: '4px' }}>$9.99</div>
+                <div style={{ fontSize: '1.8rem', fontWeight: 800, color: '#fff', marginTop: '4px' }}>$11.99</div>
               </div>
             </div>
-            
-            <h3 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '10px' }}>Upgrade via Microsoft Store</h3>
-            <p style={{ color: '#94a3b8', fontSize: '0.85rem', lineHeight: '1.5', marginBottom: '20px' }}>
-              Secure payment processed natively through the Microsoft Store ecosystem. Unlocks Pro instantly across all Windows devices linked to your account.
+
+            <h3 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '16px' }}>Upgrade via Microsoft Store</h3>
+
+            <div style={{
+              background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(59, 130, 246, 0.15) 100%)',
+              border: '1px solid rgba(99, 102, 241, 0.3)',
+              borderRadius: '12px',
+              padding: '12px',
+              marginBottom: '16px',
+              textAlign: 'center'
+            }}>
+              <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#818cf8', textTransform: 'uppercase', display: 'block' }}>
+                🚀 Launch Offer
+              </span>
+              <span style={{ fontSize: '1.1rem', fontWeight: 800, color: '#fff', marginTop: '4px', display: 'block' }}>
+                MoneyMate Pro — $11.99 One-Time Purchase
+              </span>
+            </div>
+
+            <h3 style={{ fontSize: '1.05rem', fontWeight: 800, marginBottom: '6px', color: '#fff', textAlign: 'center', lineHeight: '1.4' }}>
+              Your finances. Your data. One simple upgrade.
+            </h3>
+
+            <p style={{ color: '#94a3b8', fontSize: '0.8rem', lineHeight: '1.5', marginBottom: '16px', textAlign: 'center' }}>
+              Unlock all premium features and manage your finances without a recurring subscription.
             </p>
+
+            <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingTop: '12px', paddingBottom: '12px', marginBottom: '16px' }}>
+              <h4 style={{ fontSize: '0.85rem', fontWeight: 700, marginBottom: '8px', color: '#fff' }}>
+                Pro includes:
+              </h4>
+              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <li style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8rem', color: '#94a3b8' }}>
+                  <span>📊</span> Advanced financial reports
+                </li>
+                <li style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8rem', color: '#94a3b8' }}>
+                  <span>💰</span> Detailed salary management
+                </li>
+                <li style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8rem', color: '#94a3b8' }}>
+                  <span>🏦</span> Multiple bank-account management
+                </li>
+                <li style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8rem', color: '#94a3b8' }}>
+                  <span>📄</span> PDF & Excel exports
+                </li>
+                <li style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8rem', color: '#94a3b8' }}>
+                  <span>💾</span> Encrypted backup & restore
+                </li>
+                <li style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8rem', color: '#94a3b8' }}>
+                  <span>📈</span> Advanced financial analysis
+                </li>
+                <li style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8rem', color: '#94a3b8' }}>
+                  <span>🔓</span> All future Pro improvements
+                </li>
+              </ul>
+            </div>
+
+            <div style={{ textAlign: 'center', color: '#10b981', fontWeight: 700, fontSize: '0.85rem', marginBottom: '16px' }}>
+              ✨ No monthly subscription
+            </div>
           </div>
 
-          <button 
-            className="btn btn-primary" 
+          <button
+            className="btn btn-primary"
             disabled={loading}
             onClick={handlePurchaseStore}
-            style={{ 
-              width: '100%', 
-              padding: '12px', 
-              fontSize: '0.9rem', 
-              fontWeight: 700, 
-              background: 'linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%)', 
-              border: 'none', 
-              borderRadius: '8px', 
+            style={{
+              width: '100%',
+              padding: '12px',
+              fontSize: '0.9rem',
+              fontWeight: 700,
+              background: 'linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%)',
+              border: 'none',
+              borderRadius: '8px',
               cursor: 'pointer',
               boxShadow: '0 4px 12px rgba(79, 70, 229, 0.3)'
             }}
@@ -219,12 +273,12 @@ export default function ProUpgrade({ activeTab }) {
               </p>
 
               <div className="form-group" style={{ marginBottom: '20px' }}>
-                <input 
-                  type="text" 
-                  className="input-ctrl" 
-                  placeholder="MM-XXXX-XXXX-XXXX-XXXX" 
-                  value={licenseKeyInput} 
-                  onChange={e => setLicenseKeyInput(e.target.value)} 
+                <input
+                  type="text"
+                  className="input-ctrl"
+                  placeholder="MM-XXXX-XXXX-XXXX-XXXX"
+                  value={licenseKeyInput}
+                  onChange={e => setLicenseKeyInput(e.target.value)}
                   style={{
                     width: '100%',
                     background: 'rgba(15, 23, 42, 0.8)',
@@ -241,19 +295,19 @@ export default function ProUpgrade({ activeTab }) {
               </div>
             </div>
 
-            <button 
-              type="submit" 
-              className="btn btn-secondary" 
+            <button
+              type="submit"
+              className="btn btn-secondary"
               disabled={loading}
-              style={{ 
-                width: '100%', 
-                padding: '12px', 
-                fontSize: '0.9rem', 
-                fontWeight: 700, 
+              style={{
+                width: '100%',
+                padding: '12px',
+                fontSize: '0.9rem',
+                fontWeight: 700,
                 background: 'rgba(255, 255, 255, 0.08)',
                 border: '1px solid rgba(255, 255, 255, 0.15)',
                 color: '#fff',
-                borderRadius: '8px', 
+                borderRadius: '8px',
                 cursor: 'pointer'
               }}
             >
@@ -299,15 +353,15 @@ export default function ProUpgrade({ activeTab }) {
         <div>
           <strong style={{ color: '#fff' }}>Developer Environment Detected:</strong> You can bypass licensing checks instantly during local testing using the override.
         </div>
-        <button 
-          className="btn btn-danger" 
+        <button
+          className="btn btn-danger"
           onClick={handleDevOverride}
-          style={{ 
-            padding: '6px 14px', 
-            fontSize: '0.75rem', 
-            fontWeight: 600, 
-            background: 'rgba(239, 68, 68, 0.2)', 
-            border: '1px solid rgba(239, 68, 68, 0.3)', 
+          style={{
+            padding: '6px 14px',
+            fontSize: '0.75rem',
+            fontWeight: 600,
+            background: 'rgba(239, 68, 68, 0.2)',
+            border: '1px solid rgba(239, 68, 68, 0.3)',
             color: '#f87171',
             borderRadius: '6px',
             cursor: 'pointer'

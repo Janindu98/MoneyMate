@@ -319,7 +319,7 @@ export default function Settings() {
                       showToast(res.error, 'error');
                     }
                   }} style={{ background: 'linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%)', border: 'none' }}>
-                    Upgrade to Pro ($9.99)
+                    Upgrade to Pro ($11.99)
                   </button>
                 )}
               </div>

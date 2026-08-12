@@ -27,21 +27,67 @@ export default function ProUpgradeModal({ isOpen, onClose, reason }) {
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Upgrade to MoneyMate Pro">
-      <div className="modal-body" style={{ textAlign: 'center', padding: '24px 16px' }}>
-        <div style={{ display: 'flex', justifyContent: 'center' }}>
-          <svg viewBox="0 0 24 24" width="60" height="60" fill="none" stroke="#fbbf24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginBottom: '16px', filter: 'drop-shadow(0 0 12px rgba(251, 191, 36, 0.5))' }}>
-            <path d="M2 4l3 12h14l3-12-6 7-4-7-4 7-6-7z"/>
-            <path d="M3 20h18"/>
-          </svg>
+    <Modal isOpen={isOpen} onClose={onClose} title="Upgrade via Microsoft Store">
+      <div className="modal-body" style={{ textAlign: 'left', padding: '20px 24px', color: 'var(--text-primary)' }}>
+        
+        {/* Launch Offer Banner */}
+        <div style={{
+          background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(59, 130, 246, 0.15) 100%)',
+          border: '1px solid rgba(99, 102, 241, 0.3)',
+          borderRadius: '12px',
+          padding: '16px',
+          marginBottom: '20px',
+          textAlign: 'center'
+        }}>
+          <span style={{ fontSize: '1rem', fontWeight: 800, color: '#818cf8', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block' }}>
+            🚀 Launch Offer
+          </span>
+          <span style={{ fontSize: '1.25rem', fontWeight: 800, color: '#fff', marginTop: '6px', display: 'block' }}>
+            MoneyMate Pro — $11.99 One-Time Purchase
+          </span>
         </div>
-        <h3 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '10px', color: 'var(--text-primary)' }}>Premium Feature Locked</h3>
-        <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: '8px' }}>
-          {reason || 'This action requires a MoneyMate Pro license.'}
+
+        <h3 style={{ fontSize: '1.1rem', fontWeight: 800, marginBottom: '8px', color: 'var(--text-primary)', textAlign: 'center', lineHeight: '1.4' }}>
+          Your finances. Your data. One simple upgrade.
+        </h3>
+        
+        <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', lineHeight: '1.5', marginBottom: '20px', textAlign: 'center' }}>
+          Unlock all premium features and manage your finances without a recurring subscription.
         </p>
-        <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', lineHeight: 1.5, marginBottom: '20px' }}>
-          Upgrade to MoneyMate Pro now to gain full access to high-fidelity exports, receipt attachment vaults, unlimited accounts, and all other premium features.
-        </p>
+
+        <div style={{ borderTop: '1px solid var(--border-color)', borderBottom: '1px solid var(--border-color)', paddingTop: '16px', paddingBottom: '16px', marginBottom: '20px' }}>
+          <h4 style={{ fontSize: '0.9rem', fontWeight: 700, marginBottom: '12px', color: 'var(--text-primary)' }}>
+            Pro includes:
+          </h4>
+          <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <li style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+              <span style={{ fontSize: '1rem' }}>📊</span> Advanced financial reports
+            </li>
+            <li style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+              <span style={{ fontSize: '1rem' }}>💰</span> Detailed salary management
+            </li>
+            <li style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+              <span style={{ fontSize: '1rem' }}>🏦</span> Multiple bank-account management
+            </li>
+            <li style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+              <span style={{ fontSize: '1rem' }}>📄</span> PDF & Excel exports
+            </li>
+            <li style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+              <span style={{ fontSize: '1rem' }}>💾</span> Encrypted backup & restore
+            </li>
+            <li style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+              <span style={{ fontSize: '1rem' }}>📈</span> Advanced financial analysis
+            </li>
+            <li style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+              <span style={{ fontSize: '1rem' }}>🔓</span> All future Pro improvements
+            </li>
+          </ul>
+        </div>
+
+        <div style={{ textAlign: 'center', color: '#10b981', fontWeight: 700, fontSize: '0.9rem', marginBottom: '8px' }}>
+          ✨ No monthly subscription
+        </div>
+
       </div>
       <div className="modal-footer" style={{ gap: '12px', justifyContent: 'center', borderTop: '1px solid var(--border-color)', paddingTop: '16px' }}>
         <button type="button" className="btn btn-secondary" onClick={onClose} disabled={loading} style={{ minWidth: '100px' }}>
@@ -53,7 +99,7 @@ export default function ProUpgradeModal({ isOpen, onClose, reason }) {
           onClick={handleUpgrade} 
           disabled={loading}
           style={{ 
-            minWidth: '160px',
+            minWidth: '200px',
             background: 'linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%)',
             border: 'none',
             color: '#fff',
@@ -65,7 +111,7 @@ export default function ProUpgradeModal({ isOpen, onClose, reason }) {
             gap: '6px'
           }}
         >
-          {loading ? 'Upgrading...' : 'Upgrade to Pro'}
+          {loading ? 'Upgrading...' : 'Upgrade to Pro ($11.99)'}
         </button>
       </div>
     </Modal>
