@@ -38,7 +38,8 @@
     "jspdf-autotable": "^5.0.8",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
-    "xlsx": "^0.18.5"
+    "xlsx": "^0.18.5",
+    "xlsx-js-style": "^1.2.0"
   },
   "build": {
     "appId": "com.moneymate.app",
