@@ -1,7 +1,6 @@
 import { app, BrowserWindow, ipcMain, Menu, dialog, shell } from 'electron';
 import path from 'node:path';
 import fs from 'node:fs';
-import os from 'node:os';
 import started from 'electron-squirrel-startup';
 import Database from './database/db.js';
 import { validateLicenseKey } from './utils/licensing.js';
@@ -494,7 +493,7 @@ app.whenReady().then(() => {
         else if (ext === '.gif') mimeType = 'image/gif';
         else if (ext === '.svg') mimeType = 'image/svg+xml';
         else if (ext === '.webp') mimeType = 'image/webp';
-        
+
         const base64 = fileBuffer.toString('base64');
         return { success: true, base64: `data:${mimeType};base64,${base64}` };
       } else {
@@ -551,7 +550,7 @@ app.whenReady().then(() => {
     const isPackaged = app.isPackaged;
     const baseDir = isPackaged ? process.resourcesPath : app.getAppPath();
     const helperPath = path.join(baseDir, 'build-native', 'StoreHelper.exe');
-    
+
     if (!fs.existsSync(helperPath)) {
       console.warn('StoreHelper.exe not found at:', helperPath);
       return { isPro: false, success: false, error: 'StoreHelper binary not found.' };
@@ -568,17 +567,17 @@ app.whenReady().then(() => {
 
   ipcMain.handle('license:check', async () => {
     const license = db.getData()?.license || { status: 'free', type: 'none', key: '', purchaseToken: '', isProDevOverride: false };
-    
+
     // Dev Mode Override
     if (license.isProDevOverride) {
       return { status: 'pro', type: 'dev_override', isPro: true, license };
     }
-    
+
     // Standalone key validation
     if (license.type === 'license_key' && validateLicenseKey(license.key)) {
       return { status: 'pro', type: 'license_key', isPro: true, key: license.key, license };
     }
-    
+
     // Microsoft Store Purchase Verification (Real call)
     const storeRes = await runStoreHelper('check');
     if (storeRes && storeRes.isPro) {
@@ -610,7 +609,7 @@ app.whenReady().then(() => {
         return { status: 'free', type: 'none', isPro: false, license: data.license };
       }
     }
-    
+
     // Otherwise fallback/expire
     return { status: 'free', type: 'none', isPro: false, license };
   });
@@ -625,7 +624,7 @@ app.whenReady().then(() => {
 
     // Run the real purchase flow in the C# helper
     const storeRes = await runStoreHelper('purchase', hwndStr);
-    
+
     if (storeRes && storeRes.success) {
       const data = db.getData();
       data.license = {

@@ -90,7 +90,7 @@ export default function ProUpgrade({ activeTab }) {
   };
 
   return (
-    <div className="page active" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', minHeight: 'calc(100vh - 100px)', marginBottom: '30px', padding: '40px 20px 40px 20px', color: '#fff' }}>
+    <div className="page active" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', minHeight: 'calc(100vh - 130px)', marginTop: '15px', marginBottom: '15px', padding: '55px 20px 40px 20px', color: '#fff' }}>
 
       {/* Premium Header Accent */}
       <div style={{ textAlign: 'center', maxWidth: '640px', marginBottom: '40px' }}>
