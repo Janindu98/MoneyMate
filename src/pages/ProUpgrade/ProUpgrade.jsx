@@ -32,7 +32,7 @@ export default function ProUpgrade({ activeTab }) {
       case 'backup':
         return 'Secure your financial history by enabling background auto-backup synchronization to Google Drive, Microsoft OneDrive, or Dropbox folders.';
       default:
-        return 'Get access to cloud backups, subscription auto-renewals, utility bill monitors, and high-fidelity PDF audit reports.';
+        return 'Get access to cloud backups, subscription auto-renewals, utility bill monitors, and Excel spreadsheet audit reports.';
     }
   };
 
