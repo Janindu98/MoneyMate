@@ -5,7 +5,7 @@ import { api } from '../../services/api';
 import Modal from '../../components/Modal';
 import ConfirmModal from '../../components/ConfirmModal';
 
-export default function Settings() {
+export default function Settings({ onOpenAbout }) {
   const { settings, updateSettings, restoreDatabase, showToast: hookShowToast } = useDatabase();
   const { showToast } = useToast();
 
@@ -273,6 +273,35 @@ export default function Settings() {
                 <option value="pin">PIN Lock</option>
                 <option value="password">Password</option>
               </select>
+            </div>
+          </div>
+        </div>
+
+        {/* About & Privacy Information */}
+        <div className="settings-section">
+          <div className="settings-section-title">About MoneyMate & Privacy Guarantee</div>
+          <div className="settings-section-desc">View product build version details, software benefits, and local storage data architecture.</div>
+          <div className="settings-row">
+            <div className="settings-row-info">
+              <div className="settings-row-title">Version 1.5.0 (Offline-First Edition)</div>
+              <div className="settings-row-desc">
+                Your financial data stays 100% on your device. Zero cloud telemetry.
+              </div>
+            </div>
+            <div>
+              <button 
+                type="button" 
+                className="btn btn-secondary" 
+                onClick={onOpenAbout}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', width: '150px', justifyContent: 'center' }}
+              >
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="12" y1="16" x2="12" y2="12" />
+                  <line x1="12" y1="8" x2="12.01" y2="8" />
+                </svg>
+                About & Specs
+              </button>
             </div>
           </div>
         </div>
