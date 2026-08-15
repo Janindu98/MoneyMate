@@ -3,6 +3,7 @@ import { useDatabase } from '../../hooks/useDatabase';
 import { formatCurrency } from '../../utils/format';
 import Chart from 'chart.js/auto';
 import Modal from '../../components/Modal';
+import ProUpgradeModal from '../../components/ProUpgradeModal';
 
 export default function Budgets() {
   const { transactions, settings, updateSettings, categories, isPro } = useDatabase();
@@ -38,6 +39,13 @@ export default function Budgets() {
   
   const [customLimits, setCustomLimits] = useState({});
   const [selectedNewCat, setSelectedNewCat] = useState('');
+  const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
+  const [upgradeReason, setUpgradeReason] = useState('');
+
+  const triggerUpgradeModal = (reason) => {
+    setUpgradeReason(reason);
+    setIsUpgradeModalOpen(true);
+  };
 
   // Sync state if settings load later
   useEffect(() => {
@@ -683,12 +691,36 @@ export default function Budgets() {
 
             {filteredCatsForSelect.length > 0 && (
               <div style={{ marginTop: '16px', borderTop: '1px solid var(--border-color)', paddingTop: '12px' }}>
-                <h4 style={{ fontSize: '0.9rem', fontWeight: 700, marginBottom: '8px' }}>Add Custom Category Limit</h4>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                  <h4 style={{ fontSize: '0.9rem', fontWeight: 700, margin: 0 }}>Add Custom Category Limit</h4>
+                  {!isPro && (
+                    <span
+                      style={{
+                        background: 'rgba(251, 191, 36, 0.15)',
+                        color: '#fbbf24',
+                        border: '1px solid rgba(251, 191, 36, 0.3)',
+                        fontSize: '0.7rem',
+                        fontWeight: 700,
+                        padding: '1px 6px',
+                        borderRadius: '4px',
+                        letterSpacing: '0.05em'
+                      }}
+                    >
+                      PRO
+                    </span>
+                  )}
+                </div>
                 <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                   <select
                     className="input-ctrl"
                     value={selectedNewCat}
-                    onChange={e => setSelectedNewCat(e.target.value)}
+                    onChange={e => {
+                      if (!isPro) {
+                        triggerUpgradeModal('Setting custom category budget limits requires a MoneyMate Pro license.');
+                        return;
+                      }
+                      setSelectedNewCat(e.target.value);
+                    }}
                     style={{ flexGrow: 1 }}
                   >
                     <option value="">-- Select Category --</option>
@@ -700,14 +732,31 @@ export default function Budgets() {
                     type="button"
                     className="btn btn-secondary"
                     onClick={() => {
+                      if (!isPro) {
+                        triggerUpgradeModal('Adding custom category budget limits requires a MoneyMate Pro license.');
+                        return;
+                      }
                       if (selectedNewCat) {
                         setCustomLimits(prev => ({ ...prev, [selectedNewCat]: 0 }));
                         setSelectedNewCat('');
                       }
                     }}
-                    style={{ whiteSpace: 'nowrap', height: '36px' }}
+                    style={{
+                      whiteSpace: 'nowrap',
+                      height: '36px',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px'
+                    }}
                   >
-                    Add Category
+                    {!isPro ? (
+                      <>
+                        <svg viewBox="0 0 24 24" width="14" height="14" stroke="#fbbf24" fill="none" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+                        Add Category (Pro)
+                      </>
+                    ) : (
+                      'Add Category'
+                    )}
                   </button>
                 </div>
               </div>
@@ -719,6 +768,12 @@ export default function Budgets() {
           </div>
         </form>
       </Modal>
+
+      <ProUpgradeModal
+        isOpen={isUpgradeModalOpen}
+        onClose={() => setIsUpgradeModalOpen(false)}
+        reason={upgradeReason}
+      />
     </div>
   );
 }

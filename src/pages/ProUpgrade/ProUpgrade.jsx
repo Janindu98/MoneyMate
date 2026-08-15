@@ -3,10 +3,9 @@ import { useDatabase } from '../../hooks/useDatabase';
 import { useToast } from '../../components/Toast';
 
 export default function ProUpgrade({ activeTab }) {
-  const { purchaseProMicrosoftStore, activateLicenseKey, setProDevOverride } = useDatabase();
+  const { purchaseProMicrosoftStore, setProDevOverride } = useDatabase();
   const { showToast } = useToast();
 
-  const [licenseKeyInput, setLicenseKeyInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
@@ -55,31 +54,6 @@ export default function ProUpgrade({ activeTab }) {
     }
   };
 
-  const handleActivateKey = async (e) => {
-    e.preventDefault();
-    if (!licenseKeyInput.trim()) {
-      showToast('Please enter a license key first.', 'warning');
-      return;
-    }
-
-    setLoading(true);
-    setErrorMessage('');
-    try {
-      const res = await activateLicenseKey(licenseKeyInput.trim());
-      if (res.success) {
-        showToast('License activated successfully! MoneyMate Pro is now unlocked.');
-      } else {
-        setErrorMessage(res.error || 'Invalid key.');
-        showToast(res.error || 'Invalid key.', 'error');
-      }
-    } catch (err) {
-      setErrorMessage(err.message);
-      showToast('Key activation failed.', 'error');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleDevOverride = async () => {
     try {
       await setProDevOverride(true);
@@ -93,7 +67,7 @@ export default function ProUpgrade({ activeTab }) {
     <div className="page active" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', minHeight: 'calc(100vh - 130px)', marginTop: '15px', marginBottom: '15px', padding: '55px 20px 40px 20px', color: '#fff' }}>
 
       {/* Premium Header Accent */}
-      <div style={{ textAlign: 'center', maxWidth: '640px', marginBottom: '40px' }}>
+      <div style={{ textAlign: 'center', maxWidth: '640px', marginBottom: '32px' }}>
         <div style={{
           display: 'inline-flex',
           alignItems: 'center',
@@ -121,10 +95,10 @@ export default function ProUpgrade({ activeTab }) {
         </p>
       </div>
 
-      {/* Grid Layout for Upgrade Options */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '30px', maxWidth: '840px', width: '100%', marginBottom: '40px' }}>
+      {/* Centered Upgrade Card */}
+      <div style={{ maxWidth: '540px', width: '100%', marginBottom: '32px' }}>
 
-        {/* Card 1: Microsoft Store Billing */}
+        {/* Card: Microsoft Store Billing */}
         <div className="panel" style={{
           background: 'rgba(15, 23, 42, 0.6)',
           backdropFilter: 'blur(12px)',
@@ -235,87 +209,6 @@ export default function ProUpgrade({ activeTab }) {
           </button>
         </div>
 
-        {/* Card 2: Standalone License Key */}
-        <div className="panel" style={{
-          background: 'rgba(15, 23, 42, 0.6)',
-          backdropFilter: 'blur(12px)',
-          border: '1px solid rgba(255, 255, 255, 0.08)',
-          borderRadius: '16px',
-          padding: '30px',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'space-between',
-          boxShadow: '0 20px 40px rgba(0, 0, 0, 0.3)'
-        }}>
-          <form onSubmit={handleActivateKey} style={{ display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'space-between' }}>
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
-                <div style={{
-                  background: 'rgba(16, 185, 129, 0.1)',
-                  padding: '10px',
-                  borderRadius: '12px',
-                  border: '1px solid rgba(16, 185, 129, 0.2)'
-                }}>
-                  <svg viewBox="0 0 24 24" width="24" height="24" stroke="#34d399" fill="none" strokeWidth="2">
-                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                  </svg>
-                </div>
-                <div style={{ textAlign: 'right' }}>
-                  <span style={{ fontSize: '0.8rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 600 }}>Standalone</span>
-                  <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#34d399', background: 'rgba(16, 185, 129, 0.15)', padding: '4px 8px', borderRadius: '6px', marginTop: '4px' }}>Wired / Web</div>
-                </div>
-              </div>
-
-              <h3 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '10px' }}>Activate Standalone License</h3>
-              <p style={{ color: '#94a3b8', fontSize: '0.85rem', lineHeight: '1.5', marginBottom: '16px' }}>
-                Purchased outside the Microsoft Store? Enter your 18-digit license key below to unlock details instantly.
-              </p>
-
-              <div className="form-group" style={{ marginBottom: '20px' }}>
-                <input
-                  type="text"
-                  className="input-ctrl"
-                  placeholder="MM-XXXX-XXXX-XXXX-XXXX"
-                  value={licenseKeyInput}
-                  onChange={e => setLicenseKeyInput(e.target.value)}
-                  style={{
-                    width: '100%',
-                    background: 'rgba(15, 23, 42, 0.8)',
-                    border: '1px solid rgba(255, 255, 255, 0.1)',
-                    borderRadius: '8px',
-                    padding: '10px 14px',
-                    color: '#fff',
-                    textAlign: 'center',
-                    fontFamily: 'monospace',
-                    fontSize: '0.95rem',
-                    letterSpacing: '0.05em'
-                  }}
-                />
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              className="btn btn-secondary"
-              disabled={loading}
-              style={{
-                width: '100%',
-                padding: '12px',
-                fontSize: '0.9rem',
-                fontWeight: 700,
-                background: 'rgba(255, 255, 255, 0.08)',
-                border: '1px solid rgba(255, 255, 255, 0.15)',
-                color: '#fff',
-                borderRadius: '8px',
-                cursor: 'pointer'
-              }}
-            >
-              {loading ? 'Activating Key...' : 'Activate License'}
-            </button>
-          </form>
-        </div>
-
       </div>
 
       {/* Error Message Box */}
@@ -327,10 +220,10 @@ export default function ProUpgrade({ activeTab }) {
           padding: '12px 20px',
           borderRadius: '8px',
           fontSize: '0.85rem',
-          maxWidth: '840px',
+          maxWidth: '540px',
           width: '100%',
           textAlign: 'center',
-          marginBottom: '30px'
+          marginBottom: '24px'
         }}>
           <strong>Upgrade failed:</strong> {errorMessage}
         </div>
@@ -338,12 +231,12 @@ export default function ProUpgrade({ activeTab }) {
 
       {/* Developer Options Accent Block */}
       <div style={{
-        maxWidth: '840px',
+        maxWidth: '540px',
         width: '100%',
         background: 'rgba(255, 255, 255, 0.02)',
         border: '1px dashed rgba(255, 255, 255, 0.1)',
         borderRadius: '12px',
-        padding: '20px 24px',
+        padding: '16px 20px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
@@ -364,7 +257,9 @@ export default function ProUpgrade({ activeTab }) {
             border: '1px solid rgba(239, 68, 68, 0.3)',
             color: '#f87171',
             borderRadius: '6px',
-            cursor: 'pointer'
+            cursor: 'pointer',
+            marginLeft: '12px',
+            whiteSpace: 'nowrap'
           }}
         >
           Quick Unlock Pro
