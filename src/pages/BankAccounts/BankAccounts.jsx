@@ -11,9 +11,24 @@ export default function BankAccounts() {
   const { showToast } = useToast();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [viewAccountId, setViewAccountId] = useState(null);
+  const [viewRevealPin, setViewRevealPin] = useState(false);
+  const [viewRevealNumber, setViewRevealNumber] = useState(false);
+  const [viewRevealCvv, setViewRevealCvv] = useState(false);
   const [editId, setEditId] = useState(null);
   const [selectedTx, setSelectedTx] = useState(null);
   const [confirmState, setConfirmState] = useState({ isOpen: false, title: '', message: '', onConfirm: null, type: 'danger', requireTextInput: '' });
+
+  const isCardEligible = (type) => type === 'Savings' || type === 'Credit Card';
+
+  const handleOpenViewModal = (acc) => {
+    setViewAccountId(acc.id);
+    setViewRevealPin(false);
+    setViewRevealNumber(false);
+    setViewRevealCvv(false);
+    setIsViewModalOpen(true);
+  };
 
   const showConfirm = (title, message, onConfirm, type = 'danger', requireTextInput = '') => {
     setConfirmState({ isOpen: true, title, message, onConfirm, type, requireTextInput });
@@ -243,7 +258,8 @@ export default function BankAccounts() {
       return;
     }
 
-    if (cardPin.trim() && (cardPin.trim().length < 4 || cardPin.trim().length > 8)) {
+    const isEligible = isCardEligible(accountType);
+    if (isEligible && cardPin.trim() && (cardPin.trim().length < 4 || cardPin.trim().length > 8)) {
       showToast('Card PIN must be between 4 and 8 digits.', 'error');
       return;
     }
@@ -257,10 +273,10 @@ export default function BankAccounts() {
       currency: settings?.currency || 'USD',
       status,
       color: cardColor,
-      cardNo: cardNo.trim(),
-      cardExpiry: cardExpiry.trim(),
-      cardCvv: cardCvv.trim(),
-      cardPin: cardPin.trim()
+      cardNo: isEligible ? cardNo.trim() : '',
+      cardExpiry: isEligible ? cardExpiry.trim() : '',
+      cardCvv: isEligible ? cardCvv.trim() : '',
+      cardPin: isEligible ? cardPin.trim() : ''
     };
 
     if (editId) {
@@ -339,13 +355,13 @@ export default function BankAccounts() {
                 {acc.accountNumber ? `A/C: ${acc.accountNumber}` : 'A/C: N/A'}
               </span>
               <div className="card-actions" onClick={e => e.stopPropagation()}>
-                {(acc.cardPin || acc.cardNo) && (
-                  <button className="btn-card-action" onClick={() => { setSelectedVaultAccount(acc); setRevealVaultPin(false); setRevealVaultNumber(false); setIsCardVaultOpen(true); }} style={{ background: 'rgba(99, 102, 241, 0.25)' }} title="Reveal Debit Card PIN & Info">
+                {isCardEligible(acc.accountType) && (acc.cardPin || acc.cardNo) && (
+                  <button className="btn-card-action" onClick={() => { setSelectedVaultAccount(acc); setRevealVaultPin(false); setRevealVaultNumber(false); setIsCardVaultOpen(true); }} style={{ background: 'rgba(99, 102, 241, 0.25)' }} title="Reveal Card PIN & Info">
                     <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
                   </button>
                 )}
-                <button className="btn-card-action" onClick={() => handleOpenEditModal(acc)} title="Edit Details">
-                  <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" strokeWidth="2"><path d="M12 20h9" /><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg>
+                <button className="btn-card-action" onClick={() => handleOpenViewModal(acc)} title="View Account Details">
+                  <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
                 </button>
                 <button className="btn-card-action" onClick={() => handleDelete(acc.id, acc.bankName)} style={{ background: 'rgba(244, 63, 94, 0.3)' }} title="Delete Account">
                   <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" strokeWidth="2"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /></svg>
@@ -503,6 +519,241 @@ export default function BankAccounts() {
         );
       })()}
 
+      {/* VIEW ACCOUNT DETAILS MODAL */}
+      <Modal
+        isOpen={isViewModalOpen}
+        onClose={() => setIsViewModalOpen(false)}
+        title="Bank Account Details"
+      >
+        {(() => {
+          if (!viewAccountId) return null;
+          const liveAcc = accounts.find(a => a.id === viewAccountId) || {};
+          return (
+            <div className="modal-body" style={{ padding: '20px 24px' }}>
+              {/* Visual Card Header */}
+              <div style={{
+                background: liveAcc.color || '#1e293b',
+                borderRadius: '16px',
+                padding: '22px 24px',
+                color: '#fff',
+                marginBottom: '20px',
+                boxShadow: '0 10px 25px rgba(0, 0, 0, 0.35)',
+                border: '1px solid rgba(255, 255, 255, 0.12)'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                  <span style={{ fontSize: '1.15rem', fontWeight: 800, letterSpacing: '-0.3px' }}>{liveAcc.bankName || 'Cash'}</span>
+                  <span style={{
+                    fontSize: '0.72rem',
+                    fontWeight: 700,
+                    padding: '3px 8px',
+                    borderRadius: '6px',
+                    background: liveAcc.status === 'Active' ? 'rgba(16, 185, 129, 0.35)' : 'rgba(244, 63, 94, 0.35)',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.04em'
+                  }}>
+                    {liveAcc.status || 'Active'}
+                  </span>
+                </div>
+                <div style={{ marginBottom: '14px' }}>
+                  <div style={{ fontSize: '0.8rem', opacity: 0.8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{liveAcc.accountName}</div>
+                  <div style={{ fontSize: '1.8rem', fontWeight: 800, marginTop: '2px' }}>
+                    {formatCurrency(liveAcc.balance, settings.currency)}
+                  </div>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.85rem', opacity: 0.9 }}>
+                  <span>{liveAcc.accountNumber ? `A/C: ${liveAcc.accountNumber}` : 'A/C: N/A'}</span>
+                  <span>{liveAcc.accountType || 'Savings'}</span>
+                </div>
+              </div>
+
+              {/* Specification Grid */}
+              <div style={{
+                background: 'rgba(255, 255, 255, 0.03)',
+                border: '1px solid var(--border-color)',
+                borderRadius: '12px',
+                padding: '14px 18px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '12px'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '10px' }}>
+                  <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Bank / Institution</span>
+                  <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>{liveAcc.bankName || 'N/A'}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '10px' }}>
+                  <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Account Holder</span>
+                  <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>{liveAcc.accountName || 'N/A'}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '10px' }}>
+                  <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Account Number</span>
+                  <span style={{ fontWeight: 600, fontSize: '0.9rem', fontFamily: 'monospace' }}>{liveAcc.accountNumber || 'N/A'}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '10px' }}>
+                  <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Account Type</span>
+                  <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>{liveAcc.accountType || 'Savings'}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '10px' }}>
+                  <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Branch Location</span>
+                  <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>{liveAcc.branch || 'N/A'}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '10px' }}>
+                  <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Currency</span>
+                  <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>{liveAcc.currency || settings.currency || 'USD'}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Status</span>
+                  <span style={{
+                    fontWeight: 700,
+                    fontSize: '0.85rem',
+                    color: liveAcc.status === 'Active' ? '#34d399' : '#f87171'
+                  }}>
+                    {liveAcc.status || 'Active'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Debit / Credit Card Information Section (Savings and Credit Card only) */}
+              {isCardEligible(liveAcc.accountType) && (
+                <div style={{
+                  marginTop: '18px',
+                  background: 'rgba(99, 102, 241, 0.05)',
+                  border: '1px solid rgba(99, 102, 241, 0.25)',
+                  borderRadius: '12px',
+                  padding: '16px 20px'
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                    <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#818cf8', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" strokeWidth="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
+                      {liveAcc.accountType === 'Credit Card' ? 'Credit Card Information' : 'Debit Card Information'}
+                    </div>
+                  {(liveAcc.cardNo || liveAcc.cardPin) && (
+                    <button
+                      type="button"
+                      className="btn btn-secondary btn-sm"
+                      onClick={() => {
+                        setIsViewModalOpen(false);
+                        setSelectedVaultAccount(liveAcc);
+                        setRevealVaultPin(false);
+                        setRevealVaultNumber(false);
+                        setIsCardVaultOpen(true);
+                      }}
+                      style={{ fontSize: '0.75rem', padding: '4px 10px', display: 'inline-flex', alignItems: 'center', gap: '5px' }}
+                    >
+                      <svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" fill="none" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                      Open Card Vault
+                    </button>
+                  )}
+                </div>
+
+                {(!liveAcc.cardNo && !liveAcc.cardPin && !liveAcc.cardExpiry && !liveAcc.cardCvv) ? (
+                  <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontStyle: 'italic', padding: '6px 0' }}>
+                    No debit card details linked to this account yet. Click "Edit Account" below to add card number, expiry, and secure PIN.
+                  </div>
+                ) : (
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                    {/* Card Number */}
+                    <div style={{ background: 'rgba(0, 0, 0, 0.2)', padding: '10px 14px', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '4px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span>Card Number</span>
+                        {liveAcc.cardNo && (
+                          <button
+                            type="button"
+                            onClick={() => setViewRevealNumber(!viewRevealNumber)}
+                            style={{ background: 'none', border: 'none', color: '#818cf8', cursor: 'pointer', fontSize: '0.72rem', padding: 0 }}
+                          >
+                            {viewRevealNumber ? 'Hide' : 'Reveal'}
+                          </button>
+                        )}
+                      </div>
+                      <div style={{ fontFamily: 'monospace', fontWeight: 600, fontSize: '0.9rem', color: '#fff', letterSpacing: '0.05em' }}>
+                        {liveAcc.cardNo ? (
+                          viewRevealNumber ? (
+                            liveAcc.cardNo.replace(/(\d{4})/g, '$1 ').trim()
+                          ) : (
+                            `${liveAcc.cardNo.slice(0, 4)} •••• •••• ${liveAcc.cardNo.slice(-4)}`
+                          )
+                        ) : 'Not Provided'}
+                      </div>
+                    </div>
+
+                    {/* Expiry Date */}
+                    <div style={{ background: 'rgba(0, 0, 0, 0.2)', padding: '10px 14px', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '4px' }}>Expiry Date</div>
+                      <div style={{ fontFamily: 'monospace', fontWeight: 600, fontSize: '0.9rem', color: '#fff' }}>
+                        {liveAcc.cardExpiry || 'N/A'}
+                      </div>
+                    </div>
+
+                    {/* CVV */}
+                    <div style={{ background: 'rgba(0, 0, 0, 0.2)', padding: '10px 14px', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '4px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span>CVV</span>
+                        {liveAcc.cardCvv && (
+                          <button
+                            type="button"
+                            onClick={() => setViewRevealCvv(!viewRevealCvv)}
+                            style={{ background: 'none', border: 'none', color: '#818cf8', cursor: 'pointer', fontSize: '0.72rem', padding: 0 }}
+                          >
+                            {viewRevealCvv ? 'Hide' : 'Reveal'}
+                          </button>
+                        )}
+                      </div>
+                      <div style={{ fontFamily: 'monospace', fontWeight: 600, fontSize: '0.9rem', color: '#fff' }}>
+                        {liveAcc.cardCvv ? (viewRevealCvv ? liveAcc.cardCvv : '•••') : 'N/A'}
+                      </div>
+                    </div>
+
+                    {/* Card PIN */}
+                    <div style={{ background: 'rgba(0, 0, 0, 0.2)', padding: '10px 14px', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '4px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span>Card PIN</span>
+                        {liveAcc.cardPin && (
+                          <button
+                            type="button"
+                            onClick={() => setViewRevealPin(!viewRevealPin)}
+                            style={{ background: 'none', border: 'none', color: '#818cf8', cursor: 'pointer', fontSize: '0.72rem', padding: 0 }}
+                          >
+                            {viewRevealPin ? 'Hide' : 'Reveal'}
+                          </button>
+                        )}
+                      </div>
+                      <div style={{ fontFamily: 'monospace', fontWeight: 600, fontSize: '0.9rem', color: viewRevealPin ? '#34d399' : '#fff' }}>
+                        {liveAcc.cardPin ? (viewRevealPin ? liveAcc.cardPin : '••••') : 'N/A'}
+                      </div>
+                    </div>
+                  </div>
+                )}
+                </div>
+              )}
+            </div>
+          );
+        })()}
+        <div className="modal-footer" style={{ display: 'flex', justifyContent: 'space-between' }}>
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={() => setIsViewModalOpen(false)}
+          >
+            Close
+          </button>
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={() => {
+              const targetAcc = accounts.find(a => a.id === viewAccountId);
+              setIsViewModalOpen(false);
+              if (targetAcc) {
+                handleOpenEditModal(targetAcc);
+              }
+            }}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}
+          >
+            <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" strokeWidth="2"><path d="M12 20h9" /><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg>
+            Edit Account
+          </button>
+        </div>
+      </Modal>
+
       {/* Modal CRUD Account */}
       <Modal
         isOpen={isModalOpen}
@@ -619,66 +870,68 @@ export default function BankAccounts() {
               )}
             </div>
 
-            {/* Debit Card Details Section (Optional) */}
-            <div style={{ marginTop: '20px', borderTop: '1px solid var(--border-color)', paddingTop: '20px' }}>
-              <h3 style={{ fontSize: '0.95rem', fontWeight: 700, marginBottom: '12px', color: '#6366f1', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
-                Debit Card Information (Optional)
-              </h3>
-              <div className="form-row-2">
-                <div className="form-group">
-                  <label>Card Number (16 Digits)</label>
-                  <input
-                    type="text"
-                    className="input-ctrl"
-                    value={cardNo}
-                    onChange={e => setCardNo(e.target.value.replace(/\D/g, '').slice(0, 16))}
-                    placeholder="e.g. 4000 1234 5678 9012"
-                  />
+            {/* Card Details Section (Savings & Credit Card only) */}
+            {isCardEligible(accountType) && (
+              <div style={{ marginTop: '20px', borderTop: '1px solid var(--border-color)', paddingTop: '20px' }}>
+                <h3 style={{ fontSize: '0.95rem', fontWeight: 700, marginBottom: '12px', color: '#6366f1', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
+                  {accountType === 'Credit Card' ? 'Credit Card Information (Optional)' : 'Debit Card Information (Optional)'}
+                </h3>
+                <div className="form-row-2">
+                  <div className="form-group">
+                    <label>Card Number (16 Digits)</label>
+                    <input
+                      type="text"
+                      className="input-ctrl"
+                      value={cardNo}
+                      onChange={e => setCardNo(e.target.value.replace(/\D/g, '').slice(0, 16))}
+                      placeholder="e.g. 4000 1234 5678 9012"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Expiry Date (MM/YY)</label>
+                    <input
+                      type="text"
+                      className="input-ctrl"
+                      value={cardExpiry}
+                      onChange={e => {
+                        let val = e.target.value.replace(/\D/g, '').slice(0, 4);
+                        if (val.length > 2) {
+                          val = val.slice(0, 2) + '/' + val.slice(2);
+                        }
+                        setCardExpiry(val);
+                      }}
+                      placeholder="MM/YY"
+                      maxLength="5"
+                    />
+                  </div>
                 </div>
-                <div className="form-group">
-                  <label>Expiry Date (MM/YY)</label>
-                  <input
-                    type="text"
-                    className="input-ctrl"
-                    value={cardExpiry}
-                    onChange={e => {
-                      let val = e.target.value.replace(/\D/g, '').slice(0, 4);
-                      if (val.length > 2) {
-                        val = val.slice(0, 2) + '/' + val.slice(2);
-                      }
-                      setCardExpiry(val);
-                    }}
-                    placeholder="MM/YY"
-                    maxLength="5"
-                  />
+                <div className="form-row-2" style={{ marginTop: '12px' }}>
+                  <div className="form-group">
+                    <label>Card CVV (3 Digits)</label>
+                    <input
+                      type="password"
+                      className="input-ctrl"
+                      value={cardCvv}
+                      onChange={e => setCardCvv(e.target.value.replace(/\D/g, '').slice(0, 3))}
+                      placeholder="e.g. 123"
+                      maxLength="3"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Card PIN Number (4-8 Digits)</label>
+                    <input
+                      type="password"
+                      className="input-ctrl"
+                      value={cardPin}
+                      onChange={e => setCardPin(e.target.value.replace(/\D/g, '').slice(0, 8))}
+                      placeholder="e.g. 987654"
+                      maxLength="8"
+                    />
+                  </div>
                 </div>
               </div>
-              <div className="form-row-2" style={{ marginTop: '12px' }}>
-                <div className="form-group">
-                  <label>Card CVV (3 Digits)</label>
-                  <input
-                    type="password"
-                    className="input-ctrl"
-                    value={cardCvv}
-                    onChange={e => setCardCvv(e.target.value.replace(/\D/g, '').slice(0, 3))}
-                    placeholder="e.g. 123"
-                    maxLength="3"
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Card PIN Number (4-8 Digits)</label>
-                  <input
-                    type="password"
-                    className="input-ctrl"
-                    value={cardPin}
-                    onChange={e => setCardPin(e.target.value.replace(/\D/g, '').slice(0, 8))}
-                    placeholder="e.g. 987654"
-                    maxLength="8"
-                  />
-                </div>
-              </div>
-            </div>
+            )}
           </div>
 
           <div className="modal-footer">
