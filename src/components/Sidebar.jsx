@@ -2,7 +2,7 @@ import React from 'react';
 import logoImg from '../../images/logo.png';
 import { useDatabase } from '../hooks/useDatabase';
 
-export default function Sidebar({ activeTab, onTabChange }) {
+export default function Sidebar({ activeTab, onTabChange, onOpenAbout }) {
   const { isPro } = useDatabase();
   const tabs = [
     {
@@ -104,6 +104,18 @@ export default function Sidebar({ activeTab, onTabChange }) {
       )
     },
     {
+      id: 'help',
+      label: 'Help & Docs',
+      icon: (
+        <svg viewBox="0 0 24 24">
+          <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+          <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+          <line x1="9" y1="7" x2="15" y2="7" />
+          <line x1="9" y1="11" x2="13" y2="11" />
+        </svg>
+      )
+    },
+    {
       id: 'profile',
       label: 'Profile',
       icon: (
@@ -168,8 +180,18 @@ export default function Sidebar({ activeTab, onTabChange }) {
         })}
       </nav>
       <div className="sidebar-footer">
-        <p>MoneyMate v1.4.0</p>
-        <p style={{ marginTop: '4px' }}>Local Database Offline</p>
+        <button
+          type="button"
+          className="sidebar-about-btn"
+          onClick={onOpenAbout}
+          title="Click to view Version Details & Privacy Guarantees"
+        >
+          <span className="sidebar-version-pill">MoneyMate v1.5.0</span>
+          <span className="sidebar-privacy-tag">
+            <span className="sidebar-status-dot"></span>
+            Local Storage DB
+          </span>
+        </button>
       </div>
     </aside>
   );

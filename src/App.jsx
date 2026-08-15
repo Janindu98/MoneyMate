@@ -13,6 +13,8 @@ import Profile from './pages/Profile/Profile';
 import Subscriptions from './pages/Subscriptions/Subscriptions';
 import Backup from './pages/Backup/Backup';
 import BillAnalysis from './pages/Budgets/BillAnalysis';
+import Help from './pages/Help/Help';
+import AboutModal from './components/AboutModal';
 import LockScreen from './components/LockScreen';
 import ProUpgrade from './pages/ProUpgrade/ProUpgrade';
 
@@ -28,6 +30,7 @@ export default function App() {
 
 function AppContent() {
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [isAboutModalOpen, setIsAboutModalOpen] = useState(false);
   const { settings, loading, unlockDatabase, isPro } = useDatabase();
   const [unlocked, setUnlocked] = useState(false);
 
@@ -75,10 +78,12 @@ function AppContent() {
         return <Backup />;
       case 'reports':
         return <Reports />;
+      case 'help':
+        return <Help onNavigate={setActiveTab} onOpenAbout={() => setIsAboutModalOpen(true)} />;
       case 'profile':
         return <Profile />;
       case 'settings':
-        return <Settings />;
+        return <Settings onOpenAbout={() => setIsAboutModalOpen(true)} />;
       default:
         return <Dashboard onNavigate={setActiveTab} />;
     }
@@ -126,10 +131,20 @@ function AppContent() {
 
   return (
     <div id="app-container">
-      <Sidebar activeTab={activeTab} onTabChange={setActiveTab} />
+      <Sidebar 
+        activeTab={activeTab} 
+        onTabChange={setActiveTab} 
+        onOpenAbout={() => setIsAboutModalOpen(true)} 
+      />
       <main className="main-content">
         {renderActivePage()}
       </main>
+
+      {/* Global About Modal */}
+      <AboutModal
+        isOpen={isAboutModalOpen}
+        onClose={() => setIsAboutModalOpen(false)}
+      />
     </div>
   );
 }
