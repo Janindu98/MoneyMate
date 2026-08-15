@@ -164,14 +164,25 @@ export default function Settings({ onOpenAbout }) {
             'CRITICAL WARNING: This action is permanent and cannot be undone. Please type "OK" below to proceed.',
             () => {
               const resetState = {
-                accounts: [],
+                accounts: [
+                  {
+                    id: 'acc_cash_wallet',
+                    bankName: 'Cash',
+                    accountName: 'Cash Wallet',
+                    accountNumber: '',
+                    branch: '',
+                    accountType: 'Cash / Other',
+                    currency: 'USD',
+                    status: 'Active'
+                  }
+                ],
                 transactions: [],
                 categories: {
                   income: ['Salary', 'Bonus', 'Interest', 'Refund', 'Other'],
                   expense: ['Food & Dining', 'Groceries', 'Fuel', 'Bills', 'Insurance', 'Rent', 'Shopping', 'Healthcare & Medical', 'Education', 'Entertainment', 'Investment', 'Loan', 'Other']
                 },
                 salaryHistory: [],
-                settings: { currency: 'LKR', theme: 'dark' }
+                settings: { currency: 'USD', theme: 'dark' }
               };
               restoreDatabase(resetState);
               showToast('All local data wiped. Reset to clean template.');
@@ -214,8 +225,7 @@ export default function Settings({ onOpenAbout }) {
               <div className="settings-row-desc">Controls symbol displayed across charts, ledger lists, and totals.</div>
             </div>
             <div>
-              <select className="input-ctrl" value={settings.currency || 'LKR'} onChange={handleCurrencyChange} style={{ width: '150px' }}>
-                <option value="LKR">LKR (Rs.)</option>
+              <select className="input-ctrl" value={settings.currency || 'USD'} onChange={handleCurrencyChange} style={{ width: '150px' }}>
                 <option value="USD">USD ($)</option>
                 <option value="EUR">EUR (€)</option>
                 <option value="GBP">GBP (£)</option>
@@ -223,6 +233,7 @@ export default function Settings({ onOpenAbout }) {
                 <option value="CAD">CAD (C$)</option>
                 <option value="AUD">AUD (A$)</option>
                 <option value="JPY">JPY (¥)</option>
+                <option value="LKR">LKR (Rs.)</option>
                 <option value="KRW">KRW (₩)</option>
                 <option value="RUB">RUB (₽)</option>
                 <option value="AED">AED (د.إ)</option>
@@ -380,11 +391,11 @@ export default function Settings({ onOpenAbout }) {
 
         {/* About & Privacy Information */}
         <div className="settings-section">
-          <div className="settings-section-title">About MoneyMate & Privacy Guarantee</div>
+          <div className="settings-section-title">About MoneyMate Vault & Privacy Guarantee</div>
           <div className="settings-section-desc">View product build version details, software benefits, and local storage data architecture.</div>
           <div className="settings-row">
             <div className="settings-row-info">
-              <div className="settings-row-title">Version 1.5.0 (Offline-First Edition)</div>
+              <div className="settings-row-title">Version 1.6.0 (Offline & Private Edition)</div>
               <div className="settings-row-desc">
                 Your financial data stays 100% on your device. Zero cloud telemetry.
               </div>

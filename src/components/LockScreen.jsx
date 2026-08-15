@@ -107,9 +107,9 @@ export default function LockScreen({ settings, onUnlock, unlockDatabase }) {
       <div className={`lockscreen-card ${shake ? 'shake' : ''} ${error ? 'error' : ''}`}>
         <div className="lockscreen-header">
           <div className="lockscreen-logo" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent' }}>
-            <img src={logoImg} alt="MoneyMate Logo" style={{ width: '48px', height: '48px', objectFit: 'contain' }} />
+            <img src={logoImg} alt="MoneyMate Vault Logo" style={{ width: '48px', height: '48px', objectFit: 'contain' }} />
           </div>
-          <h2>MoneyMate</h2>
+          <h2>MoneyMate Vault</h2>
           <p className="lockscreen-subtitle">
             {securityType === 'pin' ? 'Enter PIN to unlock your vault' : 'Enter Password to unlock your vault'}
           </p>

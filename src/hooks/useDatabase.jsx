@@ -72,7 +72,7 @@ export function DatabaseProvider({ children }) {
     salaryHistory: [],
     subscriptions: [],
     settings: {
-      currency: 'LKR',
+      currency: 'USD',
       theme: 'dark',
       budgetLimits: {
         FoodDining: 20000,
@@ -251,7 +251,7 @@ export function DatabaseProvider({ children }) {
             transactions: migratedTransactions,
             subscriptions: data.subscriptions || [],
             settings: {
-              currency: 'LKR',
+              currency: 'USD',
               theme: 'dark',
               budgetLimits: {
                 FoodDining: 20000,
@@ -750,7 +750,7 @@ export function DatabaseProvider({ children }) {
           transactions: migratedTransactions,
           subscriptions: data.subscriptions || [],
           settings: {
-            currency: 'LKR',
+            currency: 'USD',
             theme: 'dark',
             budgetLimits: {
               FoodDining: 20000,

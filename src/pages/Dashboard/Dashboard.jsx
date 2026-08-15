@@ -115,7 +115,7 @@ export default function Dashboard({ onNavigate }) {
       <div className="page-header">
         <div className="header-title">
           <h1>Financial Dashboard</h1>
-          <p>Local offline salary and spending oversight styled in {settings.currency || 'LKR'}.</p>
+          <p>Local offline salary and spending oversight styled in {settings.currency || 'USD'}.</p>
         </div>
         <div className="header-actions">
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>

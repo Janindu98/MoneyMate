@@ -70,7 +70,7 @@ export default function Sidebar({ activeTab, onTabChange, onOpenAbout }) {
     },
     {
       id: 'subscriptions',
-      label: 'Subscriptions',
+      label: 'Subscription Analysis',
       icon: (
         <svg viewBox="0 0 24 24">
           <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
@@ -140,8 +140,8 @@ export default function Sidebar({ activeTab, onTabChange, onOpenAbout }) {
   return (
     <aside className="sidebar">
       <div className="brand">
-        <img src={logoImg} alt="MoneyMate Logo" style={{ width: '36px', height: '36px', objectFit: 'contain' }} />
-        <div className="brand-name">MoneyMate</div>
+        <img src={logoImg} alt="MoneyMate Vault Logo" style={{ width: '36px', height: '36px', objectFit: 'contain' }} />
+        <div className="brand-name">MoneyMate Vault</div>
       </div>
       <nav className="nav-links">
         {tabs.map((tab) => {
@@ -186,10 +186,10 @@ export default function Sidebar({ activeTab, onTabChange, onOpenAbout }) {
           onClick={onOpenAbout}
           title="Click to view Version Details & Privacy Guarantees"
         >
-          <span className="sidebar-version-pill">MoneyMate v1.5.0</span>
+          <span className="sidebar-version-pill">MoneyMate Vault v1.6.0</span>
           <span className="sidebar-privacy-tag">
             <span className="sidebar-status-dot"></span>
-            Local Storage DB
+            Offline & Private
           </span>
         </button>
       </div>

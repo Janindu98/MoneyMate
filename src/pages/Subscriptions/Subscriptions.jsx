@@ -245,8 +245,8 @@ export default function Subscriptions() {
     <div className="page active">
       <div className="page-header">
         <div className="header-title">
-          <h1>Subscription Manager</h1>
-          <p>Track your recurring SaaS products, antivirus licenses, cloud services, and automate ledger renewals.</p>
+          <h1>Subscription Analysis</h1>
+          <p>Track your recurring SaaS products, cloud services, and analyze monthly & yearly commitments.</p>
         </div>
       </div>
 
@@ -421,7 +421,7 @@ export default function Subscriptions() {
 
             <div className="form-row-2" style={{ marginTop: '12px' }}>
               <div className="form-group">
-                <label>Billing Cost (Rs.)</label>
+                <label>Billing Cost</label>
                 <input
                   type="number"
                   className="input-ctrl"

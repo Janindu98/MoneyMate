@@ -6,23 +6,23 @@ export default function AboutModal({ isOpen, onClose }) {
   if (!isOpen) return null;
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="About MoneyMate">
+    <Modal isOpen={isOpen} onClose={onClose} title="About MoneyMate Vault">
       <div className="about-modal-content">
         {/* Brand Header */}
         <div className="about-brand-header">
           <div className="about-logo-wrapper">
-            <img src={logoImg} alt="MoneyMate Logo" className="about-logo-img" />
+            <img src={logoImg} alt="MoneyMate Vault Logo" className="about-logo-img" />
             <div className="about-logo-glow"></div>
           </div>
           <div className="about-brand-info">
             <div className="about-title-row">
-              <h3 className="about-app-name">MoneyMate</h3>
-              <span className="about-version-badge">v1.5.0</span>
+              <h3 className="about-app-name">MoneyMate Vault</h3>
+              <span className="about-version-badge">v1.6.0</span>
             </div>
-            <p className="about-tagline">Personal Finance, Wealth & Budgeting Companion</p>
+            <p className="about-tagline">Expense Tracker & Personal Wealth Companion</p>
             <div className="about-meta-pills">
               <span className="about-pill">Desktop Edition</span>
-              <span className="about-pill">Offline-First</span>
+              <span className="about-pill">Offline & Private</span>
               <span className="about-pill">MIT License</span>
             </div>
           </div>
@@ -161,7 +161,7 @@ export default function AboutModal({ isOpen, onClose }) {
         <div className="about-tech-specs">
           <div className="spec-row">
             <span className="spec-label">Application Version</span>
-            <span className="spec-value">1.5.0 (Stable Release)</span>
+            <span className="spec-value">1.6.0 (Stable Release)</span>
           </div>
           <div className="spec-row">
             <span className="spec-label">Database Architecture</span>

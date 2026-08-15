@@ -435,7 +435,7 @@ export default function Budgets() {
             </button>
           </div>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '16px' }}>
-            Comparing actual LKR expenses against target thresholds.
+            Comparing actual expenses against target thresholds.
           </p>
 
           <div className="table-container" style={{ flexGrow: 1 }}>
@@ -444,8 +444,8 @@ export default function Budgets() {
                 <tr>
                   <th>Category</th>
                   <th>Target (%)</th>
-                  <th>Limit (Rs.)</th>
-                  <th>Actual (Rs.)</th>
+                  <th>Limit</th>
+                  <th>Actual</th>
                   <th>Status</th>
                 </tr>
               </thead>
@@ -509,25 +509,25 @@ export default function Budgets() {
           <div className="modal-body" style={{ maxHeight: '75vh', overflowY: 'auto' }}>
             <div className="form-row-2">
               <div className="form-group">
-                <label>Food & Dining Limit (Rs.)</label>
+                <label>Food & Dining Limit</label>
                 <input
                   type="number"
                   className="input-ctrl"
                   value={limitFoodDining}
                   onChange={e => setLimitFoodDining(e.target.value)}
-                  placeholder="20000"
+                  placeholder="500"
                   min="0"
                   required
                 />
               </div>
               <div className="form-group">
-                <label>Bill & Payment Limit (Rs.)</label>
+                <label>Bill & Payment Limit</label>
                 <input
                   type="number"
                   className="input-ctrl"
                   value={limitBillPayment}
                   onChange={e => setLimitBillPayment(e.target.value)}
-                  placeholder="30000"
+                  placeholder="800"
                   min="0"
                   required
                 />
@@ -536,25 +536,25 @@ export default function Budgets() {
 
             <div className="form-row-2">
               <div className="form-group">
-                <label>Healthcare & Medical Limit (Rs.)</label>
+                <label>Healthcare & Medical Limit</label>
                 <input
                   type="number"
                   className="input-ctrl"
                   value={limitHealthcareMedical}
                   onChange={e => setLimitHealthcareMedical(e.target.value)}
-                  placeholder="10000"
+                  placeholder="250"
                   min="0"
                   required
                 />
               </div>
               <div className="form-group">
-                <label>Shopping Limit (Rs.)</label>
+                <label>Shopping Limit</label>
                 <input
                   type="number"
                   className="input-ctrl"
                   value={limitShopping}
                   onChange={e => setLimitShopping(e.target.value)}
-                  placeholder="15000"
+                  placeholder="300"
                   min="0"
                   required
                 />
@@ -563,25 +563,25 @@ export default function Budgets() {
 
             <div className="form-row-2">
               <div className="form-group">
-                <label>Transportation Limit (Rs.)</label>
+                <label>Transportation Limit</label>
                 <input
                   type="number"
                   className="input-ctrl"
                   value={limitTransportation}
                   onChange={e => setLimitTransportation(e.target.value)}
-                  placeholder="5000"
+                  placeholder="150"
                   min="0"
                   required
                 />
               </div>
               <div className="form-group">
-                <label>Groceries Limit (Rs.)</label>
+                <label>Groceries Limit</label>
                 <input
                   type="number"
                   className="input-ctrl"
                   value={limitGroceries}
                   onChange={e => setLimitGroceries(e.target.value)}
-                  placeholder="15000"
+                  placeholder="400"
                   min="0"
                   required
                 />
@@ -590,25 +590,25 @@ export default function Budgets() {
 
             <div className="form-row-2">
               <div className="form-group">
-                <label>Education Limit (Rs.)</label>
+                <label>Education Limit</label>
                 <input
                   type="number"
                   className="input-ctrl"
                   value={limitEducation}
                   onChange={e => setLimitEducation(e.target.value)}
-                  placeholder="10000"
+                  placeholder="200"
                   min="0"
                   required
                 />
               </div>
               <div className="form-group">
-                <label>Fuel Limit (Rs.)</label>
+                <label>Fuel Limit</label>
                 <input
                   type="number"
                   className="input-ctrl"
                   value={limitFuel}
                   onChange={e => setLimitFuel(e.target.value)}
-                  placeholder="20000"
+                  placeholder="200"
                   min="0"
                   required
                 />
@@ -617,125 +617,101 @@ export default function Budgets() {
 
             <div className="form-row-2">
               <div className="form-group">
-                <label>Withdrawal Limit (Rs.)</label>
+                <label>Withdrawal Limit</label>
                 <input
                   type="number"
                   className="input-ctrl"
                   value={limitWithdrawal}
                   onChange={e => setLimitWithdrawal(e.target.value)}
-                  placeholder="10000"
+                  placeholder="250"
                   min="0"
                   required
                 />
               </div>
               <div className="form-group">
-                <label>Others Limit (Rs.)</label>
+                <label>Others Limit</label>
                 <input
                   type="number"
                   className="input-ctrl"
                   value={limitOthers}
                   onChange={e => setLimitOthers(e.target.value)}
-                  placeholder="12000"
+                  placeholder="300"
                   min="0"
                   required
                 />
               </div>
             </div>
 
-            {/* Pro Custom Category Limits Section */}
-            <div style={{ marginTop: '16px', borderTop: '1px solid var(--border-color)', paddingTop: '12px' }}>
-              <h4 style={{ fontSize: '0.9rem', fontWeight: 700, marginBottom: '8px', color: isPro ? 'var(--text-primary)' : 'var(--text-muted)' }}>
-                Custom Category Limits {!isPro && ' (Pro Only)'}
-              </h4>
-              
-              {!isPro ? (
-                <div style={{
-                  background: 'rgba(99, 102, 241, 0.05)',
-                  border: '1px dashed rgba(99, 102, 241, 0.3)',
-                  borderRadius: '10px',
-                  padding: '16px',
-                  textAlign: 'center',
-                  marginTop: '10px'
-                }}>
-                  <div style={{ fontSize: '1.2rem', marginBottom: '8px' }}>🔒</div>
-                  <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)' }}>Custom Category Limits</div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '4px', lineHeight: '1.4' }}>
-                    Custom category budgets are only available to MoneyMate Pro users. Upgrade in settings to set budgets for any custom expense category.
-                  </div>
-                </div>
-              ) : (
-                <>
-                  {Object.keys(customLimits).length > 0 && (
-                    <div style={{ marginBottom: '16px' }}>
-                      {Object.keys(customLimits).map(catName => (
-                        <div className="form-row-2" key={catName} style={{ alignItems: 'flex-end', marginTop: '8px' }}>
-                          <div className="form-group" style={{ flexGrow: 1 }}>
-                            <label>{catName} Limit (Rs.)</label>
-                            <input
-                              type="number"
-                              className="input-ctrl"
-                              value={customLimits[catName]}
-                              onChange={e => {
-                                const val = parseFloat(e.target.value) || 0;
-                                setCustomLimits(prev => ({ ...prev, [catName]: val }));
-                              }}
-                              min="0"
-                              required
-                            />
-                          </div>
-                          <button
-                            type="button"
-                            className="btn btn-secondary"
-                            onClick={() => {
-                              setCustomLimits(prev => {
-                                const copy = { ...prev };
-                                delete copy[catName];
-                                return copy;
-                              });
-                            }}
-                            style={{ marginBottom: '4px', height: '36px', padding: '0 12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                          >
-                            Remove
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
 
-                  {filteredCatsForSelect.length > 0 && (
-                    <div style={{ marginTop: '16px', borderTop: '1px solid var(--border-color)', paddingTop: '12px' }}>
-                      <h5 style={{ fontSize: '0.8rem', fontWeight: 700, marginBottom: '8px', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Add Custom Category Limit</h5>
-                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                        <select
-                          className="input-ctrl"
-                          value={selectedNewCat}
-                          onChange={e => setSelectedNewCat(e.target.value)}
-                          style={{ flexGrow: 1 }}
-                        >
-                          <option value="">-- Select Category --</option>
-                          {filteredCatsForSelect.map(c => (
-                            <option key={c} value={c}>{c}</option>
-                          ))}
-                        </select>
-                        <button
-                          type="button"
-                          className="btn btn-secondary"
-                          onClick={() => {
-                            if (selectedNewCat) {
-                              setCustomLimits(prev => ({ ...prev, [selectedNewCat]: 0 }));
-                              setSelectedNewCat('');
-                            }
-                          }}
-                          style={{ whiteSpace: 'nowrap', height: '36px' }}
-                        >
-                          Add Category
-                        </button>
-                      </div>
+            {Object.keys(customLimits).length > 0 && (
+              <div style={{ marginTop: '16px', borderTop: '1px solid var(--border-color)', paddingTop: '12px' }}>
+                <h4 style={{ fontSize: '0.9rem', fontWeight: 700, marginBottom: '8px' }}>Custom Category Limits</h4>
+                {Object.keys(customLimits).map(catName => (
+                  <div className="form-row-2" key={catName} style={{ alignItems: 'flex-end', marginTop: '8px' }}>
+                    <div className="form-group" style={{ flexGrow: 1 }}>
+                      <label>{catName} Limit</label>
+                      <input
+                        type="number"
+                        className="input-ctrl"
+                        value={customLimits[catName]}
+                        onChange={e => {
+                          const val = parseFloat(e.target.value) || 0;
+                          setCustomLimits(prev => ({ ...prev, [catName]: val }));
+                        }}
+                        min="0"
+                        required
+                      />
                     </div>
-                  )}
-                </>
-              )}
-            </div>
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      onClick={() => {
+                        setCustomLimits(prev => {
+                          const copy = { ...prev };
+                          delete copy[catName];
+                          return copy;
+                        });
+                      }}
+                      style={{ marginBottom: '4px', height: '36px', padding: '0 12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {filteredCatsForSelect.length > 0 && (
+              <div style={{ marginTop: '16px', borderTop: '1px solid var(--border-color)', paddingTop: '12px' }}>
+                <h4 style={{ fontSize: '0.9rem', fontWeight: 700, marginBottom: '8px' }}>Add Custom Category Limit</h4>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  <select
+                    className="input-ctrl"
+                    value={selectedNewCat}
+                    onChange={e => setSelectedNewCat(e.target.value)}
+                    style={{ flexGrow: 1 }}
+                  >
+                    <option value="">-- Select Category --</option>
+                    {filteredCatsForSelect.map(c => (
+                      <option key={c} value={c}>{c}</option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={() => {
+                      if (selectedNewCat) {
+                        setCustomLimits(prev => ({ ...prev, [selectedNewCat]: 0 }));
+                        setSelectedNewCat('');
+                      }
+                    }}
+                    style={{ whiteSpace: 'nowrap', height: '36px' }}
+                  >
+                    Add Category
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
           <div className="modal-footer">
             <button type="button" className="btn btn-secondary" onClick={() => setIsLimitsModalOpen(false)}>Cancel</button>

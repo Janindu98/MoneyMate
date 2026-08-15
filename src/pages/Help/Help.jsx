@@ -18,8 +18,8 @@ export default function Help({ onNavigate, onOpenAbout }) {
           <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
         </svg>
       ),
-      summary: 'Welcome to MoneyMate! Discover the core layout, offline architecture, and how to set up your financial command center.',
-      overview: 'MoneyMate is an offline-first desktop personal finance platform built to help you track bank balances, analyze monthly expenditures, monitor salary packages, automate bill deadlines, and generate financial reports with 100% data privacy.',
+      summary: 'Welcome to MoneyMate Vault! Discover the core layout, offline architecture, and how to set up your financial command center.',
+      overview: 'MoneyMate Vault is an offline and private desktop personal finance platform built to help you track bank balances, analyze monthly expenditures, monitor salary packages, automate bill deadlines, and generate financial reports with 100% data privacy.',
       steps: [
         {
           title: '1. Set Up Your Bank & Cash Accounts',
@@ -235,7 +235,7 @@ export default function Help({ onNavigate, onOpenAbout }) {
         },
         {
           title: '2. Set Statutory Deductions',
-          desc: 'Specify employee deduction percentages (e.g., EPF 8%, APIT/PAYE Tax) and employer contributions (EPF 12%, ETF 3%).'
+          desc: 'Specify employee deduction percentages (e.g., EPF 8%, Income Tax) and employer contributions (EPF 12%, ETF 3%).'
         },
         {
           title: '3. Track Monthly Salary History',
@@ -359,7 +359,7 @@ export default function Help({ onNavigate, onOpenAbout }) {
     {
       id: 'subscriptions',
       navTarget: 'subscriptions',
-      title: 'Subscriptions Tracker',
+      title: 'Subscription Analysis',
       category: 'Obligations',
       badge: 'Recurring Costs',
       readTime: '3 min read',
@@ -562,7 +562,7 @@ export default function Help({ onNavigate, onOpenAbout }) {
       steps: [
         {
           title: '1. Change Currency Symbol',
-          desc: 'Select your preferred currency: LKR (Rs.), USD ($), EUR (€), GBP (£), INR (₹), CAD, AUD, JPY, AED, SAR, and more.'
+          desc: 'Select your preferred currency: USD ($), EUR (€), GBP (£), INR (₹), CAD, AUD, JPY, LKR (Rs.), AED, SAR, and more.'
         },
         {
           title: '2. Switch Theme & Font Sizing',
@@ -694,7 +694,7 @@ export default function Help({ onNavigate, onOpenAbout }) {
               <line x1="12" y1="16" x2="12" y2="12" />
               <line x1="12" y1="8" x2="12.01" y2="8" />
             </svg>
-            About MoneyMate & Privacy
+            About MoneyMate Vault & Privacy
           </button>
         </div>
       </div>
@@ -717,9 +717,6 @@ export default function Help({ onNavigate, onOpenAbout }) {
             </div>
           </div>
         </div>
-        <button type="button" className="btn btn-secondary btn-sm" style={{ whiteSpace: 'nowrap' }}>
-          Read Privacy Architecture →
-        </button>
       </div>
 
       {/* Main 2-Column Documentation Hub */}
