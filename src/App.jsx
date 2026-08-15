@@ -110,7 +110,7 @@ function AppContent() {
             margin: '0 auto 16px auto',
             boxShadow: '0 8px 24px rgba(99, 102, 241, 0.3)'
           }}>MM</div>
-          <div style={{ fontSize: '1.2rem', fontWeight: 600, marginBottom: '6px', color: '#fff' }}>MoneyMate</div>
+          <div style={{ fontSize: '1.2rem', fontWeight: 600, marginBottom: '6px', color: '#fff' }}>MoneyMate Vault</div>
           <div style={{ fontSize: '0.85rem', opacity: 0.8 }}>Loading secure profile database...</div>
         </div>
       </div>

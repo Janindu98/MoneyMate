@@ -39,7 +39,7 @@ export default function Salary() {
   const [epfCompany, setEpfCompany] = useState('');
   const [etfCompany, setEtfCompany] = useState('');
   const [tax, setTax] = useState('');
-  const [taxType, setTaxType] = useState('APIT');
+  const [taxType, setTaxType] = useState('');
   const [loanDeduction, setLoanDeduction] = useState('');
   const [otherDeduction, setOtherDeduction] = useState('');
   const [paymentDate, setPaymentDate] = useState(new Date().toISOString().split('T')[0]);
@@ -297,7 +297,7 @@ export default function Salary() {
     setEpfCompany(sal.epfCompany !== undefined ? sal.epfCompany.toString() : '');
     setEtfCompany(sal.etfCompany !== undefined ? sal.etfCompany.toString() : '');
     setTax(sal.tax !== undefined ? sal.tax.toString() : '');
-    setTaxType(sal.taxType || 'APIT');
+    setTaxType(sal.taxType || '');
     setLoanDeduction(sal.loanDeduction !== undefined ? sal.loanDeduction.toString() : '');
     setOtherDeduction(sal.otherDeduction !== undefined ? sal.otherDeduction.toString() : '');
     setPaymentDate(sal.paymentDate || '');
@@ -386,6 +386,7 @@ export default function Salary() {
             setEpfCompany('');
             setEtfCompany('');
             setTax('');
+            setTaxType('');
             setLoanDeduction('');
             setOtherDeduction('');
             setPayslipPath('');
@@ -579,7 +580,7 @@ export default function Salary() {
                 )}
 
                 <div className="deduction-item">
-                  <span className="deduction-label">Tax ({selectedSalary.taxType})</span>
+                  <span className="deduction-label">Tax{selectedSalary.taxType ? ` (${selectedSalary.taxType})` : ''}</span>
                   <span className="deduction-val">{formatCurrency(selectedSalary.tax || 0, settings.currency)}</span>
                 </div>
                 <div className="deduction-item">
@@ -832,11 +833,13 @@ export default function Salary() {
               </div>
               <div className="form-group">
                 <label>Tax Type</label>
-                <select className="input-ctrl" value={taxType} onChange={e => setTaxType(e.target.value)}>
-                  <option value="APIT">APIT (PAYE)</option>
-                  <option value="WHT">WHT</option>
-                  <option value="Other">Other</option>
-                </select>
+                <input
+                  type="text"
+                  className="input-ctrl"
+                  value={taxType}
+                  onChange={e => setTaxType(e.target.value)}
+                  placeholder="e.g. APIT, PAYE, WHT"
+                />
               </div>
               <div className="form-group">
                 <label>Loan Deductions (Rs.)</label>

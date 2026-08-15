@@ -245,8 +245,8 @@ export default function Subscriptions() {
     <div className="page active">
       <div className="page-header">
         <div className="header-title">
-          <h1>Subscription Manager</h1>
-          <p>Track your recurring SaaS products, antivirus licenses, cloud services, and automate ledger renewals.</p>
+          <h1>Subscription Analysis</h1>
+          <p>Track your recurring SaaS products, cloud services, and analyze monthly & yearly commitments.</p>
         </div>
       </div>
 

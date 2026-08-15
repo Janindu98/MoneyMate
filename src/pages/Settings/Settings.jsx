@@ -279,11 +279,11 @@ export default function Settings({ onOpenAbout }) {
 
         {/* About & Privacy Information */}
         <div className="settings-section">
-          <div className="settings-section-title">About MoneyMate & Privacy Guarantee</div>
+          <div className="settings-section-title">About MoneyMate Vault & Privacy Guarantee</div>
           <div className="settings-section-desc">View product build version details, software benefits, and local storage data architecture.</div>
           <div className="settings-row">
             <div className="settings-row-info">
-              <div className="settings-row-title">Version 1.5.0 (Offline-First Edition)</div>
+              <div className="settings-row-title">Version 1.6.0 (Offline & Private Edition)</div>
               <div className="settings-row-desc">
                 Your financial data stays 100% on your device. Zero cloud telemetry.
               </div>

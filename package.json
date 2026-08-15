@@ -1,7 +1,7 @@
 {
   "name": "moneymate",
-  "productName": "MoneyMate",
-  "version": "1.5.0",
+  "productName": "MoneyMate Vault - Expense Tracker",
+  "version": "1.6.0",
   "description": "My Electron application description",
   "main": ".vite/build/main.js",
   "private": true,
@@ -43,7 +43,7 @@
   },
   "build": {
     "appId": "com.moneymate.app",
-    "productName": "MoneyMate",
+    "productName": "MoneyMate Vault - Expense Tracker",
     "win": {
       "target": "nsis",
       "icon": "images/logo.png"

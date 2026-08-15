@@ -902,7 +902,7 @@ export default function Transactions() {
 
                       {(salaryRec.tax > 0) && (
                         <div className="deduction-item" style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '4px', paddingTop: '4px', fontSize: '0.85rem' }}>
-                          <span>Tax ({salaryRec.taxType})</span>
+                          <span>Tax{salaryRec.taxType ? ` (${salaryRec.taxType})` : ''}</span>
                           <span>{formatCurrency(salaryRec.tax, settings.currency)}</span>
                         </div>
                       )}
