@@ -267,7 +267,7 @@ export default function Reports() {
         const targetSalaries = getFilteredSalaries();
 
         // 1. Accounts Summary Sheet
-        const accHeaders = ['Bank Name', 'Account Holder Name', 'Type', 'LKR Balance', 'Branch', 'Account Number', 'Status'];
+        const accHeaders = ['Bank Name', 'Account Holder Name', 'Type', 'Balance', 'Branch', 'Account Number', 'Status'];
         const accRows = accounts.map(a => [
           a.bankName,
           a.accountName,
@@ -475,7 +475,7 @@ export default function Reports() {
   const handleExportPDF = () => {
     try {
       const doc = new jsPDF();
-      const symbol = currencySymbols[settings.currency || 'LKR'] || 'Rs.';
+      const symbol = currencySymbols[settings.currency || 'USD'] || '$';
 
       // Title layout
       doc.setFont('Helvetica', 'bold');

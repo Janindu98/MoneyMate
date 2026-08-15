@@ -39,48 +39,17 @@ export default class Database {
     return {
       accounts: [
         {
-          id: 'acc_national_bank',
-          bankName: 'National Bank',
-          accountName: 'Personal Savings',
-          accountNumber: '5678',
-          branch: 'Kandy',
-          accountType: 'Savings',
-          currency: 'LKR',
-          status: 'Active'
-        },
-        {
           id: 'acc_cash_wallet',
           bankName: 'Cash',
-          accountName: 'Physical Wallet',
+          accountName: 'Cash Wallet',
           accountNumber: '',
           branch: 'Main',
           accountType: 'Cash / Other',
-          currency: 'LKR',
+          currency: 'USD',
           status: 'Active'
         }
       ],
-      transactions: [
-        {
-          id: 'tx_init_national',
-          date: new Date().toISOString().split('T')[0],
-          bankId: 'acc_national_bank',
-          type: 'Deposit',
-          category: 'Other',
-          payee: 'Self',
-          amount: 150000.00,
-          description: 'Initial deposit'
-        },
-        {
-          id: 'tx_init_cash',
-          date: new Date().toISOString().split('T')[0],
-          bankId: 'acc_cash_wallet',
-          type: 'Deposit',
-          category: 'Other',
-          payee: 'Self',
-          amount: 10000.00,
-          description: 'Cash opening balance'
-        }
-      ],
+      transactions: [],
       categories: {
         income: ['Salary', 'Bonus', 'Interest', 'Refund', 'Other'],
         expense: [
@@ -128,7 +97,7 @@ export default class Database {
       salaryHistory: [],
       subscriptions: [],
       settings: {
-        currency: 'LKR',
+        currency: 'USD',
         theme: 'dark',
         fontSize: 'medium',
         budgetLimits: {
@@ -258,7 +227,7 @@ export default class Database {
     if (!Array.isArray(this.data.salaryHistory)) this.data.salaryHistory = [];
     if (!Array.isArray(this.data.subscriptions)) this.data.subscriptions = [];
     if (!this.data.settings) this.data.settings = this.getInitialState().settings;
-    if (!this.data.settings.currency) this.data.settings.currency = 'LKR';
+    if (!this.data.settings.currency) this.data.settings.currency = 'USD';
     if (!this.data.settings.theme) this.data.settings.theme = 'dark';
     if (!this.data.settings.budgetLimits) this.data.settings.budgetLimits = this.getInitialState().settings.budgetLimits;
     if (!this.data.settings.billLimits) this.data.settings.billLimits = this.getInitialState().settings.billLimits;

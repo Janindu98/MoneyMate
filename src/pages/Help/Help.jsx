@@ -235,7 +235,7 @@ export default function Help({ onNavigate, onOpenAbout }) {
         },
         {
           title: '2. Set Statutory Deductions',
-          desc: 'Specify employee deduction percentages (e.g., EPF 8%, APIT/PAYE Tax) and employer contributions (EPF 12%, ETF 3%).'
+          desc: 'Specify employee deduction percentages (e.g., EPF 8%, Income Tax) and employer contributions (EPF 12%, ETF 3%).'
         },
         {
           title: '3. Track Monthly Salary History',
@@ -562,7 +562,7 @@ export default function Help({ onNavigate, onOpenAbout }) {
       steps: [
         {
           title: '1. Change Currency Symbol',
-          desc: 'Select your preferred currency: LKR (Rs.), USD ($), EUR (€), GBP (£), INR (₹), CAD, AUD, JPY, AED, SAR, and more.'
+          desc: 'Select your preferred currency: USD ($), EUR (€), GBP (£), INR (₹), CAD, AUD, JPY, LKR (Rs.), AED, SAR, and more.'
         },
         {
           title: '2. Switch Theme & Font Sizing',

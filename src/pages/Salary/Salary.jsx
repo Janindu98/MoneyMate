@@ -741,7 +741,7 @@ export default function Salary() {
 
             <div className="form-row-2">
               <div className="form-group">
-                <label>Basic Salary (Rs.)</label>
+                <label>Basic Salary</label>
                 <input 
                   type="number" 
                   className="input-ctrl" 
@@ -753,7 +753,7 @@ export default function Salary() {
                 />
               </div>
               <div className="form-group">
-                <label>Fixed Allowance (Rs.)</label>
+                <label>Fixed Allowance</label>
                 <input 
                   type="number" 
                   className="input-ctrl" 
@@ -772,11 +772,11 @@ export default function Salary() {
                 <input type="number" className="input-ctrl" value={otherAllowances} onChange={e => setOtherAllowances(e.target.value)} placeholder="0.00" min="0" />
               </div>
               <div className="form-group">
-                <label>Bonus (Rs.)</label>
+                <label>Bonus</label>
                 <input type="number" className="input-ctrl" value={bonus} onChange={e => setBonus(e.target.value)} placeholder="0.00" min="0" />
               </div>
               <div className="form-group">
-                <label>Overtime Pay (Rs.)</label>
+                <label>Overtime Pay</label>
                 <input type="number" className="input-ctrl" value={overtime} onChange={e => setOvertime(e.target.value)} placeholder="0.00" min="0" />
               </div>
             </div>
@@ -828,7 +828,7 @@ export default function Salary() {
 
             <div className="form-row-3" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', marginTop: '10px' }}>
               <div className="form-group">
-                <label>Tax Deducted (Rs.)</label>
+                <label>Tax Deducted</label>
                 <input type="number" className="input-ctrl" value={tax} onChange={e => setTax(e.target.value)} placeholder="0.00" min="0" />
               </div>
               <div className="form-group">
@@ -838,17 +838,17 @@ export default function Salary() {
                   className="input-ctrl"
                   value={taxType}
                   onChange={e => setTaxType(e.target.value)}
-                  placeholder="e.g. APIT, PAYE, WHT"
+                  placeholder="e.g. Income Tax, State Tax"
                 />
               </div>
               <div className="form-group">
-                <label>Loan Deductions (Rs.)</label>
+                <label>Loan Deductions</label>
                 <input type="number" className="input-ctrl" value={loanDeduction} onChange={e => setLoanDeduction(e.target.value)} placeholder="0.00" min="0" />
               </div>
             </div>
 
             <div className="form-group" style={{ marginTop: '10px' }}>
-              <label>Other Deductions (Rs.)</label>
+              <label>Other Deductions</label>
               <input type="number" className="input-ctrl" value={otherDeduction} onChange={e => setOtherDeduction(e.target.value)} placeholder="0.00" min="0" />
             </div>
 

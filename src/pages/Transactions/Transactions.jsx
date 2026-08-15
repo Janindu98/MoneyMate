@@ -513,7 +513,7 @@ export default function Transactions() {
 
             <div className="form-row-2">
               <div className="form-group">
-                <label>Amount (Rs.)</label>
+                <label>Amount</label>
                 <input
                   type="number"
                   step="0.01"

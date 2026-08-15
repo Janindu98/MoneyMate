@@ -254,7 +254,7 @@ export default function BankAccounts() {
       accountNumber: accountNumber.trim(),
       branch: branch.trim(),
       accountType,
-      currency: 'LKR',
+      currency: settings?.currency || 'USD',
       status,
       color: cardColor,
       cardNo: cardNo.trim(),
@@ -466,7 +466,7 @@ export default function BankAccounts() {
                 </thead>
                 <tbody>
                   {passbookData.map(tx => {
-                    const symbol = currencySymbols[settings.currency || 'LKR'] || 'Rs.';
+                    const symbol = currencySymbols[settings.currency || 'USD'] || '$';
                     return (
                       <tr key={tx.id} style={{ cursor: 'pointer' }} onClick={() => setSelectedTx(tx)}>
                         <td>{tx.date}</td>
@@ -605,7 +605,7 @@ export default function BankAccounts() {
 
               {!editId && (
                 <div className="form-group">
-                  <label>Starting Balance (Rs.)</label>
+                  <label>Starting Balance</label>
                   <input
                     type="number"
                     className="input-ctrl"
@@ -965,7 +965,7 @@ export default function BankAccounts() {
 
                       {(salaryRec.payeTaxDeduction > 0 || salaryRec.tax > 0) && (
                         <div className="deduction-item" style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '4px', paddingTop: '4px', fontSize: '0.85rem' }}>
-                          <span>PAYE Tax Deducted</span>
+                          <span>Tax Deducted</span>
                           <span style={{ fontWeight: 600, color: '#f43f5e' }}>-{formatCurrency(salaryRec.payeTaxDeduction || salaryRec.tax, settings.currency)}</span>
                         </div>
                       )}

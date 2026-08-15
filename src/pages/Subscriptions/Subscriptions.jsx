@@ -421,7 +421,7 @@ export default function Subscriptions() {
 
             <div className="form-row-2" style={{ marginTop: '12px' }}>
               <div className="form-group">
-                <label>Billing Cost (Rs.)</label>
+                <label>Billing Cost</label>
                 <input
                   type="number"
                   className="input-ctrl"

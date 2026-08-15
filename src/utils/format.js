@@ -13,8 +13,8 @@ export const currencySymbols = {
   SAR: '﷼'
 };
 
-export function formatCurrency(amount, currencyCode = 'LKR') {
-  const symbol = currencySymbols[currencyCode] || 'Rs.';
+export function formatCurrency(amount, currencyCode = 'USD') {
+  const symbol = currencySymbols[currencyCode] || '$';
   const formatted = Math.abs(amount || 0).toLocaleString(undefined, {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2

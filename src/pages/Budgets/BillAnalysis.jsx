@@ -466,7 +466,7 @@ export default function BillAnalysis() {
             </button>
           </div>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '16px' }}>
-            Comparing actual LKR utility costs against target thresholds.
+            Comparing actual utility costs against target thresholds.
           </p>
           
           <div className="table-container" style={{ flexGrow: 1 }}>
@@ -475,8 +475,8 @@ export default function BillAnalysis() {
                 <tr>
                   <th>Category</th>
                   <th>Target (%)</th>
-                  <th>Limit (Rs.)</th>
-                  <th>Actual (Rs.)</th>
+                  <th>Limit</th>
+                  <th>Actual</th>
                   <th>Status</th>
                 </tr>
               </thead>
@@ -540,26 +540,26 @@ export default function BillAnalysis() {
           <div className="modal-body" style={{ maxHeight: '70vh', overflowY: 'auto' }}>
             <div className="form-row-2">
               <div className="form-group">
-                <label>Electricity Limit (Rs.)</label>
+                <label>Electricity Limit</label>
                 <input 
                   type="number" 
                   className="input-ctrl" 
                   value={limitElectricity} 
                   onChange={e => setLimitElectricity(e.target.value)} 
-                  placeholder="8000" 
-                  min="0"
+                  placeholder="120" 
+                  min="0" 
                   required 
                 />
               </div>
               <div className="form-group">
-                <label>Water Limit (Rs.)</label>
+                <label>Water Limit</label>
                 <input 
                   type="number" 
                   className="input-ctrl" 
                   value={limitWater} 
                   onChange={e => setLimitWater(e.target.value)} 
-                  placeholder="2000" 
-                  min="0"
+                  placeholder="50" 
+                  min="0" 
                   required 
                 />
               </div>
@@ -567,26 +567,26 @@ export default function BillAnalysis() {
 
             <div className="form-row-2">
               <div className="form-group">
-                <label>Internet Limit (Rs.)</label>
+                <label>Internet Limit</label>
                 <input 
                   type="number" 
                   className="input-ctrl" 
                   value={limitInternet} 
                   onChange={e => setLimitInternet(e.target.value)} 
-                  placeholder="5000" 
-                  min="0"
+                  placeholder="80" 
+                  min="0" 
                   required 
                 />
               </div>
               <div className="form-group">
-                <label>Mobile phone Limit (Rs.)</label>
+                <label>Mobile phone Limit</label>
                 <input 
                   type="number" 
                   className="input-ctrl" 
                   value={limitMobile} 
                   onChange={e => setLimitMobile(e.target.value)} 
-                  placeholder="3000" 
-                  min="0"
+                  placeholder="60" 
+                  min="0" 
                   required 
                 />
               </div>
@@ -594,26 +594,26 @@ export default function BillAnalysis() {
 
             <div className="form-row-2">
               <div className="form-group">
-                <label>Insurance Limit (Rs.)</label>
+                <label>Insurance Limit</label>
                 <input 
                   type="number" 
                   className="input-ctrl" 
                   value={limitInsurance} 
                   onChange={e => setLimitInsurance(e.target.value)} 
-                  placeholder="15000" 
-                  min="0"
+                  placeholder="200" 
+                  min="0" 
                   required 
                 />
               </div>
               <div className="form-group">
-                <label>Credit cards Limit (Rs.)</label>
+                <label>Credit cards Limit</label>
                 <input 
                   type="number" 
                   className="input-ctrl" 
                   value={limitCreditCards} 
                   onChange={e => setLimitCreditCards(e.target.value)} 
-                  placeholder="25000" 
-                  min="0"
+                  placeholder="500" 
+                  min="0" 
                   required 
                 />
               </div>
@@ -621,26 +621,26 @@ export default function BillAnalysis() {
 
             <div className="form-row-2" style={{ marginTop: '10px' }}>
               <div className="form-group">
-                <label>Rent Limit (Rs.)</label>
+                <label>Rent Limit</label>
                 <input 
                   type="number" 
                   className="input-ctrl" 
                   value={limitRent} 
                   onChange={e => setLimitRent(e.target.value)} 
-                  placeholder="45000" 
-                  min="0"
+                  placeholder="1200" 
+                  min="0" 
                   required 
                 />
               </div>
               <div className="form-group">
-                <label>Subscriptions Limit (Rs.)</label>
+                <label>Subscriptions Limit</label>
                 <input 
                   type="number" 
                   className="input-ctrl" 
                   value={limitSubscriptions} 
                   onChange={e => setLimitSubscriptions(e.target.value)} 
-                  placeholder="10000" 
-                  min="0"
+                  placeholder="100" 
+                  min="0" 
                   required 
                 />
               </div>
@@ -652,7 +652,7 @@ export default function BillAnalysis() {
                 {Object.keys(customBillLimits).map(catName => (
                   <div className="form-row-2" key={catName} style={{ alignItems: 'flex-end', marginTop: '8px' }}>
                     <div className="form-group" style={{ flexGrow: 1 }}>
-                      <label>{catName} Limit (Rs.)</label>
+                      <label>{catName} Limit</label>
                       <input
                         type="number"
                         className="input-ctrl"
