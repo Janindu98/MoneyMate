@@ -15,8 +15,7 @@ export default function Settings({ onOpenAbout }) {
     isPro,
     purchaseProMicrosoftStore,
     checkLicense,
-    deactivateLicense,
-    setProDevOverride
+    deactivateLicense
   } = useDatabase();
   const { showToast } = useToast();
 
@@ -305,12 +304,11 @@ export default function Settings({ onOpenAbout }) {
           <div className="settings-section-title">License & Microsoft Store Entitlement</div>
           <div className="settings-section-desc">Manage your MoneyMate Pro tier. Pro upgrades are bound directly to your Microsoft Account entitlement with offline caching.</div>
           <div className="settings-row" style={{ flexDirection: 'column', alignItems: 'stretch' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
               <div className="settings-row-info">
                 <div className="settings-row-title">Active License Status</div>
                 <div className="settings-row-desc">
                   Current Status: <strong style={{ color: isPro ? '#34d399' : '#fbbf24' }}>{isPro ? 'Pro Mode Active' : 'Free Tier'}</strong>
-                  {isPro && license?.type === 'dev_override' && ' (Development Mode Override)'}
                   {isPro && license?.type === 'microsoft_store' && ' (Microsoft Store Entitlement)'}
                 </div>
               </div>
@@ -354,25 +352,6 @@ export default function Settings({ onOpenAbout }) {
                     Upgrade to Pro ($11.99)
                   </button>
                 )}
-              </div>
-            </div>
-
-            {/* Development Override for Testers */}
-            <div style={{ borderTop: '1px dashed var(--border-color)', paddingTop: '16px', marginTop: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div>
-                <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#f87171' }}>Local Development Override</div>
-                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Instantly switch Pro state offline during development or UI verification.</div>
-              </div>
-              <div>
-                <input
-                  type="checkbox"
-                  checked={!!license?.isProDevOverride}
-                  onChange={async (e) => {
-                    await setProDevOverride(e.target.checked);
-                    showToast(e.target.checked ? 'Development Mode Pro Override Enabled.' : 'Development Mode Pro Override Disabled.');
-                  }}
-                  style={{ width: '20px', height: '20px', cursor: 'pointer' }}
-                />
               </div>
             </div>
           </div>
