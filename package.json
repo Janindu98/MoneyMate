@@ -44,11 +44,14 @@
   "build": {
     "appId": "com.moneymate.app",
     "productName": "MoneyMate Vault - Expense Tracker",
+    "artifactName": "MoneyMate_Vault-Expense-Tracker-Setup-${version}.${ext}",
     "win": {
       "target": "nsis",
-      "icon": "images/logo.png"
+      "icon": "images/logo.png",
+      "artifactName": "MoneyMate_Vault-Expense-Tracker-Setup-${version}.${ext}"
     },
     "nsis": {
+      "artifactName": "MoneyMate_Vault-Expense-Tracker-Setup-${version}.${ext}",
       "oneClick": false,
       "perMachine": true,
       "allowElevation": true,
