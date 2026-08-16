@@ -42,8 +42,8 @@
     "xlsx-js-style": "^1.2.0"
   },
   "build": {
-    "appId": "com.moneymate.app",
-    "productName": "MoneyMate Vault - Expense Tracker",
+    "appId": "com.moneymatevault.app",
+    "productName": "MoneyMate Vault",
     "artifactName": "MoneyMate_Vault-Expense-Tracker-Setup-${version}.${ext}",
     "win": {
       "target": "nsis",

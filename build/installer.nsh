@@ -34,7 +34,7 @@
 !macroend
 
 Function CreateDesktopShortcutFunc
-  CreateShortCut "$DESKTOP\MoneyMate.lnk" "$INSTDIR\MoneyMate.exe" "" "$INSTDIR\resources\app.asar.unpacked\images\logo.ico"
+  CreateShortCut "$DESKTOP\MoneyMate Vault.lnk" "$INSTDIR\MoneyMate Vault.exe" "" "$INSTDIR\resources\app.asar.unpacked\images\logo.ico"
 FunctionEnd
 
 !macro customInit
@@ -50,6 +50,18 @@ FunctionEnd
 !macroend
 
 !macro customUnInstall
-  ; Clean up desktop shortcut on uninstallation
+  ; Move NSIS working directory outside the installation directory
+  SetOutPath "$TEMP"
+
+  ; Remove desktop shortcuts
+  Delete "$DESKTOP\MoneyMate Vault.lnk"
   Delete "$DESKTOP\MoneyMate.lnk"
+
+  ; Remove all files and subdirectories
+  RMDir /r "$INSTDIR"
+
+  ; Remove the empty directory explicitly
+  RMDir "$INSTDIR"
 !macroend
+
+
