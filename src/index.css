@@ -9,7 +9,7 @@
   --text-primary: #f8fafc;
   --text-secondary: #94a3b8;
   --text-muted: #64748b;
-  
+
   /* Gradients */
   --accent-gradient: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
   --success-gradient: linear-gradient(135deg, #10b981 0%, #059669 100%);
@@ -19,11 +19,11 @@
   --card-purple-gradient: linear-gradient(135deg, #7c3aed 0%, #8b5cf6 100%);
   --card-teal-gradient: linear-gradient(135deg, #0d9488 0%, #0d9488 100%);
   --card-dark-gradient: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-  
+
   /* Shadow & Blur */
   --card-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
   --glass-blur: blur(16px);
-  
+
   --sidebar-width: 260px;
   --font-sans: 'Plus Jakarta Sans', 'Inter', sans-serif;
 }
@@ -57,7 +57,8 @@ body {
 }
 
 /* App Structure */
-.app-container, #app-container {
+.app-container,
+#app-container {
   display: flex;
   width: 100%;
   height: 100%;
@@ -174,8 +175,8 @@ body {
   overflow-x: auto;
   padding: 32px 40px;
   background: radial-gradient(ellipse at top right, rgba(99, 102, 241, 0.08), transparent 50%),
-              radial-gradient(ellipse at bottom left, rgba(168, 85, 247, 0.04), transparent 50%),
-              var(--bg-primary);
+    radial-gradient(ellipse at bottom left, rgba(168, 85, 247, 0.04), transparent 50%),
+    var(--bg-primary);
   display: flex;
   flex-direction: column;
   gap: 32px;
@@ -198,6 +199,7 @@ body {
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
@@ -753,7 +755,9 @@ label {
   color: var(--text-secondary);
 }
 
-.input-ctrl, select, textarea {
+.input-ctrl,
+select,
+textarea {
   width: 100%;
   background-color: rgba(255, 255, 255, 0.03);
   border: 1px solid var(--border-color);
@@ -765,7 +769,8 @@ label {
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-select option, select optgroup {
+select option,
+select optgroup {
   background-color: #0f1322;
   color: #f8fafc;
 }
@@ -780,7 +785,9 @@ input[type="number"] {
   -moz-appearance: textfield;
 }
 
-.input-ctrl:focus, select:focus, textarea:focus {
+.input-ctrl:focus,
+select:focus,
+textarea:focus {
   border-color: var(--border-focus);
   box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
 }
@@ -1032,6 +1039,7 @@ textarea {
     transform: translateX(100%);
     opacity: 0;
   }
+
   to {
     transform: translateX(0);
     opacity: 1;
@@ -1341,14 +1349,31 @@ textarea {
 
 /* Shaking Error Animation */
 .lockscreen-card.shake {
-  animation: lockscreenShake 0.45s cubic-bezier(.36,.07,.19,.97) both;
+  animation: lockscreenShake 0.45s cubic-bezier(.36, .07, .19, .97) both;
 }
 
 @keyframes lockscreenShake {
-  10%, 90% { transform: translate3d(-2px, 0, 0); }
-  20%, 80% { transform: translate3d(4px, 0, 0); }
-  30%, 50%, 70% { transform: translate3d(-6px, 0, 0); }
-  40%, 60% { transform: translate3d(6px, 0, 0); }
+
+  10%,
+  90% {
+    transform: translate3d(-2px, 0, 0);
+  }
+
+  20%,
+  80% {
+    transform: translate3d(4px, 0, 0);
+  }
+
+  30%,
+  50%,
+  70% {
+    transform: translate3d(-6px, 0, 0);
+  }
+
+  40%,
+  60% {
+    transform: translate3d(6px, 0, 0);
+  }
 }
 
 /* Light Theme System Overrides */
@@ -1375,17 +1400,18 @@ body.light-theme .nav-item {
 }
 
 body.light-theme .nav-item:hover {
-  background-color: rgba(15, 23, 42, 0.04);
-  color: var(--text-primary);
+  background-color: rgba(99, 102, 241, 0.09);
+  color: #4f46e5;
 }
 
 body.light-theme .nav-item:hover svg {
-  stroke: var(--text-primary);
+  stroke: #4f46e5;
 }
 
 body.light-theme .nav-item.active {
   color: #ffffff;
   background: var(--accent-gradient);
+  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.35);
 }
 
 body.light-theme .nav-item.active svg {
@@ -1426,23 +1452,32 @@ body.light-theme .modal-footer {
 }
 
 body.light-theme tr:hover td {
-  background-color: rgba(15, 23, 42, 0.015);
+  background-color: rgba(99, 102, 241, 0.04);
 }
 
 body.light-theme .category-icon {
   background-color: rgba(15, 23, 42, 0.03);
 }
 
+body.light-theme .panel {
+  background: #ffffff;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.04);
+}
+
 body.light-theme .panel:hover {
-  border-color: rgba(15, 23, 42, 0.15);
+  border-color: rgba(99, 102, 241, 0.35);
+  box-shadow: 0 8px 24px rgba(99, 102, 241, 0.1);
 }
 
 body.light-theme .salary-event-card {
   background: rgba(15, 23, 42, 0.02);
+  border: 1px solid rgba(15, 23, 42, 0.08);
 }
 
 body.light-theme .salary-event-card:hover {
-  background: rgba(15, 23, 42, 0.04);
+  background: rgba(99, 102, 241, 0.06);
+  border-color: rgba(99, 102, 241, 0.25);
 }
 
 body.light-theme .btn-secondary {
@@ -1452,8 +1487,9 @@ body.light-theme .btn-secondary {
 }
 
 body.light-theme .btn-secondary:hover {
-  background-color: rgba(15, 23, 42, 0.08);
-  border-color: rgba(15, 23, 42, 0.25);
+  background-color: rgba(99, 102, 241, 0.08);
+  border-color: rgba(99, 102, 241, 0.3);
+  color: #4f46e5;
 }
 
 /* Settings Specific Buttons Style */
@@ -2361,10 +2397,9 @@ body.light-theme .doc-footer-cta {
   .help-hub-layout {
     grid-template-columns: 1fr;
   }
+
   .help-sidebar-panel {
     position: static;
     max-height: 350px;
   }
 }
-
-

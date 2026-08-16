@@ -557,8 +557,16 @@ export function DatabaseProvider({ children }) {
 
   const deleteSalaryRecord = (id) => {
     updateDbState(prev => {
+      const targetSalary = prev.salaryHistory.find(s => s.id === id);
       const newSal = prev.salaryHistory.filter(s => s.id !== id);
-      return { ...prev, salaryHistory: newSal };
+      const newTx = prev.transactions.filter(t => {
+        if (t.salaryRecordId === id) return false;
+        if (targetSalary && !t.salaryRecordId && t.category === 'Salary' && t.amount === targetSalary.netSalary && t.date === targetSalary.paymentDate) {
+          return false;
+        }
+        return true;
+      });
+      return { ...prev, salaryHistory: newSal, transactions: newTx };
     });
   };
 

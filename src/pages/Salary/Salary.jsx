@@ -57,6 +57,9 @@ export default function Salary() {
   const [payslipName, setPayslipName] = useState('');
   const [salaryContributions, setSalaryContributions] = useState({});
 
+  const [filterYear, setFilterYear] = useState('all');
+  const [filterMonth, setFilterMonth] = useState('all');
+
   // Prefill states when profile/accounts change
   useEffect(() => {
     if (profile) {
@@ -76,14 +79,12 @@ export default function Salary() {
     }
   }, [profile, accounts, isModalOpen]);
 
-
-
-  // Statutory suggestion math based on Basic Salary
+  // Statutory suggestion math based on Basic Salary for custom contributions
   const handleBasicSalaryChange = (val) => {
     setBasicSalary(val);
     const basic = parseFloat(val) || 0;
     
-    // Auto-suggest values for custom contributions
+    // Auto-suggest values for custom contributions configured in user profile
     const updatedContribs = { ...salaryContributions };
     if (profile && Array.isArray(profile.contributions)) {
       profile.contributions.forEach(c => {
@@ -96,16 +97,6 @@ export default function Salary() {
       });
     }
     setSalaryContributions(updatedContribs);
-
-    if (basic > 0) {
-      setEpfEmployee((basic * 0.08).toFixed(2));
-      setEpfCompany((basic * 0.12).toFixed(2));
-      setEtfCompany((basic * 0.03).toFixed(2));
-    } else {
-      setEpfEmployee('');
-      setEpfCompany('');
-      setEtfCompany('');
-    }
   };
 
   const handlePaymentDateChange = (val) => {
@@ -345,6 +336,29 @@ export default function Salary() {
     setIsModalOpen(true);
   };
 
+  // Sort chronologically descending (latest at top, earlier at bottom)
+  const sortedSalaryHistory = [...salaryHistory].sort((a, b) => {
+    if (a.paymentDate && b.paymentDate) {
+      const diff = new Date(b.paymentDate) - new Date(a.paymentDate);
+      if (diff !== 0) return diff;
+    }
+    const yearDiff = (parseInt(b.year, 10) || 0) - (parseInt(a.year, 10) || 0);
+    if (yearDiff !== 0) return yearDiff;
+    return monthsList.indexOf(b.month) - monthsList.indexOf(a.month);
+  });
+
+  // Extract unique available years from records (sorted descending)
+  const availableYears = Array.from(
+    new Set(salaryHistory.map(s => s.year?.toString()).filter(Boolean))
+  ).sort((a, b) => (parseInt(b, 10) || 0) - (parseInt(a, 10) || 0));
+
+  // Filter records by selected Year and Month
+  const filteredSalaryHistory = sortedSalaryHistory.filter(s => {
+    const matchYear = filterYear === 'all' || s.year?.toString() === filterYear.toString();
+    const matchMonth = filterMonth === 'all' || s.month === filterMonth;
+    return matchYear && matchMonth;
+  });
+
   // --- STATS CALCULATIONS ---
   const count = salaryHistory.length;
   const netSalaries = salaryHistory.map(s => s.netSalary || 0);
@@ -356,42 +370,24 @@ export default function Salary() {
 
   const bonusEarned = salaryHistory.reduce((sum, s) => sum + (s.bonus || 0), 0);
   const overtimeEarned = salaryHistory.reduce((sum, s) => sum + (s.overtime || 0), 0);
-  
-  const totalEPF = salaryHistory.reduce((sum, s) => {
-    if (s.contributions && s.contributions.length > 0) {
-      const epf = s.contributions.find(c => c.name.toLowerCase().includes('epf'));
-      if (epf) {
-        return sum + (epf.employeeContribution || 0) + (epf.employerContribution || 0);
-      }
-    }
-    return sum + (s.epfEmployee || 0) + (s.epfCompany || 0);
-  }, 0);
 
-  const totalETF = salaryHistory.reduce((sum, s) => {
-    if (s.contributions && s.contributions.length > 0) {
-      const etf = s.contributions.find(c => c.name.toLowerCase().includes('etf'));
-      if (etf) {
-        return sum + (etf.employerContribution || 0);
-      }
-    }
-    return sum + (s.etfCompany || 0);
-  }, 0);
-
-  // Set default selected salary as the most recent record on mount
+  // Set default selected salary as the most recent matching record on mount / filter change
   useEffect(() => {
-    if (salaryHistory.length > 0 && !selectedSalary) {
-      // Sort chronologically and set most recent
-      const sorted = [...salaryHistory].sort((a, b) => new Date(b.paymentDate) - new Date(a.paymentDate));
-      setSelectedSalary(sorted[0]);
+    if (filteredSalaryHistory.length > 0) {
+      if (!selectedSalary || !filteredSalaryHistory.some(s => s.id === selectedSalary.id)) {
+        setSelectedSalary(filteredSalaryHistory[0]);
+      }
+    } else {
+      setSelectedSalary(null);
     }
-  }, [salaryHistory, selectedSalary]);
+  }, [salaryHistory, filterYear, filterMonth]);
 
   return (
     <div className="page active">
       <div className="page-header">
         <div className="header-title">
           <h1>Salary Management</h1>
-          <p>Monitor paystubs history, position progression, and EPF/ETF contributions.</p>
+          <p>Monitor paystubs history, position progression, and social security / retirement fund contributions.</p>
         </div>
         <div className="header-actions">
           <button className="btn btn-primary" onClick={() => {
@@ -475,23 +471,59 @@ export default function Salary() {
           <div style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: 600 }}>Overtime Earned</div>
           <div style={{ fontSize: '1.2rem', fontWeight: 700, color: '#3b82f6', marginTop: '2px' }}>{formatCurrency(overtimeEarned, settings.currency)}</div>
         </div>
-        <div className="panel" style={{ padding: '14px 20px' }}>
-          <div style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: 600 }}>Total EPF (Emp + Comp)</div>
-          <div style={{ fontSize: '1.2rem', fontWeight: 700, color: '#10b981', marginTop: '2px' }}>{formatCurrency(totalEPF, settings.currency)}</div>
-        </div>
-        <div className="panel" style={{ padding: '14px 20px' }}>
-          <div style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: 600 }}>Total ETF (Comp)</div>
-          <div style={{ fontSize: '1.2rem', fontWeight: 700, color: '#14b8a6', marginTop: '2px' }}>{formatCurrency(totalETF, settings.currency)}</div>
-        </div>
+        {profile?.contributions && Array.isArray(profile.contributions) && profile.contributions.map(c => {
+          const totalForContrib = salaryHistory.reduce((sum, s) => {
+            if (s.contributions && Array.isArray(s.contributions)) {
+              const match = s.contributions.find(sc => sc.id === c.id || (sc.name && sc.name.toLowerCase() === c.name.toLowerCase()));
+              if (match) {
+                return sum + (match.employeeContribution || 0) + (match.employerContribution || 0);
+              }
+            }
+            return sum;
+          }, 0);
+          return (
+            <div key={c.id} className="panel" style={{ padding: '14px 20px' }}>
+              <div style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: 600 }}>Total {c.name} (Emp + Comp)</div>
+              <div style={{ fontSize: '1.2rem', fontWeight: 700, color: '#10b981', marginTop: '2px' }}>{formatCurrency(totalForContrib, settings.currency)}</div>
+            </div>
+          );
+        })}
       </div>
 
       {/* Split view: list of records on left, detailed pay stub on right */}
       <div className="salary-dashboard">
         {/* Left Column: timeline history list */}
         <div className="panel">
-          <h2 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '20px' }}>Salary Records Timeline</h2>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
+            <h2 style={{ fontSize: '1.1rem', fontWeight: 700, margin: 0 }}>Salary Records Timeline</h2>
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+              <select
+                className="input-ctrl filter-select"
+                value={filterYear}
+                onChange={(e) => setFilterYear(e.target.value)}
+                style={{ padding: '6px 10px', fontSize: '0.8rem', width: 'auto', minWidth: '95px' }}
+              >
+                <option value="all">All Years</option>
+                {availableYears.map(y => (
+                  <option key={y} value={y}>{y}</option>
+                ))}
+              </select>
+              <select
+                className="input-ctrl filter-select"
+                value={filterMonth}
+                onChange={(e) => setFilterMonth(e.target.value)}
+                style={{ padding: '6px 10px', fontSize: '0.8rem', width: 'auto', minWidth: '105px' }}
+              >
+                <option value="all">All Months</option>
+                {monthsList.map(m => (
+                  <option key={m} value={m}>{m}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
           <div className="salary-timeline">
-            {salaryHistory.map(pay => (
+            {filteredSalaryHistory.map(pay => (
               <div 
                 key={pay.id} 
                 className={`salary-event-card ${selectedSalary?.id === pay.id ? 'active' : ''}`}
@@ -511,10 +543,12 @@ export default function Salary() {
               </div>
             ))}
 
-            {salaryHistory.length === 0 && (
+            {filteredSalaryHistory.length === 0 && (
               <div className="empty-state">
                 <svg viewBox="0 0 24 24" width="48" height="48" stroke="currentColor" fill="none" strokeWidth="1.5"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
-                <div className="empty-state-text">No salary records saved. Log one above.</div>
+                <div className="empty-state-text">
+                  {salaryHistory.length === 0 ? "No salary records saved. Log one above." : "No salary records match the selected Year and Month."}
+                </div>
               </div>
             )}
           </div>
@@ -580,7 +614,7 @@ export default function Salary() {
               <div style={{ marginBottom: '16px' }}>
                 <h3 style={{ fontSize: '0.85rem', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px' }}>Deductions</h3>
                 
-                {selectedSalary.contributions && selectedSalary.contributions.length > 0 ? (
+                {selectedSalary.contributions && selectedSalary.contributions.length > 0 && (
                   selectedSalary.contributions.map(c => (
                     c.employeeContribution > 0 && (
                       <div key={c.id} className="deduction-item">
@@ -589,15 +623,6 @@ export default function Salary() {
                       </div>
                     )
                   ))
-                ) : (
-                  <>
-                    {selectedSalary.epfEmployee > 0 && (
-                      <div className="deduction-item">
-                        <span className="deduction-label">EPF Employee (8%)</span>
-                        <span className="deduction-val">{formatCurrency(selectedSalary.epfEmployee, settings.currency)}</span>
-                      </div>
-                    )}
-                  </>
                 )}
 
                 <div className="deduction-item">
@@ -615,35 +640,18 @@ export default function Salary() {
               </div>
 
               {/* Company statutory contributions (informational) */}
-              {((selectedSalary.contributions && selectedSalary.contributions.some(c => c.employerContribution > 0)) || selectedSalary.epfCompany > 0 || selectedSalary.etfCompany > 0) ? (
+              {(selectedSalary.contributions && selectedSalary.contributions.some(c => c.employerContribution > 0)) ? (
                 <div style={{ background: 'rgba(255, 255, 255, 0.02)', border: '1px dashed var(--border-color)', borderRadius: '8px', padding: '12px', marginBottom: '16px' }}>
                   <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', marginBottom: '6px' }}>Company Statutory Contributions</div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.8rem' }}>
-                    {selectedSalary.contributions && selectedSalary.contributions.length > 0 ? (
-                      selectedSalary.contributions.map(c => (
-                        c.employerContribution > 0 && (
-                          <div key={c.id} style={{ display: 'flex', justifyContent: 'space-between' }}>
-                            <span>{c.name} Employer ({c.employerRate}%):</span>
-                            <strong>{formatCurrency(c.employerContribution, settings.currency)}</strong>
-                          </div>
-                        )
-                      ))
-                    ) : (
-                      <>
-                        {selectedSalary.epfCompany > 0 && (
-                          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                            <span>Employer EPF (12%):</span>
-                            <strong>{formatCurrency(selectedSalary.epfCompany, settings.currency)}</strong>
-                          </div>
-                        )}
-                        {selectedSalary.etfCompany > 0 && (
-                          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                            <span>Employer ETF (3%):</span>
-                            <strong>{formatCurrency(selectedSalary.etfCompany, settings.currency)}</strong>
-                          </div>
-                        )}
-                      </>
-                    )}
+                    {selectedSalary.contributions.map(c => (
+                      c.employerContribution > 0 && (
+                        <div key={c.id} style={{ display: 'flex', justifyContent: 'space-between' }}>
+                          <span>{c.name} Employer ({c.employerRate}%):</span>
+                          <strong>{formatCurrency(c.employerContribution, settings.currency)}</strong>
+                        </div>
+                      )
+                    ))}
                   </div>
                 </div>
               ) : null}

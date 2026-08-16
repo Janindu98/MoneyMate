@@ -785,7 +785,7 @@ export default function Transactions() {
                   </div>
                   <div>
                     <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Transaction Amount</div>
-                    <div style={{ fontWeight: 800, fontSize: '1.2rem', color: isOutflow ? '#f43f5e' : '#10b981', marginTop: '2px' }}>
+                    <div style={{ fontWeight: 800, fontSize: '1.2rem', color: selectedTx.type === 'Online/Account cash transfer' ? '#6366f1' : (isOutflow ? '#f43f5e' : '#10b981'), marginTop: '2px' }}>
                       {isOutflow ? '-' : '+'}{formatCurrency(selectedTx.amount, settings.currency)}
                     </div>
                   </div>
@@ -900,7 +900,7 @@ export default function Transactions() {
                      <div style={{ marginBottom: '16px' }}>
                       <h4 style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '6px' }}>Deductions & Statutory</h4>
                       
-                      {salaryRec.contributions && salaryRec.contributions.length > 0 ? (
+                      {salaryRec.contributions && salaryRec.contributions.length > 0 && (
                         salaryRec.contributions.map(c => (
                           <React.Fragment key={c.id || c.name}>
                             {c.employeeContribution > 0 && (
@@ -917,27 +917,6 @@ export default function Transactions() {
                             )}
                           </React.Fragment>
                         ))
-                      ) : (
-                        <>
-                          {salaryRec.epfEmployee > 0 && (
-                            <div className="deduction-item" style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '4px', fontSize: '0.85rem' }}>
-                              <span>EPF Employee contribution (8%)</span>
-                              <span>{formatCurrency(salaryRec.epfEmployee, settings.currency)}</span>
-                            </div>
-                          )}
-                          {salaryRec.epfCompany > 0 && (
-                            <div className="deduction-item" style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '4px', paddingTop: '4px', fontSize: '0.85rem' }}>
-                              <span>EPF Company contribution (12%)</span>
-                              <span>{formatCurrency(salaryRec.epfCompany, settings.currency)}</span>
-                            </div>
-                          )}
-                          {salaryRec.etfCompany > 0 && (
-                            <div className="deduction-item" style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '4px', paddingTop: '4px', fontSize: '0.85rem' }}>
-                              <span>ETF Company contribution (3%)</span>
-                              <span>{formatCurrency(salaryRec.etfCompany, settings.currency)}</span>
-                            </div>
-                          )}
-                        </>
                       )}
 
                       {(salaryRec.tax > 0) && (

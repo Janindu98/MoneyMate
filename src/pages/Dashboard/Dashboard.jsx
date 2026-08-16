@@ -243,8 +243,11 @@ export default function Dashboard({ onNavigate }) {
               </thead>
               <tbody>
                 {recentTx.map(tx => {
-                  const acc = accounts.find(a => a.id === tx.bankId);
-                  const isOutflow = ['Expense', 'Withdrawal', 'online payment', 'Online Payment', 'Online/Account cash transfer', 'Bill & Payment'].includes(tx.type) && tx.bankId === acc?.id;
+                  const sourceAcc = accounts.find(a => a.id === tx.bankId);
+                  const targetAcc = accounts.find(a => a.id === tx.targetBankId);
+                  const isOutflow = ['Expense', 'Withdrawal', 'online payment', 'Online Payment', 'Online/Account cash transfer', 'Bill & Payment'].includes(tx.type) && tx.bankId === sourceAcc?.id;
+                  const isTransfer = tx.type === 'Online/Account cash transfer';
+
                   return (
                     <tr key={tx.id}>
                       <td>
@@ -258,16 +261,25 @@ export default function Dashboard({ onNavigate }) {
                           </div>
                         </div>
                       </td>
-                      <td>{acc ? acc.bankName : 'Unknown'}</td>
+                      <td>
+                        {isTransfer ? (
+                          <div style={{ fontSize: '0.85rem' }}>
+                            <div>From: {sourceAcc ? sourceAcc.bankName : 'Unknown'}</div>
+                            <div style={{ color: 'var(--text-muted)' }}>To: {targetAcc ? targetAcc.bankName : 'Unknown'}</div>
+                          </div>
+                        ) : (
+                          sourceAcc ? sourceAcc.bankName : 'Unknown'
+                        )}
+                      </td>
                       <td>{tx.category}</td>
                       <td>{tx.date}</td>
                       <td>
-                        <span className={`badge badge-${isOutflow ? 'expense' : 'income'}`}>
+                        <span className={`badge ${isTransfer ? 'badge-transfer' : (isOutflow ? 'badge-expense' : 'badge-income')}`}>
                           {tx.type}
                         </span>
                       </td>
                       <td>
-                        <span className={`amount ${isOutflow ? 'expense' : 'income'}`}>
+                        <span className={`amount ${isTransfer ? 'transfer' : (isOutflow ? 'expense' : 'income')}`}>
                           {isOutflow ? '-' : '+'}{formatCurrency(tx.amount, settings.currency)}
                         </span>
                       </td>
