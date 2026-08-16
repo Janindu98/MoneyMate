@@ -1106,7 +1106,7 @@ export default function BankAccounts() {
                   </div>
                   <div>
                     <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Transaction Amount</div>
-                    <div style={{ fontWeight: 800, fontSize: '1.2rem', color: isOutflow ? '#f43f5e' : '#10b981', marginTop: '2px' }}>
+                    <div style={{ fontWeight: 800, fontSize: '1.2rem', color: selectedTx.type === 'Online/Account cash transfer' ? '#6366f1' : (isOutflow ? '#f43f5e' : '#10b981'), marginTop: '2px' }}>
                       {isOutflow ? '-' : '+'}{formatCurrency(selectedTx.amount, settings.currency)}
                     </div>
                   </div>
