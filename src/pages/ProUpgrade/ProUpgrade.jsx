@@ -3,10 +3,11 @@ import { useDatabase } from '../../hooks/useDatabase';
 import { useToast } from '../../components/Toast';
 
 export default function ProUpgrade({ activeTab }) {
-  const { purchaseProMicrosoftStore, setProDevOverride } = useDatabase();
+  const { purchaseProMicrosoftStore, checkLicense, setProDevOverride } = useDatabase();
   const { showToast } = useToast();
 
   const [loading, setLoading] = useState(false);
+  const [restoring, setRestoring] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
   const getFeatureTitle = () => {
@@ -48,9 +49,25 @@ export default function ProUpgrade({ activeTab }) {
       }
     } catch (err) {
       setErrorMessage(err.message);
-      showToast('Purchase simulation failed.', 'error');
+      showToast('Purchase request failed.', 'error');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleRestorePurchase = async () => {
+    setRestoring(true);
+    try {
+      const res = await checkLicense();
+      if (res && res.isPro) {
+        showToast('Microsoft Store Pro entitlement verified! Pro unlocked.');
+      } else {
+        showToast('No active Pro purchase found on this Microsoft Account.', 'warning');
+      }
+    } catch (e) {
+      showToast('Could not query Store license.', 'error');
+    } finally {
+      setRestoring(false);
     }
   };
 
@@ -206,6 +223,25 @@ export default function ProUpgrade({ activeTab }) {
             }}
           >
             {loading ? 'Initiating Purchase Dialog...' : 'Buy Now'}
+          </button>
+
+          <button
+            className="btn btn-secondary"
+            disabled={loading || restoring}
+            onClick={handleRestorePurchase}
+            style={{
+              width: '100%',
+              marginTop: '10px',
+              padding: '8px',
+              fontSize: '0.8rem',
+              fontWeight: 600,
+              background: 'rgba(255, 255, 255, 0.05)',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              borderRadius: '8px',
+              color: '#cbd5e1'
+            }}
+          >
+            {restoring ? 'Checking Microsoft Store...' : 'Already purchased Pro? Restore Entitlement'}
           </button>
         </div>
 

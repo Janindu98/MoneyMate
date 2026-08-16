@@ -19,7 +19,6 @@ contextBridge.exposeInMainWorld('api', {
   readEncryptedFile: () => ipcRenderer.invoke('db:read-encrypted-file'),
   checkLicense: () => ipcRenderer.invoke('license:check'),
   purchaseMicrosoftStore: () => ipcRenderer.invoke('license:buy-microsoft'),
-  activateLicenseKey: (key) => ipcRenderer.invoke('license:activate-key', key),
   deactivateLicense: () => ipcRenderer.invoke('license:deactivate'),
   toggleDevOverride: (enabled) => ipcRenderer.invoke('license:toggle-dev-override', enabled)
 });

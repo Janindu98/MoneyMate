@@ -14,7 +14,7 @@ export default function Settings({ onOpenAbout }) {
     license,
     isPro,
     purchaseProMicrosoftStore,
-    activateLicenseKey,
+    checkLicense,
     deactivateLicense,
     setProDevOverride
   } = useDatabase();
@@ -37,7 +37,7 @@ export default function Settings({ onOpenAbout }) {
   const [verifyModalOpen, setVerifyModalOpen] = useState(false);
   const [verifyValue, setVerifyValue] = useState('');
   const [pendingType, setPendingType] = useState('');
-  const [settingsLicenseKey, setSettingsLicenseKey] = useState('');
+  const [checkingLicense, setCheckingLicense] = useState(false);
 
   const handleSecurityChange = (e) => {
     const val = e.target.value;
@@ -302,20 +302,41 @@ export default function Settings({ onOpenAbout }) {
 
         {/* Licensing & Pro Features */}
         <div className="settings-section">
-          <div className="settings-section-title">License & Subscription Tiers</div>
-          <div className="settings-section-desc">Manage your MoneyMate license key and unlock premium capabilities.</div>
+          <div className="settings-section-title">License & Microsoft Store Entitlement</div>
+          <div className="settings-section-desc">Manage your MoneyMate Pro tier. Pro upgrades are bound directly to your Microsoft Account entitlement with offline caching.</div>
           <div className="settings-row" style={{ flexDirection: 'column', alignItems: 'stretch' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
               <div className="settings-row-info">
                 <div className="settings-row-title">Active License Status</div>
                 <div className="settings-row-desc">
                   Current Status: <strong style={{ color: isPro ? '#34d399' : '#fbbf24' }}>{isPro ? 'Pro Mode Active' : 'Free Tier'}</strong>
-                  {isPro && license?.type === 'dev_override' && ' (Development Mode)'}
-                  {isPro && license?.type === 'microsoft_store' && ' (Microsoft Store App)'}
-                  {isPro && license?.type === 'license_key' && ' (Standalone License Key)'}
+                  {isPro && license?.type === 'dev_override' && ' (Development Mode Override)'}
+                  {isPro && license?.type === 'microsoft_store' && ' (Microsoft Store Entitlement)'}
                 </div>
               </div>
-              <div>
+              <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                <button 
+                  className="btn btn-secondary" 
+                  disabled={checkingLicense}
+                  onClick={async () => {
+                    setCheckingLicense(true);
+                    try {
+                      const res = await checkLicense();
+                      if (res && res.isPro) {
+                        showToast('Microsoft Store Pro entitlement verified and active!');
+                      } else {
+                        showToast('Store check complete. Current tier: Free mode.');
+                      }
+                    } catch (err) {
+                      showToast('Could not reach Microsoft Store. Using cached offline entitlement.', 'warning');
+                    } finally {
+                      setCheckingLicense(false);
+                    }
+                  }}
+                >
+                  {checkingLicense ? 'Checking Store...' : 'Check / Restore License'}
+                </button>
+
                 {isPro ? (
                   <button className="btn btn-secondary" onClick={async () => {
                     await deactivateLicense();
@@ -325,7 +346,7 @@ export default function Settings({ onOpenAbout }) {
                   <button className="btn btn-primary" onClick={async () => {
                     const res = await purchaseProMicrosoftStore();
                     if (res.success) {
-                      showToast('Microsoft Store purchase simulation succeeded! MoneyMate Pro activated.');
+                      showToast('Microsoft Store purchase completed! MoneyMate Pro activated.');
                     } else if (res.error) {
                       showToast(res.error, 'error');
                     }
@@ -336,40 +357,8 @@ export default function Settings({ onOpenAbout }) {
               </div>
             </div>
 
-            {!isPro && (
-              <div style={{ background: 'rgba(255, 255, 255, 0.03)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '16px', marginTop: '8px' }}>
-                <div style={{ fontSize: '0.85rem', fontWeight: 600, marginBottom: '10px' }}>Activate Standalone Offline Key</div>
-                <div style={{ display: 'flex', gap: '10px' }}>
-                  <input
-                    type="text"
-                    className="input-ctrl"
-                    placeholder="MM-XXXX-XXXX-XXXX-XXXX"
-                    value={settingsLicenseKey}
-                    onChange={e => setSettingsLicenseKey(e.target.value)}
-                    style={{ flex: 1, fontFamily: 'monospace', letterSpacing: '0.05em', color: '#fff', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border-color)', borderRadius: '6px', padding: '8px 12px' }}
-                  />
-                  <button className="btn btn-secondary" onClick={async () => {
-                    if (!settingsLicenseKey.trim()) {
-                      showToast('Please enter a key.', 'warning');
-                      return;
-                    }
-                    const res = await activateLicenseKey(settingsLicenseKey.trim());
-                    if (res.success) {
-                      showToast('License key activated! Welcome to MoneyMate Pro.');
-                      setSettingsLicenseKey('');
-                    } else {
-                      showToast(res.error || 'Invalid key checksum.', 'error');
-                    }
-                  }}>Activate Key</button>
-                </div>
-                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '8px' }}>
-                  Enter the standalone key purchased outside the store. Try valid keys: <code>MM-FREE-PROM-O26X-6F7B</code>
-                </div>
-              </div>
-            )}
-
             {/* Development Override for Testers */}
-            <div style={{ borderTop: '1px dashed var(--border-color)', paddingTop: '16px', marginTop: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ borderTop: '1px dashed var(--border-color)', paddingTop: '16px', marginTop: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
                 <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#f87171' }}>Local Development Override</div>
                 <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Instantly switch Pro state offline during development or UI verification.</div>

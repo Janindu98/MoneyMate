@@ -4,9 +4,10 @@ import { useDatabase } from '../hooks/useDatabase';
 import { useToast } from './Toast';
 
 export default function ProUpgradeModal({ isOpen, onClose, reason }) {
-  const { purchaseProMicrosoftStore } = useDatabase();
+  const { purchaseProMicrosoftStore, checkLicense } = useDatabase();
   const { showToast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [restoring, setRestoring] = useState(false);
 
   const handleUpgrade = async () => {
     setLoading(true);
@@ -20,9 +21,27 @@ export default function ProUpgradeModal({ isOpen, onClose, reason }) {
       }
     } catch (err) {
       console.error(err);
-      showToast('Purchase simulation failed.', 'error');
+      showToast('Purchase request failed.', 'error');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleRestore = async () => {
+    setRestoring(true);
+    try {
+      const res = await checkLicense();
+      if (res && res.isPro) {
+        showToast('Microsoft Store Pro entitlement verified! Pro unlocked.', 'success');
+        onClose();
+      } else {
+        showToast('No active Pro purchase found on this Microsoft Account.', 'warning');
+      }
+    } catch (err) {
+      console.error(err);
+      showToast('Could not query Microsoft Store.', 'error');
+    } finally {
+      setRestoring(false);
     }
   };
 
@@ -89,17 +108,26 @@ export default function ProUpgradeModal({ isOpen, onClose, reason }) {
         </div>
 
       </div>
-      <div className="modal-footer" style={{ gap: '12px', justifyContent: 'center', borderTop: '1px solid var(--border-color)', paddingTop: '16px' }}>
-        <button type="button" className="btn btn-secondary" onClick={onClose} disabled={loading} style={{ minWidth: '100px' }}>
+      <div className="modal-footer" style={{ gap: '10px', justifyContent: 'center', borderTop: '1px solid var(--border-color)', paddingTop: '16px', flexWrap: 'wrap' }}>
+        <button type="button" className="btn btn-secondary" onClick={onClose} disabled={loading || restoring} style={{ minWidth: '90px' }}>
           Cancel
+        </button>
+        <button 
+          type="button" 
+          className="btn btn-secondary" 
+          onClick={handleRestore} 
+          disabled={loading || restoring}
+          style={{ minWidth: '130px', fontSize: '0.82rem' }}
+        >
+          {restoring ? 'Checking...' : 'Restore License'}
         </button>
         <button 
           type="button" 
           className="btn btn-primary" 
           onClick={handleUpgrade} 
-          disabled={loading}
+          disabled={loading || restoring}
           style={{ 
-            minWidth: '200px',
+            minWidth: '180px',
             background: 'linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%)',
             border: 'none',
             color: '#fff',

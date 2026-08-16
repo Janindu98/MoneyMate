@@ -401,6 +401,16 @@ export function DatabaseProvider({ children }) {
           }
 
           setDbState(renewedData);
+
+          // Authoritative Microsoft Store Entitlement verification on startup
+          api.checkLicense().then(res => {
+            if (res && res.license) {
+              setDbState(prev => ({
+                ...prev,
+                license: res.license
+              }));
+            }
+          }).catch(err => console.warn('Store license startup check skipped:', err));
         }
       } catch (err) {
         console.error('Failed to load database:', err);
@@ -927,17 +937,16 @@ export function DatabaseProvider({ children }) {
     }
   };
 
-  const activateLicenseKey = async (key) => {
+  const checkLicense = async () => {
     try {
-      const res = await api.activateLicenseKey(key);
-      if (res && res.success) {
+      const res = await api.checkLicense();
+      if (res && res.license) {
         setDbState(prev => ({
           ...prev,
           license: res.license
         }));
-        return { success: true };
       }
-      return { success: false, error: res?.error || 'Validation failed.' };
+      return res;
     } catch (e) {
       console.error(e);
       return { success: false, error: e.message };
@@ -994,7 +1003,7 @@ export function DatabaseProvider({ children }) {
       license: dbState.license,
       isPro,
       purchaseProMicrosoftStore,
-      activateLicenseKey,
+      checkLicense,
       deactivateLicense,
       setProDevOverride,
       loading,

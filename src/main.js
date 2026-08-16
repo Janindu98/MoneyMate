@@ -3,7 +3,6 @@ import path from 'node:path';
 import fs from 'node:fs';
 import started from 'electron-squirrel-startup';
 import Database from './database/db.js';
-import { validateLicenseKey } from './utils/licensing.js';
 import { execFile } from 'node:child_process';
 import util from 'node:util';
 
@@ -566,51 +565,57 @@ app.whenReady().then(() => {
   }
 
   ipcMain.handle('license:check', async () => {
-    const license = db.getData()?.license || { status: 'free', type: 'none', key: '', purchaseToken: '', isProDevOverride: false };
+    const data = db.getData() || {};
+    const license = data.license || { status: 'free', type: 'none', purchaseToken: '', isProDevOverride: false };
 
-    // Dev Mode Override
+    // Dev Mode Override for local UI & feature development
     if (license.isProDevOverride) {
       return { status: 'pro', type: 'dev_override', isPro: true, license };
     }
 
-    // Standalone key validation
-    if (license.type === 'license_key' && validateLicenseKey(license.key)) {
-      return { status: 'pro', type: 'license_key', isPro: true, key: license.key, license };
-    }
-
-    // Microsoft Store Purchase Verification (Real call)
+    // Query Microsoft Store Entitlement via native StoreHelper (StoreContext -> StoreAppLicense -> AddOnLicenses)
     const storeRes = await runStoreHelper('check');
+
+    // Case 1: Microsoft Store confirms Pro durable add-on entitlement
     if (storeRes && storeRes.isPro) {
       if (license.status !== 'pro' || license.type !== 'microsoft_store') {
-        const data = db.getData();
         data.license = {
           status: 'pro',
           type: 'microsoft_store',
-          key: '',
           purchaseToken: 'microsoft_store_verified',
+          addOnId: storeRes.activeAddOnId || '',
+          lastVerified: Date.now(),
           isProDevOverride: data.license?.isProDevOverride || false
         };
         db.setData(data);
-        return { status: 'pro', type: 'microsoft_store', isPro: true, purchaseToken: 'microsoft_store_verified', license: data.license };
+        return { status: 'pro', type: 'microsoft_store', isPro: true, license: data.license };
       }
-      return { status: 'pro', type: 'microsoft_store', isPro: true, purchaseToken: 'microsoft_store_verified', license };
-    } else {
-      // Revert from Microsoft Store Pro if active previously but no longer entitled
-      if (license.type === 'microsoft_store' && license.status === 'pro') {
-        const data = db.getData();
+      return { status: 'pro', type: 'microsoft_store', isPro: true, license };
+    }
+
+    // Case 2: Store check ran successfully with Store package identity, and Store explicitly states no active Pro add-on
+    if (storeRes && storeRes.hasStoreContext && !storeRes.isPro) {
+      if (license.status === 'pro' && license.type === 'microsoft_store') {
         data.license = {
           status: 'free',
           type: 'none',
-          key: '',
           purchaseToken: '',
+          lastVerified: Date.now(),
           isProDevOverride: data.license?.isProDevOverride || false
         };
         db.setData(data);
         return { status: 'free', type: 'none', isPro: false, license: data.license };
       }
+      return { status: 'free', type: 'none', isPro: false, license };
     }
 
-    // Otherwise fallback/expire
+    // Case 3: Offline / Network failure / Unpackaged dev environment (no Store response or error)
+    // Maintain the cached / last-known Store entitlement so offline users retain Pro capabilities
+    if (license.status === 'pro' && license.type === 'microsoft_store') {
+      return { status: 'pro', type: 'microsoft_store', isPro: true, offlineCached: true, license };
+    }
+
+    // Default fallback: Free tier
     return { status: 'free', type: 'none', isPro: false, license };
   });
 
@@ -622,50 +627,33 @@ app.whenReady().then(() => {
       hwndStr = process.arch === 'x64' ? hwndBuffer.readBigInt64LE().toString() : hwndBuffer.readInt32LE().toString();
     }
 
-    // Run the real purchase flow in the C# helper
+    // Run the native purchase flow in the C# helper
     const storeRes = await runStoreHelper('purchase', hwndStr);
 
     if (storeRes && storeRes.success) {
-      const data = db.getData();
+      const data = db.getData() || {};
       data.license = {
         status: 'pro',
         type: 'microsoft_store',
-        key: '',
         purchaseToken: 'microsoft_store_verified',
+        addOnId: storeRes.activeAddOnId || '',
+        lastVerified: Date.now(),
         isProDevOverride: data.license?.isProDevOverride || false
       };
       db.setData(data);
-      return { success: true, license: data.license };
+      return { success: true, isPro: true, license: data.license };
     } else {
-      return { success: false, error: storeRes?.error || 'Purchase declined or failed.' };
-    }
-  });
-
-  ipcMain.handle('license:activate-key', (event, key) => {
-    const isValid = validateLicenseKey(key);
-    if (isValid) {
-      const data = db.getData();
-      data.license = {
-        status: 'pro',
-        type: 'license_key',
-        key: key,
-        purchaseToken: '',
-        isProDevOverride: data.license?.isProDevOverride || false
-      };
-      db.setData(data);
-      return { success: true, license: data.license };
-    } else {
-      return { success: false, error: 'License key format incorrect or checksum verification failed.' };
+      return { success: false, error: storeRes?.error || 'Purchase declined or cancelled.' };
     }
   });
 
   ipcMain.handle('license:deactivate', () => {
-    const data = db.getData();
+    const data = db.getData() || {};
     data.license = {
       status: 'free',
       type: 'none',
-      key: '',
       purchaseToken: '',
+      lastVerified: Date.now(),
       isProDevOverride: data.license?.isProDevOverride || false
     };
     db.setData(data);

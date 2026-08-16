@@ -54,9 +54,6 @@ export const api = {
   purchaseMicrosoftStore: async () => {
     return await window.api.purchaseMicrosoftStore();
   },
-  activateLicenseKey: async (key) => {
-    return await window.api.activateLicenseKey(key);
-  },
   deactivateLicense: async () => {
     return await window.api.deactivateLicense();
   },
