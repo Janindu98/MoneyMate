@@ -1188,7 +1188,7 @@ export default function BankAccounts() {
                     <div style={{ marginBottom: '16px' }}>
                       <h4 style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '6px' }}>Deductions Details</h4>
                       
-                      {salaryRec.contributions && salaryRec.contributions.length > 0 ? (
+                      {salaryRec.contributions && salaryRec.contributions.length > 0 && (
                         salaryRec.contributions.map(c => (
                           <React.Fragment key={c.id || c.name}>
                             {c.employeeContribution > 0 && (
@@ -1205,15 +1205,6 @@ export default function BankAccounts() {
                             )}
                           </React.Fragment>
                         ))
-                      ) : (
-                        <>
-                          {(salaryRec.epfDeduction > 0 || salaryRec.epfEmployee > 0) && (
-                            <div className="deduction-item" style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '4px', fontSize: '0.85rem' }}>
-                              <span>EPF Employee Share</span>
-                              <span style={{ fontWeight: 600, color: '#f43f5e' }}>-{formatCurrency(salaryRec.epfDeduction || salaryRec.epfEmployee, settings.currency)}</span>
-                            </div>
-                          )}
-                        </>
                       )}
 
                       {(salaryRec.payeTaxDeduction > 0 || salaryRec.tax > 0) && (
