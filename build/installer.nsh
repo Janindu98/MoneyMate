@@ -37,6 +37,13 @@ Function CreateDesktopShortcutFunc
   CreateShortCut "$DESKTOP\MoneyMate.lnk" "$INSTDIR\MoneyMate.exe" "" "$INSTDIR\resources\app.asar.unpacked\images\logo.ico"
 FunctionEnd
 
+!macro customInit
+  ; Set default installation directory to C:\Program Files\MoneyMate Vault
+  ${ifNot} ${isUpdated}
+    StrCpy $INSTDIR "$PROGRAMFILES64\MoneyMate Vault"
+  ${endIf}
+!macroend
+
 !macro customInstall
   ; Force reference the shortcut function to prevent NSIS warning 6010 (warning treated as error)
   GetFunctionAddress $0 CreateDesktopShortcutFunc
