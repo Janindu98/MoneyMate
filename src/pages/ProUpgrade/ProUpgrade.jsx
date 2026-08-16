@@ -3,7 +3,7 @@ import { useDatabase } from '../../hooks/useDatabase';
 import { useToast } from '../../components/Toast';
 
 export default function ProUpgrade({ activeTab }) {
-  const { purchaseProMicrosoftStore, checkLicense, setProDevOverride } = useDatabase();
+  const { purchaseProMicrosoftStore, checkLicense } = useDatabase();
   const { showToast } = useToast();
 
   const [loading, setLoading] = useState(false);
@@ -68,15 +68,6 @@ export default function ProUpgrade({ activeTab }) {
       showToast('Could not query Store license.', 'error');
     } finally {
       setRestoring(false);
-    }
-  };
-
-  const handleDevOverride = async () => {
-    try {
-      await setProDevOverride(true);
-      showToast('Development Override: Pro Mode temporarily unlocked.');
-    } catch (e) {
-      showToast('Failed to apply dev override.', 'error');
     }
   };
 
@@ -264,43 +255,6 @@ export default function ProUpgrade({ activeTab }) {
           <strong>Upgrade failed:</strong> {errorMessage}
         </div>
       )}
-
-      {/* Developer Options Accent Block */}
-      <div style={{
-        maxWidth: '540px',
-        width: '100%',
-        background: 'rgba(255, 255, 255, 0.02)',
-        border: '1px dashed rgba(255, 255, 255, 0.1)',
-        borderRadius: '12px',
-        padding: '16px 20px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        fontSize: '0.85rem',
-        color: '#94a3b8'
-      }}>
-        <div>
-          <strong style={{ color: '#fff' }}>Developer Environment Detected:</strong> You can bypass licensing checks instantly during local testing using the override.
-        </div>
-        <button
-          className="btn btn-danger"
-          onClick={handleDevOverride}
-          style={{
-            padding: '6px 14px',
-            fontSize: '0.75rem',
-            fontWeight: 600,
-            background: 'rgba(239, 68, 68, 0.2)',
-            border: '1px solid rgba(239, 68, 68, 0.3)',
-            color: '#f87171',
-            borderRadius: '6px',
-            cursor: 'pointer',
-            marginLeft: '12px',
-            whiteSpace: 'nowrap'
-          }}
-        >
-          Quick Unlock Pro
-        </button>
-      </div>
 
     </div>
   );
