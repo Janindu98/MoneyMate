@@ -14,8 +14,7 @@ export default function Settings({ onOpenAbout }) {
     license,
     isPro,
     purchaseProMicrosoftStore,
-    checkLicense,
-    deactivateLicense
+    checkLicense
   } = useDatabase();
   const { showToast } = useToast();
 
@@ -335,12 +334,7 @@ export default function Settings({ onOpenAbout }) {
                   {checkingLicense ? 'Checking Store...' : 'Check / Restore License'}
                 </button>
 
-                {isPro ? (
-                  <button className="btn btn-secondary" onClick={async () => {
-                    await deactivateLicense();
-                    showToast('License deactivated. Reverted to Free mode.');
-                  }}>Deactivate License</button>
-                ) : (
+                {!isPro && (
                   <button className="btn btn-primary" onClick={async () => {
                     const res = await purchaseProMicrosoftStore();
                     if (res.success) {
