@@ -42,13 +42,16 @@
     "xlsx-js-style": "^1.2.0"
   },
   "build": {
-    "appId": "com.moneymate.app",
-    "productName": "MoneyMate Vault - Expense Tracker",
+    "appId": "com.moneymatevault.app",
+    "productName": "MoneyMate Vault",
+    "artifactName": "MoneyMate_Vault-Expense-Tracker-Setup-${version}.${ext}",
     "win": {
       "target": "nsis",
-      "icon": "images/logo.png"
+      "icon": "images/logo.png",
+      "artifactName": "MoneyMate_Vault-Expense-Tracker-Setup-${version}.${ext}"
     },
     "nsis": {
+      "artifactName": "MoneyMate_Vault-Expense-Tracker-Setup-${version}.${ext}",
       "oneClick": false,
       "perMachine": true,
       "allowElevation": true,

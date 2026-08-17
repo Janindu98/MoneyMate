@@ -10,7 +10,10 @@ module.exports = {
   makers: [
     {
       name: '@electron-forge/maker-squirrel',
-      config: {},
+      config: {
+        setupExe: 'MoneyMate_Vault-Expense-Tracker-Setup-1.6.0.exe',
+        setupIcon: './images/logo.ico'
+      },
     },
     {
       name: '@electron-forge/maker-zip',
