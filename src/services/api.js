@@ -47,5 +47,26 @@ export const api = {
   },
   readEncryptedFile: async () => {
     return await window.api.readEncryptedFile();
+  },
+  startOAuth: async (providerKey) => {
+    return await window.api.startOAuth(providerKey);
+  },
+  verifyOAuthToken: async (providerKey) => {
+    return await window.api.verifyOAuthToken(providerKey);
+  },
+  disconnectOAuth: async (providerKey) => {
+    return await window.api.disconnectOAuth(providerKey);
+  },
+  directCloudUpload: async (providerKey, encryptedPayload, defaultName) => {
+    return await window.api.directCloudUpload(providerKey, encryptedPayload, defaultName);
+  },
+  listCloudBackups: async (providerKey) => {
+    return await window.api.listCloudBackups(providerKey);
+  },
+  downloadCloudBackup: async (providerKey, fileId) => {
+    return await window.api.downloadCloudBackup(providerKey, fileId);
+  },
+  onAuthProgress: (callback) => {
+    return window.api.onAuthProgress(callback);
   }
 };

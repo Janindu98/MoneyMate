@@ -1,9 +1,26 @@
 import { app, BrowserWindow, ipcMain, Menu, dialog, shell } from 'electron';
 import path from 'node:path';
 import fs from 'node:fs';
-import os from 'node:os';
 import started from 'electron-squirrel-startup';
 import Database from './database/db.js';
+import {
+  startOAuthFlow,
+  refreshAccessToken,
+  verifyAccountIdentity,
+  testStorageAccess,
+  uploadToGoogleDrive,
+  listGoogleDriveBackups,
+  downloadGoogleDriveBackup,
+  uploadToOneDrive,
+  listOneDriveBackups,
+  downloadOneDriveBackup,
+  uploadToDropbox,
+  listDropboxBackups,
+  downloadDropboxBackup,
+  encryptToken,
+  decryptToken,
+  CloudAuthManager
+} from './main/oauthService.js';
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (started) {
@@ -141,24 +158,46 @@ app.whenReady().then(() => {
   });
 
   ipcMain.handle('db:save', (event, newData) => {
-    const success = db.setData(newData);
+    const currentData = db.getData() || {};
+    const currentSettings = currentData.settings || {};
+
+    // Protect encrypted OAuth credentials from being erased during renderer state updates
+    const tokenKeys = [
+      'gdriveEncryptedAccessToken', 'gdriveEncryptedRefreshToken', 'gdriveTokenExpiresAt',
+      'onedriveEncryptedAccessToken', 'onedriveEncryptedRefreshToken', 'onedriveTokenExpiresAt',
+      'dropboxEncryptedAccessToken', 'dropboxEncryptedRefreshToken', 'dropboxTokenExpiresAt'
+    ];
+
+    const safeSettings = { ...(newData?.settings || {}) };
+    for (const key of tokenKeys) {
+      if (currentSettings[key] && !safeSettings[key]) {
+        safeSettings[key] = currentSettings[key];
+      }
+    }
+
+    const mergedData = {
+      ...newData,
+      settings: safeSettings
+    };
+
+    const success = db.setData(mergedData);
     if (success) {
       try {
-        const settings = newData?.settings;
+        const settings = safeSettings;
         // GDrive backup
         if (settings?.gdriveBackupEnabled && settings?.gdriveBackupPath && fs.existsSync(settings.gdriveBackupPath)) {
           const targetBackupFile = path.join(settings.gdriveBackupPath, 'personal_finance_backup.json');
-          fs.writeFileSync(targetBackupFile, JSON.stringify(newData, null, 2), 'utf8');
+          fs.writeFileSync(targetBackupFile, JSON.stringify(mergedData, null, 2), 'utf8');
         }
         // OneDrive backup
         if (settings?.onedriveBackupEnabled && settings?.onedriveBackupPath && fs.existsSync(settings.onedriveBackupPath)) {
           const targetBackupFile = path.join(settings.onedriveBackupPath, 'personal_finance_backup.json');
-          fs.writeFileSync(targetBackupFile, JSON.stringify(newData, null, 2), 'utf8');
+          fs.writeFileSync(targetBackupFile, JSON.stringify(mergedData, null, 2), 'utf8');
         }
         // Dropbox backup
         if (settings?.dropboxBackupEnabled && settings?.dropboxBackupPath && fs.existsSync(settings.dropboxBackupPath)) {
           const targetBackupFile = path.join(settings.dropboxBackupPath, 'personal_finance_backup.json');
-          fs.writeFileSync(targetBackupFile, JSON.stringify(newData, null, 2), 'utf8');
+          fs.writeFileSync(targetBackupFile, JSON.stringify(mergedData, null, 2), 'utf8');
         }
       } catch (backupErr) {
         console.error('Failed to auto-backup database to cloud folders:', backupErr);
@@ -540,6 +579,214 @@ app.whenReady().then(() => {
       }
     }
     return { success: false, canceled: true };
+  });
+
+  // 1-Click OAuth 2.0 PKCE Handlers
+  ipcMain.handle('auth:start-oauth', async (event, providerKey) => {
+    try {
+      const activeWindow = BrowserWindow.getFocusedWindow();
+      const result = await startOAuthFlow(providerKey, (progress) => {
+        if (activeWindow && !activeWindow.isDestroyed()) {
+          activeWindow.webContents.send('auth:progress', progress);
+        }
+      });
+
+      const appData = db.getData() || {};
+      const currentSettings = appData.settings || {};
+      
+      // Preserve existing refresh token if provider did not send a new one in this handshake
+      const existingRefreshToken = currentSettings[`${providerKey}EncryptedRefreshToken`];
+      const finalRefreshToken = result.encryptedRefreshToken || existingRefreshToken || '';
+
+      const updatedSettings = {
+        ...currentSettings,
+        [`${providerKey}Connected`]: true,
+        [`${providerKey}Email`]: result.email,
+        [`${providerKey}Name`]: result.name,
+        [`${providerKey}Picture`]: result.picture,
+        [`${providerKey}StorageQuota`]: result.storageQuota,
+        [`${providerKey}LastVerified`]: result.lastVerified,
+        [`${providerKey}EncryptedAccessToken`]: result.encryptedAccessToken,
+        [`${providerKey}EncryptedRefreshToken`]: finalRefreshToken,
+        [`${providerKey}TokenExpiresAt`]: result.tokenExpiresAt
+      };
+
+      db.setData({ ...appData, settings: updatedSettings });
+
+      return { success: true, ...result };
+    } catch (err) {
+      console.error(`[OAuth] Authentication error for ${providerKey}:`, err);
+      return { success: false, error: err.message };
+    }
+  });
+
+  ipcMain.handle('auth:verify-token', async (event, providerKey) => {
+    try {
+      const appData = db.getData() || {};
+      const currentSettings = appData.settings || {};
+
+      // Get valid access token with automatic silent refresh
+      const accessToken = await CloudAuthManager.getValidAccessToken(providerKey, currentSettings, (newTokens) => {
+        const liveData = db.getData() || {};
+        db.setData({
+          ...liveData,
+          settings: { ...(liveData.settings || {}), ...newTokens }
+        });
+      });
+
+      const identity = await verifyAccountIdentity(providerKey, accessToken);
+      const storageQuota = await testStorageAccess(providerKey, accessToken);
+      const lastVerified = new Date().toISOString();
+
+      const liveData = db.getData() || {};
+      const liveSettings = liveData.settings || {};
+      const updatedSettings = {
+        ...liveSettings,
+        [`${providerKey}Email`]: identity.email,
+        [`${providerKey}Name`]: identity.name,
+        [`${providerKey}Picture`]: identity.picture,
+        [`${providerKey}StorageQuota`]: storageQuota,
+        [`${providerKey}LastVerified`]: lastVerified
+      };
+
+      db.setData({ ...liveData, settings: updatedSettings });
+
+      return {
+        success: true,
+        email: identity.email,
+        name: identity.name,
+        picture: identity.picture,
+        storageQuota,
+        lastVerified
+      };
+    } catch (err) {
+      console.error(`[OAuth] Verification error for ${providerKey}:`, err);
+      return { success: false, error: err.message };
+    }
+  });
+
+  ipcMain.handle('auth:disconnect', async (event, providerKey) => {
+    try {
+      const appData = db.getData() || {};
+      const settings = appData.settings || {};
+
+      settings[`${providerKey}Connected`] = false;
+      settings[`${providerKey}Email`] = '';
+      settings[`${providerKey}Name`] = '';
+      settings[`${providerKey}Picture`] = '';
+      settings[`${providerKey}StorageQuota`] = null;
+      settings[`${providerKey}LastVerified`] = null;
+      settings[`${providerKey}EncryptedAccessToken`] = '';
+      settings[`${providerKey}EncryptedRefreshToken`] = '';
+      settings[`${providerKey}TokenExpiresAt`] = null;
+      settings[`${providerKey}BackupEnabled`] = false;
+
+      db.setData({ ...appData, settings });
+
+      return { success: true };
+    } catch (err) {
+      console.error(`[OAuth] Disconnect error for ${providerKey}:`, err);
+      return { success: false, error: err.message };
+    }
+  });
+
+  ipcMain.handle('cloud:direct-upload', async (event, providerKey, encryptedPayload, defaultName) => {
+    try {
+      const appData = db.getData() || {};
+      const currentSettings = appData.settings || {};
+
+      // Get valid access token with automatic silent refresh
+      const accessToken = await CloudAuthManager.getValidAccessToken(providerKey, currentSettings, (newTokens) => {
+        const liveData = db.getData() || {};
+        db.setData({
+          ...liveData,
+          settings: { ...(liveData.settings || {}), ...newTokens }
+        });
+      });
+
+      const fileName = defaultName || `moneymate_vault_backup_${providerKey}_${new Date().toISOString().split('T')[0]}.enc`;
+
+      let uploadResult;
+      if (providerKey === 'gdrive') {
+        uploadResult = await uploadToGoogleDrive(accessToken, encryptedPayload, fileName);
+      } else if (providerKey === 'onedrive') {
+        uploadResult = await uploadToOneDrive(accessToken, encryptedPayload, fileName);
+      } else if (providerKey === 'dropbox') {
+        uploadResult = await uploadToDropbox(accessToken, encryptedPayload, fileName);
+      } else {
+        throw new Error(`Unsupported provider: ${providerKey}`);
+      }
+
+      const liveData = db.getData() || {};
+      const liveSettings = liveData.settings || {};
+      liveSettings[`${providerKey}LastBackupTime`] = new Date().toISOString();
+      db.setData({ ...liveData, settings: liveSettings });
+
+      return { success: true, ...uploadResult };
+    } catch (err) {
+      console.error(`[Cloud Upload] Upload error for ${providerKey}:`, err);
+      return { success: false, error: err.message };
+    }
+  });
+
+  ipcMain.handle('cloud:list-backups', async (event, providerKey) => {
+    try {
+      const appData = db.getData() || {};
+      const currentSettings = appData.settings || {};
+
+      const accessToken = await CloudAuthManager.getValidAccessToken(providerKey, currentSettings, (newTokens) => {
+        const liveData = db.getData() || {};
+        db.setData({
+          ...liveData,
+          settings: { ...(liveData.settings || {}), ...newTokens }
+        });
+      });
+
+      let files = [];
+      if (providerKey === 'gdrive') {
+        files = await listGoogleDriveBackups(accessToken);
+      } else if (providerKey === 'onedrive') {
+        files = await listOneDriveBackups(accessToken);
+      } else if (providerKey === 'dropbox') {
+        files = await listDropboxBackups(accessToken);
+      }
+
+      return { success: true, files };
+    } catch (err) {
+      console.error(`[Cloud List] Error listing backups for ${providerKey}:`, err);
+      return { success: false, error: err.message, files: [] };
+    }
+  });
+
+  ipcMain.handle('cloud:download-backup', async (event, providerKey, fileId) => {
+    try {
+      const appData = db.getData() || {};
+      const currentSettings = appData.settings || {};
+
+      const accessToken = await CloudAuthManager.getValidAccessToken(providerKey, currentSettings, (newTokens) => {
+        const liveData = db.getData() || {};
+        db.setData({
+          ...liveData,
+          settings: { ...(liveData.settings || {}), ...newTokens }
+        });
+      });
+
+      let content;
+      if (providerKey === 'gdrive') {
+        content = await downloadGoogleDriveBackup(accessToken, fileId);
+      } else if (providerKey === 'onedrive') {
+        content = await downloadOneDriveBackup(accessToken, fileId);
+      } else if (providerKey === 'dropbox') {
+        content = await downloadDropboxBackup(accessToken, fileId);
+      } else {
+        throw new Error(`Unsupported provider: ${providerKey}`);
+      }
+
+      return { success: true, content };
+    } catch (err) {
+      console.error(`[Cloud Download] Error downloading backup for ${providerKey}:`, err);
+      return { success: false, error: err.message };
+    }
   });
 
   createWindow();

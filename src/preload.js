@@ -16,5 +16,18 @@ contextBridge.exposeInMainWorld('api', {
   syncGDrive: () => ipcRenderer.invoke('db:sync-gdrive'),
   syncCloudFolder: (backupPath) => ipcRenderer.invoke('db:sync-cloud-folder', backupPath),
   writeEncryptedFile: (content, defaultName) => ipcRenderer.invoke('db:write-encrypted-file', content, defaultName),
-  readEncryptedFile: () => ipcRenderer.invoke('db:read-encrypted-file')
+  readEncryptedFile: () => ipcRenderer.invoke('db:read-encrypted-file'),
+
+  // Cloud OAuth 2.0 PKCE Bridge
+  startOAuth: (providerKey) => ipcRenderer.invoke('auth:start-oauth', providerKey),
+  verifyOAuthToken: (providerKey) => ipcRenderer.invoke('auth:verify-token', providerKey),
+  disconnectOAuth: (providerKey) => ipcRenderer.invoke('auth:disconnect', providerKey),
+  directCloudUpload: (providerKey, encryptedPayload, defaultName) => ipcRenderer.invoke('cloud:direct-upload', providerKey, encryptedPayload, defaultName),
+  listCloudBackups: (providerKey) => ipcRenderer.invoke('cloud:list-backups', providerKey),
+  downloadCloudBackup: (providerKey, fileId) => ipcRenderer.invoke('cloud:download-backup', providerKey, fileId),
+  onAuthProgress: (callback) => {
+    const subscription = (event, progress) => callback(progress);
+    ipcRenderer.on('auth:progress', subscription);
+    return () => ipcRenderer.removeListener('auth:progress', subscription);
+  }
 });
