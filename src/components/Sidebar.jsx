@@ -1,5 +1,5 @@
 import React from 'react';
-import logoImg from '../../images/logo.png';
+import logoImg from '../../images/logo_2.png';
 
 export default function Sidebar({ activeTab, onTabChange, onOpenAbout }) {
   const tabs = [

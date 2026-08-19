@@ -337,11 +337,6 @@ export default function Backup() {
   };
 
   const handleBackupWorkflow = async () => {
-    if (!activeConn.connected) {
-      showToast(`Please connect ${activeConn.providerName} first.`, 'warning');
-      return;
-    }
-    
     setIsWorkflowActive(true);
     setWorkflowType('backup');
     setWorkflowStep(1);
@@ -369,7 +364,7 @@ export default function Backup() {
       await sleep(800);
       setWorkflowStep(4);
       
-      const defaultName = `moneymate_vault_backup_${activeTab}_${new Date().toISOString().split('T')[0]}.enc`;
+      const defaultName = `moneymate_vault_backup_${new Date().toISOString().split('T')[0]}.enc`;
       const res = await api.writeEncryptedFile(encryptedString, defaultName);
       
       if (res.success) {
@@ -672,31 +667,6 @@ export default function Backup() {
                   🔄 Sync Folder Now
                 </button>
               </div>
-
-              {/* Local File Export / Import */}
-              <div style={{ display: 'flex', gap: '16px', borderTop: '1px solid var(--border-color)', paddingTop: '20px' }}>
-                <div style={{ flexGrow: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <h3 style={{ fontSize: '0.92rem', fontWeight: 700 }}>🔒 Save File to Computer</h3>
-                  <p style={{ color: 'var(--text-muted)', fontSize: '0.78rem', lineHeight: 1.4 }}>
-                    Encrypts and exports an offline `.enc` backup file to your hard drive.
-                  </p>
-                  <button className="btn btn-secondary" onClick={handleBackupWorkflow} disabled={isWorkflowActive}>
-                    Save Backup File
-                  </button>
-                </div>
-
-                <div style={{ width: '1px', background: 'var(--border-color)' }}></div>
-
-                <div style={{ flexGrow: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <h3 style={{ fontSize: '0.92rem', fontWeight: 700 }}>📂 Restore from File</h3>
-                  <p style={{ color: 'var(--text-muted)', fontSize: '0.78rem', lineHeight: 1.4 }}>
-                    Browse and select a previously exported `.enc` file to restore ledger data.
-                  </p>
-                  <button className="btn btn-secondary" onClick={handleRestoreWorkflow} disabled={isWorkflowActive}>
-                    Restore Backup File
-                  </button>
-                </div>
-              </div>
             </div>
           ) : (
             <div style={{ padding: '32px 24px', borderRadius: '14px', border: '1px solid var(--border-color)', background: 'rgba(255,255,255,0.01)', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: '16px' }}>
@@ -721,6 +691,31 @@ export default function Backup() {
               </button>
             </div>
           )}
+
+          {/* Local File Export / Import - Always Available without linking any accounts */}
+          <div style={{ display: 'flex', gap: '16px', borderTop: '1px solid var(--border-color)', paddingTop: '20px', marginTop: '4px' }}>
+            <div style={{ flexGrow: 1, flexBasis: '0', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <h3 style={{ fontSize: '0.92rem', fontWeight: 700 }}>🔒 Save File to Computer</h3>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.78rem', lineHeight: 1.4 }}>
+                Encrypts and exports an offline `.enc` backup file to your hard drive.
+              </p>
+              <button className="btn btn-secondary" onClick={handleBackupWorkflow} disabled={isWorkflowActive} style={{ marginTop: 'auto' }}>
+                Save Backup File
+              </button>
+            </div>
+
+            <div style={{ width: '1px', background: 'var(--border-color)' }}></div>
+
+            <div style={{ flexGrow: 1, flexBasis: '0', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <h3 style={{ fontSize: '0.92rem', fontWeight: 700 }}>📂 Restore from File</h3>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.78rem', lineHeight: 1.4 }}>
+                Browse and select a previously exported `.enc` file to restore ledger data.
+              </p>
+              <button className="btn btn-secondary" onClick={handleRestoreWorkflow} disabled={isWorkflowActive} style={{ marginTop: 'auto' }}>
+                Restore Backup File
+              </button>
+            </div>
+          </div>
 
           {/* Workflow Animation */}
           {isWorkflowActive && (

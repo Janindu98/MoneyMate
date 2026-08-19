@@ -37,7 +37,7 @@ const createWindow = () => {
     minWidth: 1000,
     minHeight: 700,
     title: "MoneyMate Vault - Expense Tracker",
-    icon: path.join(__dirname, '..', '..', 'images', 'logo.png'),
+    icon: path.join(__dirname, '..', '..', 'images', 'logo_2.png'),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       nodeIntegration: false,

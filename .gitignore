@@ -98,6 +98,10 @@ dist/
 /dist
 /dist/assets
 
-#
+# Native build dirs
 src-native/
 build-native/
+
+# OAuth credentials / configuration
+src/main/oauthService.js
+oauthService.js
