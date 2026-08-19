@@ -47,7 +47,7 @@
     "artifactName": "MoneyMate_Vault-Expense-Tracker-Setup-${version}.${ext}",
     "win": {
       "target": "nsis",
-      "icon": "images/logo.png",
+      "icon": "images/logo_2.png",
       "artifactName": "MoneyMate_Vault-Expense-Tracker-Setup-${version}.${ext}"
     },
     "nsis": {
@@ -57,9 +57,9 @@
       "allowElevation": true,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": false,
-      "installerHeaderIcon": "images/logo.ico",
-      "installerIcon": "images/logo.ico",
-      "uninstallerIcon": "images/logo.ico",
+      "installerHeaderIcon": "images/logo_2.ico",
+      "installerIcon": "images/logo_2.ico",
+      "uninstallerIcon": "images/logo_2.ico",
       "license": "LICENSE.txt",
       "include": "build/installer.nsh",
       "warningsAsErrors": false

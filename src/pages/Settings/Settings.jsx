@@ -5,7 +5,7 @@ import { api } from '../../services/api';
 import Modal from '../../components/Modal';
 import ConfirmModal from '../../components/ConfirmModal';
 
-export default function Settings({ onOpenAbout }) {
+export default function Settings({ onOpenAbout, onNavigate }) {
   const { 
     settings, 
     updateSettings, 
@@ -347,6 +347,36 @@ export default function Settings({ onOpenAbout }) {
                   </button>
                 )}
               </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Cloud Backups */}
+        <div className="settings-section">
+          <div className="settings-section-title">Cloud Backups</div>
+          <div className="settings-section-desc">Manage your connected Google Drive, OneDrive, or Dropbox storage for automated encrypted backups.</div>
+          <div className="settings-row">
+            <div className="settings-row-info">
+              <div className="settings-row-title">Connected Cloud Providers</div>
+              <div className="settings-row-desc">
+                {settings.gdriveConnected 
+                  ? `Google Drive (${settings.gdriveEmail})`
+                  : settings.onedriveConnected
+                  ? `OneDrive (${settings.onedriveEmail})`
+                  : settings.dropboxConnected
+                  ? `Dropbox (${settings.dropboxEmail})`
+                  : 'No cloud provider currently connected.'}
+              </div>
+            </div>
+            <div>
+              <button 
+                type="button" 
+                className="btn btn-secondary" 
+                onClick={() => onNavigate && onNavigate('backup')}
+                style={{ width: '150px' }}
+              >
+                Manage Backups
+              </button>
             </div>
           </div>
         </div>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import logoImg from '../../images/logo.png';
+import logoImg from '../../images/logo_2.png';
 
 export default function LockScreen({ settings, onUnlock, unlockDatabase }) {
   const securityType = settings.securityType; // 'pin' or 'password'
