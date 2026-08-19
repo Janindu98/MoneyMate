@@ -20,5 +20,18 @@ contextBridge.exposeInMainWorld('api', {
   checkLicense: () => ipcRenderer.invoke('license:check'),
   purchaseMicrosoftStore: () => ipcRenderer.invoke('license:buy-microsoft'),
   deactivateLicense: () => ipcRenderer.invoke('license:deactivate'),
-  toggleDevOverride: (enabled) => ipcRenderer.invoke('license:toggle-dev-override', enabled)
+  toggleDevOverride: (enabled) => ipcRenderer.invoke('license:toggle-dev-override', enabled),
+
+  // Cloud OAuth 2.0 PKCE Bridge
+  startOAuth: (providerKey) => ipcRenderer.invoke('auth:start-oauth', providerKey),
+  verifyOAuthToken: (providerKey) => ipcRenderer.invoke('auth:verify-token', providerKey),
+  disconnectOAuth: (providerKey) => ipcRenderer.invoke('auth:disconnect', providerKey),
+  directCloudUpload: (providerKey, encryptedPayload, defaultName) => ipcRenderer.invoke('cloud:direct-upload', providerKey, encryptedPayload, defaultName),
+  listCloudBackups: (providerKey) => ipcRenderer.invoke('cloud:list-backups', providerKey),
+  downloadCloudBackup: (providerKey, fileId) => ipcRenderer.invoke('cloud:download-backup', providerKey, fileId),
+  onAuthProgress: (callback) => {
+    const subscription = (event, progress) => callback(progress);
+    ipcRenderer.on('auth:progress', subscription);
+    return () => ipcRenderer.removeListener('auth:progress', subscription);
+  }
 });

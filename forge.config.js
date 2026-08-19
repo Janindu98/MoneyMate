@@ -4,7 +4,7 @@ const { FuseV1Options, FuseVersion } = require('@electron/fuses');
 module.exports = {
   packagerConfig: {
     asar: true,
-    icon: './images/logo'
+    icon: './images/logo_2'
   },
   rebuildConfig: {},
   makers: [
@@ -12,7 +12,7 @@ module.exports = {
       name: '@electron-forge/maker-squirrel',
       config: {
         setupExe: 'MoneyMate_Vault-Expense-Tracker-Setup-1.6.0.exe',
-        setupIcon: './images/logo.ico'
+        setupIcon: './images/logo_2.ico'
       },
     },
     {

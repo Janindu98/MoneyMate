@@ -1,6 +1,6 @@
 import React from 'react';
 import Modal from './Modal';
-import logoImg from '../../images/logo.png';
+import logoImg from '../../images/logo_2.png';
 
 export default function AboutModal({ isOpen, onClose }) {
   if (!isOpen) return null;

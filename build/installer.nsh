@@ -34,7 +34,7 @@
 !macroend
 
 Function CreateDesktopShortcutFunc
-  CreateShortCut "$DESKTOP\MoneyMate Vault.lnk" "$INSTDIR\MoneyMate Vault.exe" "" "$INSTDIR\resources\app.asar.unpacked\images\logo.ico"
+  CreateShortCut "$DESKTOP\MoneyMate Vault.lnk" "$INSTDIR\MoneyMate Vault.exe" "" "$INSTDIR\resources\app.asar.unpacked\images\logo_2.ico"
 FunctionEnd
 
 !macro customInit
