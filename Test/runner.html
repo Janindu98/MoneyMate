@@ -1,0 +1,959 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MoneyMate Vault - Automated Test Suite Runner & Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-base: #070a13;
+      --bg-surface: #0f172a;
+      --bg-card: rgba(30, 41, 59, 0.7);
+      --bg-card-hover: rgba(51, 65, 85, 0.8);
+      --border-color: rgba(255, 255, 255, 0.08);
+      --border-focus: rgba(99, 102, 241, 0.5);
+      
+      --accent: #6366f1;
+      --accent-gradient: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+      --success: #10b981;
+      --success-gradient: linear-gradient(135deg, #059669 0%, #10b981 100%);
+      --danger: #f43f5e;
+      --danger-gradient: linear-gradient(135deg, #e11d48 0%, #f43f5e 100%);
+      --warning: #f59e0b;
+      --cyan: #06b6d4;
+
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+
+      --font-sans: 'Plus Jakarta Sans', 'Inter', -apple-system, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-base);
+      color: var(--text-main);
+      font-family: var(--font-sans);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+
+    /* Ambient background glow */
+    .ambient-glow {
+      position: fixed;
+      top: -200px;
+      left: 20%;
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, rgba(168, 85, 247, 0.05) 50%, transparent 70%);
+      filter: blur(80px);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border-color);
+      padding: 16px 32px;
+    }
+
+    .header-content {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .brand-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      background: var(--accent-gradient);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 1.2rem;
+      color: #fff;
+      box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4);
+    }
+
+    .brand-title h1 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .brand-title p {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 18px;
+      border-radius: 10px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all 0.2s ease;
+      font-family: var(--font-sans);
+      text-decoration: none;
+    }
+
+    .btn-primary {
+      background: var(--accent-gradient);
+      color: #fff;
+      box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35);
+    }
+    .btn-primary:hover {
+      box-shadow: 0 6px 20px rgba(99, 102, 241, 0.5);
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text-main);
+      border-color: var(--border-color);
+    }
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.12);
+    }
+
+    .btn-success {
+      background: var(--success-gradient);
+      color: #fff;
+      box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
+    }
+    .btn-success:hover {
+      box-shadow: 0 6px 20px rgba(16, 185, 129, 0.45);
+      transform: translateY(-1px);
+    }
+
+    .btn-sm {
+      padding: 5px 12px;
+      font-size: 0.78rem;
+      border-radius: 8px;
+    }
+
+    /* Main Container */
+    main {
+      flex: 1;
+      max-width: 1400px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 24px 32px 64px 32px;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* KPI Summary Cards */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .kpi-card {
+      background: var(--bg-card);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      padding: 18px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: transform 0.2s ease, border-color 0.2s ease;
+    }
+    .kpi-card:hover {
+      border-color: var(--border-focus);
+      transform: translateY(-2px);
+    }
+
+    .kpi-info span {
+      display: block;
+    }
+
+    .kpi-label {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      font-weight: 500;
+      margin-bottom: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .kpi-value {
+      font-size: 1.75rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+    }
+
+    .kpi-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.3rem;
+    }
+
+    /* Progress bar */
+    .progress-bar-container {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 16px 20px;
+      margin-bottom: 24px;
+    }
+
+    .progress-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.88rem;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .progress-track {
+      height: 10px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 999px;
+      overflow: hidden;
+      display: flex;
+    }
+
+    .progress-fill-pass {
+      background: var(--success);
+      height: 100%;
+      transition: width 0.3s ease;
+    }
+    .progress-fill-fail {
+      background: var(--danger);
+      height: 100%;
+      transition: width 0.3s ease;
+    }
+
+    /* Toolbar / Filters */
+    .toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      padding: 14px 20px;
+    }
+
+    .search-box {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 8px 14px;
+      flex: 1;
+      min-width: 260px;
+      max-width: 450px;
+    }
+
+    .search-box input {
+      background: transparent;
+      border: none;
+      color: #fff;
+      font-size: 0.88rem;
+      font-family: var(--font-sans);
+      width: 100%;
+      outline: none;
+    }
+
+    .filter-pills {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .pill {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-color);
+      color: var(--text-muted);
+      padding: 6px 14px;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .pill.active, .pill:hover {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+    .pill-pass.active { background: var(--success); border-color: var(--success); }
+    .pill-fail.active { background: var(--danger); border-color: var(--danger); }
+
+    /* Suite Accordion */
+    .suite-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      margin-bottom: 18px;
+      overflow: hidden;
+      transition: border-color 0.2s ease;
+    }
+    .suite-card:hover {
+      border-color: rgba(255, 255, 255, 0.15);
+    }
+
+    .suite-header {
+      padding: 16px 20px;
+      background: rgba(255, 255, 255, 0.02);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      user-select: none;
+      border-bottom: 1px solid transparent;
+      transition: background 0.2s ease;
+    }
+    .suite-header:hover {
+      background: rgba(255, 255, 255, 0.05);
+    }
+    .suite-card.open .suite-header {
+      border-bottom-color: var(--border-color);
+    }
+
+    .suite-title-area {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .suite-name {
+      font-size: 1.05rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .badge-count {
+      font-size: 0.75rem;
+      padding: 2px 8px;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    .suite-controls {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    /* Test Case Row */
+    .case-list {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .case-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 20px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      gap: 16px;
+      transition: background 0.15s ease;
+    }
+    .case-row:last-child {
+      border-bottom: none;
+    }
+    .case-row:hover {
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .case-left {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .case-checkbox {
+      width: 16px;
+      height: 16px;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+
+    .case-id {
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 6px;
+      background: rgba(99, 102, 241, 0.15);
+      color: #818cf8;
+      white-space: nowrap;
+      border: 1px solid rgba(99, 102, 241, 0.3);
+    }
+
+    .case-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .case-title {
+      font-size: 0.92rem;
+      font-weight: 600;
+      color: var(--text-main);
+      margin-bottom: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .case-desc {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .case-right {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .case-duration {
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      color: var(--text-dim);
+      min-width: 60px;
+      text-align: right;
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 8px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      min-width: 90px;
+      justify-content: center;
+    }
+
+    .status-pending {
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text-muted);
+    }
+    .status-running {
+      background: rgba(6, 182, 212, 0.15);
+      color: var(--cyan);
+      border: 1px solid rgba(6, 182, 212, 0.3);
+      animation: pulse 1.5s infinite;
+    }
+    .status-passed {
+      background: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+    .status-failed {
+      background: rgba(244, 63, 94, 0.15);
+      color: #fb7185;
+      border: 1px solid rgba(244, 63, 94, 0.3);
+    }
+
+    @keyframes pulse {
+      0% { opacity: 0.6; }
+      50% { opacity: 1; }
+      100% { opacity: 0.6; }
+    }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(8px);
+      z-index: 100;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .modal-overlay.open {
+      display: flex;
+    }
+
+    .modal-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      width: 100%;
+      max-width: 800px;
+      max-height: 85vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+    }
+
+    .modal-header {
+      padding: 18px 24px;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-body {
+      padding: 24px;
+      overflow-y: auto;
+    }
+
+    pre {
+      background: rgba(0, 0, 0, 0.4);
+      padding: 14px;
+      border-radius: 10px;
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      color: #e2e8f0;
+      overflow-x: auto;
+    }
+  </style>
+</head>
+<body>
+  <div class="ambient-glow"></div>
+
+  <header>
+    <div class="header-content">
+      <div class="brand">
+        <div class="brand-icon">MM</div>
+        <div class="brand-title">
+          <h1>MoneyMate Vault - Automated Test Suite</h1>
+          <p>Interactive Execution Engine & Verification Dashboard</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button id="btnRunAll" class="btn btn-primary" onclick="runAllTests()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          Run All Tests
+        </button>
+        <button id="btnRunSelected" class="btn btn-success" onclick="runSelectedTests()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+          Run Selected (<span id="selectedCount">0</span>)
+        </button>
+        <button class="btn btn-secondary" onclick="resetAll()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+          Reset Status
+        </button>
+        <a href="ResultSheet.html" class="btn btn-secondary" target="_blank">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          Result Sheet
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- KPI Summary Grid -->
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-info">
+          <span class="kpi-label">Total Test Cases</span>
+          <span id="statTotal" class="kpi-value">100</span>
+        </div>
+        <div class="kpi-icon" style="background: rgba(99, 102, 241, 0.15); color: #818cf8;">📋</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-info">
+          <span class="kpi-label">Passed</span>
+          <span id="statPassed" class="kpi-value" style="color: #34d399;">0</span>
+        </div>
+        <div class="kpi-icon" style="background: rgba(16, 185, 129, 0.15); color: #34d399;">✅</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-info">
+          <span class="kpi-label">Failed</span>
+          <span id="statFailed" class="kpi-value" style="color: #fb7185;">0</span>
+        </div>
+        <div class="kpi-icon" style="background: rgba(244, 63, 94, 0.15); color: #fb7185;">❌</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-info">
+          <span class="kpi-label">Success Rate</span>
+          <span id="statRate" class="kpi-value" style="color: #f59e0b;">0%</span>
+        </div>
+        <div class="kpi-icon" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b;">🎯</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-info">
+          <span class="kpi-label">Duration</span>
+          <span id="statDuration" class="kpi-value" style="color: #06b6d4; font-size: 1.4rem;">0.00s</span>
+        </div>
+        <div class="kpi-icon" style="background: rgba(6, 182, 212, 0.15); color: #06b6d4;">⚡</div>
+      </div>
+    </div>
+
+    <!-- Progress Bar -->
+    <div class="progress-bar-container">
+      <div class="progress-header">
+        <span>Execution Progress</span>
+        <span id="progressText">0 / 100 Completed</span>
+      </div>
+      <div class="progress-track">
+        <div id="progressFillPass" class="progress-fill-pass" style="width: 0%;"></div>
+        <div id="progressFillFail" class="progress-fill-fail" style="width: 0%;"></div>
+      </div>
+    </div>
+
+    <!-- Toolbar Filters -->
+    <div class="toolbar">
+      <div class="search-box">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" id="searchInput" placeholder="Search case ID, name, or description..." oninput="handleSearch()">
+      </div>
+      <div class="filter-pills">
+        <button class="pill active" onclick="setFilter('all', this)">All (100)</button>
+        <button class="pill pill-pass" onclick="setFilter('passed', this)">Passed</button>
+        <button class="pill pill-fail" onclick="setFilter('failed', this)">Failed</button>
+        <button class="pill" onclick="setFilter('pending', this)">Pending</button>
+      </div>
+    </div>
+
+    <!-- Test Suites Container -->
+    <div id="suitesContainer">
+      <!-- Generated dynamically by JavaScript -->
+    </div>
+  </main>
+
+  <!-- Modal for Test Details / Errors -->
+  <div id="caseModal" class="modal-overlay" onclick="closeModal(event)">
+    <div class="modal-card" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <h3 id="modalCaseTitle">Test Case Details</h3>
+        <button class="btn btn-secondary btn-sm" onclick="closeModal()">✕</button>
+      </div>
+      <div class="modal-body" id="modalCaseBody">
+        <!-- Content -->
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { registerAllTests, framework } from './core/testRegistry.js';
+
+    // Initialize test registry
+    registerAllTests();
+
+    let allSuites = framework.suites;
+    let activeFilter = 'all';
+    let searchQuery = '';
+
+    window.addEventListener('DOMContentLoaded', () => {
+      renderSuites();
+      updateStats();
+    });
+
+    function renderSuites() {
+      const container = document.getElementById('suitesContainer');
+      container.innerHTML = '';
+
+      allSuites.forEach(suite => {
+        const suiteEl = document.createElement('div');
+        suiteEl.className = 'suite-card open';
+        suiteEl.id = `suite-${suite.name}`;
+
+        const passedCount = suite.cases.filter(c => c.status === 'passed').length;
+        const failedCount = suite.cases.filter(c => c.status === 'failed').length;
+
+        suiteEl.innerHTML = `
+          <div class="suite-header" onclick="toggleSuite('${suite.name}')">
+            <div class="suite-title-area">
+              <span class="suite-name">
+                📁 ${suite.name}
+                <span class="badge-count">${suite.cases.length} cases</span>
+              </span>
+            </div>
+            <div class="suite-controls" onclick="event.stopPropagation()">
+              <button class="btn btn-secondary btn-sm" onclick="runSuite('${suite.name}')">
+                ▶ Run Suite
+              </button>
+              <label style="display: flex; align-items: center; gap: 6px; font-size: 0.8rem; color: var(--text-muted); cursor: pointer;">
+                <input type="checkbox" onchange="toggleSuiteSelection('${suite.name}', this.checked)"> Select All
+              </label>
+            </div>
+          </div>
+          <div class="case-list" id="cases-${suite.name}">
+            ${suite.cases.map(c => renderCaseRow(c, suite.name)).join('')}
+          </div>
+        `;
+
+        container.appendChild(suiteEl);
+      });
+
+      applyFilters();
+      updateSelectedCount();
+    }
+
+    function renderCaseRow(c, suiteName) {
+      const statusClass = `status-${c.status}`;
+      const statusIcon = c.status === 'passed' ? '✅' : (c.status === 'failed' ? '❌' : (c.status === 'running' ? '⏳' : '⏸️'));
+      const statusText = c.status.toUpperCase();
+
+      return `
+        <div class="case-row" id="row-${c.id}" data-id="${c.id}" data-status="${c.status}" data-suite="${suiteName}">
+          <div class="case-left">
+            <input type="checkbox" class="case-checkbox" data-id="${c.id}" onchange="updateSelectedCount()">
+            <span class="case-id">${c.id}</span>
+            <div class="case-info" onclick="openCaseModal('${c.id}')" style="cursor: pointer;">
+              <div class="case-title">${c.name}</div>
+              <div class="case-desc">${c.description}</div>
+            </div>
+          </div>
+          <div class="case-right">
+            <span class="case-duration" id="dur-${c.id}">${c.duration ? c.duration + 'ms' : '-'}</span>
+            <span class="status-badge ${statusClass}" id="badge-${c.id}">
+              ${statusIcon} ${statusText}
+            </span>
+            <button class="btn btn-secondary btn-sm" onclick="runSingleCase('${c.id}')">
+              ▶ Run
+            </button>
+          </div>
+        </div>
+      `;
+    }
+
+    window.toggleSuite = (suiteName) => {
+      const el = document.getElementById(`suite-${suiteName}`);
+      el.classList.toggle('open');
+      const list = document.getElementById(`cases-${suiteName}`);
+      list.style.display = el.classList.contains('open') ? 'flex' : 'none';
+    };
+
+    window.toggleSuiteSelection = (suiteName, isChecked) => {
+      const checkboxes = document.querySelectorAll(`#cases-${suiteName} .case-checkbox`);
+      checkboxes.forEach(cb => cb.checked = isChecked);
+      updateSelectedCount();
+    };
+
+    window.updateSelectedCount = () => {
+      const selected = document.querySelectorAll('.case-checkbox:checked').length;
+      document.getElementById('selectedCount').innerText = selected;
+    };
+
+    window.runSingleCase = async (caseId) => {
+      const match = framework.getCaseById(caseId);
+      if (!match) return;
+
+      updateCaseUI(match.testCase, 'running');
+      await framework.runCase(match.testCase);
+      updateCaseUI(match.testCase, match.testCase.status);
+      updateStats();
+    };
+
+    window.runSuite = async (suiteName) => {
+      const suite = framework.suites.find(s => s.name === suiteName);
+      if (!suite) return;
+
+      for (const c of suite.cases) {
+        updateCaseUI(c, 'running');
+        await framework.runCase(c);
+        updateCaseUI(c, c.status);
+        updateStats();
+      }
+    };
+
+    window.runSelectedTests = async () => {
+      const checkedBoxes = Array.from(document.querySelectorAll('.case-checkbox:checked'));
+      if (checkedBoxes.length === 0) {
+        alert('Please select at least one test case to run.');
+        return;
+      }
+
+      for (const cb of checkedBoxes) {
+        const id = cb.dataset.id;
+        const match = framework.getCaseById(id);
+        if (match) {
+          updateCaseUI(match.testCase, 'running');
+          await framework.runCase(match.testCase);
+          updateCaseUI(match.testCase, match.testCase.status);
+          updateStats();
+        }
+      }
+    };
+
+    window.runAllTests = async () => {
+      const allCases = framework.getAllCases();
+      const startTime = performance.now();
+
+      for (const c of allCases) {
+        updateCaseUI(c, 'running');
+        await framework.runCase(c);
+        updateCaseUI(c, c.status);
+        updateStats();
+      }
+
+      const totalSec = ((performance.now() - startTime) / 1000).toFixed(2);
+      document.getElementById('statDuration').innerText = `${totalSec}s`;
+    };
+
+    function updateCaseUI(testCase, status) {
+      const badge = document.getElementById(`badge-${testCase.id}`);
+      const dur = document.getElementById(`dur-${testCase.id}`);
+      const row = document.getElementById(`row-${testCase.id}`);
+
+      if (badge) {
+        badge.className = `status-badge status-${status}`;
+        const icon = status === 'passed' ? '✅' : (status === 'failed' ? '❌' : (status === 'running' ? '⏳' : '⏸️'));
+        badge.innerHTML = `${icon} ${status.toUpperCase()}`;
+      }
+      if (dur && testCase.duration) {
+        dur.innerText = `${testCase.duration}ms`;
+      }
+      if (row) {
+        row.dataset.status = status;
+      }
+    }
+
+    function updateStats() {
+      const all = framework.getAllCases();
+      const passed = all.filter(c => c.status === 'passed').length;
+      const failed = all.filter(c => c.status === 'failed').length;
+      const completed = passed + failed;
+      const rate = completed > 0 ? ((passed / completed) * 100).toFixed(1) : 0;
+
+      document.getElementById('statTotal').innerText = all.length;
+      document.getElementById('statPassed').innerText = passed;
+      document.getElementById('statFailed').innerText = failed;
+      document.getElementById('statRate').innerText = `${rate}%`;
+
+      document.getElementById('progressText').innerText = `${completed} / ${all.length} Completed`;
+      document.getElementById('progressFillPass').style.width = `${(passed / all.length) * 100}%`;
+      document.getElementById('progressFillFail').style.width = `${(failed / all.length) * 100}%`;
+    }
+
+    window.resetAll = () => {
+      framework.resetAllStatus();
+      framework.getAllCases().forEach(c => updateCaseUI(c, 'pending'));
+      updateStats();
+      document.getElementById('statDuration').innerText = '0.00s';
+    };
+
+    window.setFilter = (filter, btn) => {
+      activeFilter = filter;
+      document.querySelectorAll('.filter-pills .pill').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      applyFilters();
+    };
+
+    window.handleSearch = () => {
+      searchQuery = document.getElementById('searchInput').value.toLowerCase().trim();
+      applyFilters();
+    };
+
+    function applyFilters() {
+      const rows = document.querySelectorAll('.case-row');
+      rows.forEach(row => {
+        const id = row.dataset.id.toLowerCase();
+        const status = row.dataset.status;
+        const text = row.innerText.toLowerCase();
+
+        const matchesStatus = activeFilter === 'all' || status === activeFilter;
+        const matchesSearch = !searchQuery || text.includes(searchQuery) || id.includes(searchQuery);
+
+        row.style.display = matchesStatus && matchesSearch ? 'flex' : 'none';
+      });
+    }
+
+    window.openCaseModal = (caseId) => {
+      const match = framework.getCaseById(caseId);
+      if (!match) return;
+
+      const c = match.testCase;
+      document.getElementById('modalCaseTitle').innerText = `${c.id} - ${c.name}`;
+      
+      let html = `
+        <p style="margin-bottom: 12px; color: var(--text-muted);">${c.description}</p>
+        <div style="margin-bottom: 16px;">
+          <h4 style="font-size: 0.9rem; margin-bottom: 6px; color: var(--text-main);">Expected Result:</h4>
+          <p style="color: var(--cyan); font-size: 0.88rem;">${c.expectedResult}</p>
+        </div>
+        <div style="margin-bottom: 16px;">
+          <h4 style="font-size: 0.9rem; margin-bottom: 6px; color: var(--text-main);">Execution Status:</h4>
+          <span class="status-badge status-${c.status}">${c.status.toUpperCase()}</span>
+          ${c.duration ? `<span style="font-family: var(--font-mono); margin-left: 10px; font-size: 0.85rem; color: var(--text-dim);">${c.duration}ms</span>` : ''}
+        </div>
+      `;
+
+      if (c.error) {
+        html += `
+          <div>
+            <h4 style="font-size: 0.9rem; margin-bottom: 6px; color: var(--danger);">Error Stack:</h4>
+            <pre>${c.error.message}\n${c.error.stack || ''}</pre>
+          </div>
+        `;
+      }
+
+      document.getElementById('modalCaseBody').innerHTML = html;
+      document.getElementById('caseModal').classList.add('open');
+    };
+
+    window.closeModal = () => {
+      document.getElementById('caseModal').classList.remove('open');
+    };
+  </script>
+</body>
+</html>

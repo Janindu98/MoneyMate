@@ -1,0 +1,1010 @@
+{
+  "timestamp": "2026-08-20T22:15:12.951Z",
+  "total": 100,
+  "passed": 100,
+  "failed": 0,
+  "successRate": "100.0%",
+  "durationSeconds": "0.11",
+  "cases": [
+    {
+      "id": "TC-DASH-001",
+      "suite": "Dashboard",
+      "name": "Total Balance Calculation Across Active Accounts",
+      "description": "Verifies current total balance sums all active accounts with calculated ledger balances",
+      "status": "passed",
+      "duration": 1.09,
+      "expectedResult": "Total balance correctly matches sum of active balances (4765.00)",
+      "error": null
+    },
+    {
+      "id": "TC-DASH-002",
+      "suite": "Dashboard",
+      "name": "Total Bank Balance Excluding Physical Cash Accounts",
+      "description": "Verifies total bank balance aggregates only bank accounts excluding Cash / Other accounts",
+      "status": "passed",
+      "duration": 0.53,
+      "expectedResult": "Total bank balance is 4465.00 (excluding 300 cash)",
+      "error": null
+    },
+    {
+      "id": "TC-DASH-003",
+      "suite": "Dashboard",
+      "name": "Inactive Accounts Exclusion from Balance Calculations",
+      "description": "Ensures accounts marked as Inactive are excluded from Dashboard total metrics",
+      "status": "passed",
+      "duration": 2.04,
+      "expectedResult": "Inactive account balance is omitted from active total",
+      "error": null
+    },
+    {
+      "id": "TC-DASH-004",
+      "suite": "Dashboard",
+      "name": "Period Filtering - This Month Aggregation",
+      "description": "Verifies monthly income, expense and net savings calculation for the current month",
+      "status": "passed",
+      "duration": 0.41,
+      "expectedResult": "Income = 5000, Expense = 235, Savings = 4765",
+      "error": null
+    },
+    {
+      "id": "TC-DASH-005",
+      "suite": "Dashboard",
+      "name": "Period Filtering - This Year Aggregation",
+      "description": "Verifies yearly income and expense rollup across all months in current calendar year",
+      "status": "passed",
+      "duration": 0.53,
+      "expectedResult": "Yearly income correctly includes all months (6200)",
+      "error": null
+    },
+    {
+      "id": "TC-DASH-006",
+      "suite": "Dashboard",
+      "name": "Period Filtering - Last Month Aggregation",
+      "description": "Verifies correct isolation of previous month transactions",
+      "status": "passed",
+      "duration": 0.38,
+      "expectedResult": "Only previous month transactions are counted (450)",
+      "error": null
+    },
+    {
+      "id": "TC-DASH-007",
+      "suite": "Dashboard",
+      "name": "Period Filtering - Overall History Aggregation",
+      "description": "Verifies overall lifetime history aggregates all historical transactions regardless of date",
+      "status": "passed",
+      "duration": 0.35,
+      "expectedResult": "Overall lifetime income equals 9000",
+      "error": null
+    },
+    {
+      "id": "TC-DASH-008",
+      "suite": "Dashboard",
+      "name": "Period Filtering - Custom Date Range",
+      "description": "Filters ledger transactions within custom start and end date boundary",
+      "status": "passed",
+      "duration": 0.3,
+      "expectedResult": "Returns exactly 2 transactions in range",
+      "error": null
+    },
+    {
+      "id": "TC-DASH-009",
+      "suite": "Dashboard",
+      "name": "Recent Ledger Transactions Extraction & Slicing",
+      "description": "Verifies recent transactions table shows latest items sorted in descending date order",
+      "status": "passed",
+      "duration": 0.57,
+      "expectedResult": "First transaction is latest (2026-08-10)",
+      "error": null
+    },
+    {
+      "id": "TC-DASH-010",
+      "suite": "Dashboard",
+      "name": "Currency Formatting Helper Presentation",
+      "description": "Validates currency symbols and formatting for positive, negative, and multi-currency values",
+      "status": "passed",
+      "duration": 35.66,
+      "expectedResult": "Formats correctly with appropriate symbols and two decimals",
+      "error": null
+    },
+    {
+      "id": "TC-ACC-001",
+      "suite": "BankAccounts",
+      "name": "Create New Bank Account with Metadata",
+      "description": "Creates a new bank account and verifies all attributes are recorded in state",
+      "status": "passed",
+      "duration": 0.71,
+      "expectedResult": "Account created with designated fields",
+      "error": null
+    },
+    {
+      "id": "TC-ACC-002",
+      "suite": "BankAccounts",
+      "name": "Create Account with Initial Opening Balance Auto-Generates Ledger Deposit",
+      "description": "Verifies that creating an account with an initial opening balance creates an automatic Deposit transaction in the ledger",
+      "status": "passed",
+      "duration": 0.58,
+      "expectedResult": "Automatic Deposit transaction created with amount 1500",
+      "error": null
+    },
+    {
+      "id": "TC-ACC-003",
+      "suite": "BankAccounts",
+      "name": "Edit Existing Bank Account Details",
+      "description": "Updates bank account properties without affecting other account fields",
+      "status": "passed",
+      "duration": 0.48,
+      "expectedResult": "Account name and branch updated successfully",
+      "error": null
+    },
+    {
+      "id": "TC-ACC-004",
+      "suite": "BankAccounts",
+      "name": "Delete Bank Account with Cascading Cleanup",
+      "description": "Deletes a bank account and verifies cascade removal of associated transactions and salary entries",
+      "status": "passed",
+      "duration": 0.75,
+      "expectedResult": "Account and all related records deleted cleanly",
+      "error": null
+    },
+    {
+      "id": "TC-ACC-005",
+      "suite": "BankAccounts",
+      "name": "Dynamic Ledger Balance Calculation for Multiple Transaction Outflows",
+      "description": "Computes account balance correctly across Deposit, Expense, Withdrawal, Online Payment, and Bill & Payment",
+      "status": "passed",
+      "duration": 0.39,
+      "expectedResult": "Balance computed accurately as 1250.00",
+      "error": null
+    },
+    {
+      "id": "TC-ACC-006",
+      "suite": "BankAccounts",
+      "name": "Inter-Account Transfer Balance Adjustments",
+      "description": "Verifies transfer transaction decreases source account balance and increases destination account balance",
+      "status": "passed",
+      "duration": 0.43,
+      "expectedResult": "Source debited by 500, Destination credited by 500",
+      "error": null
+    },
+    {
+      "id": "TC-ACC-007",
+      "suite": "BankAccounts",
+      "name": "Account Status Toggle (Active vs Inactive)",
+      "description": "Toggles status between Active and Inactive for account archiving",
+      "status": "passed",
+      "duration": 0.5,
+      "expectedResult": "Status toggles properly without loss of data",
+      "error": null
+    },
+    {
+      "id": "TC-ACC-008",
+      "suite": "BankAccounts",
+      "name": "Default Cash Wallet Account Persistence",
+      "description": "Ensures the built-in Cash Wallet account is present and configured as Cash / Other",
+      "status": "passed",
+      "duration": 0.35,
+      "expectedResult": "Default Cash Wallet account is present",
+      "error": null
+    },
+    {
+      "id": "TC-ACC-009",
+      "suite": "BankAccounts",
+      "name": "Multi-Account Balance Isolation",
+      "description": "Verifies transactions on one bank account do not leak or miscalculate other accounts",
+      "status": "passed",
+      "duration": 0.39,
+      "expectedResult": "Balances are strictly isolated to their respective accounts",
+      "error": null
+    },
+    {
+      "id": "TC-TX-001",
+      "suite": "Transactions",
+      "name": "Record Standard Expense Transaction",
+      "description": "Records an Expense transaction and checks fields are correctly preserved in state",
+      "status": "passed",
+      "duration": 0.49,
+      "expectedResult": "Expense recorded with correct amount and category",
+      "error": null
+    },
+    {
+      "id": "TC-TX-002",
+      "suite": "Transactions",
+      "name": "Record Income Transaction",
+      "description": "Records an Income transaction to increase account balance",
+      "status": "passed",
+      "duration": 0.44,
+      "expectedResult": "Income transaction successfully added",
+      "error": null
+    },
+    {
+      "id": "TC-TX-003",
+      "suite": "Transactions",
+      "name": "Record Cash Deposit Transaction",
+      "description": "Records a Deposit transaction into a bank account",
+      "status": "passed",
+      "duration": 0.23,
+      "expectedResult": "Deposit transaction logged",
+      "error": null
+    },
+    {
+      "id": "TC-TX-004",
+      "suite": "Transactions",
+      "name": "Record Cash Withdrawal Transaction",
+      "description": "Records a Cash Withdrawal transaction",
+      "status": "passed",
+      "duration": 0.23,
+      "expectedResult": "Withdrawal transaction logged",
+      "error": null
+    },
+    {
+      "id": "TC-TX-005",
+      "suite": "Transactions",
+      "name": "Record Inter-Account Transfer Transaction",
+      "description": "Records an inter-account transfer with source and target bank IDs",
+      "status": "passed",
+      "duration": 0.26,
+      "expectedResult": "Transfer transaction logged with both bank references",
+      "error": null
+    },
+    {
+      "id": "TC-TX-006",
+      "suite": "Transactions",
+      "name": "Record Online Payment Transaction",
+      "description": "Records an Online Payment transaction with merchant payee",
+      "status": "passed",
+      "duration": 0.23,
+      "expectedResult": "Online Payment transaction logged",
+      "error": null
+    },
+    {
+      "id": "TC-TX-007",
+      "suite": "Transactions",
+      "name": "Record Utility Bill & Payment Transaction",
+      "description": "Records a Bill & Payment transaction with specific utility category",
+      "status": "passed",
+      "duration": 0.2,
+      "expectedResult": "Bill & Payment transaction logged",
+      "error": null
+    },
+    {
+      "id": "TC-TX-008",
+      "suite": "Transactions",
+      "name": "Edit Transaction Amount and Category",
+      "description": "Edits transaction attributes and verifies updated values in state",
+      "status": "passed",
+      "duration": 0.43,
+      "expectedResult": "Transaction successfully modified",
+      "error": null
+    },
+    {
+      "id": "TC-TX-009",
+      "suite": "Transactions",
+      "name": "Delete Transaction from Ledger",
+      "description": "Deletes a transaction and confirms its removal from state",
+      "status": "passed",
+      "duration": 0.36,
+      "expectedResult": "Transaction deleted",
+      "error": null
+    },
+    {
+      "id": "TC-TX-010",
+      "suite": "Transactions",
+      "name": "Add Custom Transaction Category",
+      "description": "Adds custom categories and prevents duplicate insertions",
+      "status": "passed",
+      "duration": 0.37,
+      "expectedResult": "Custom category added and duplicates prevented",
+      "error": null
+    },
+    {
+      "id": "TC-TX-011",
+      "suite": "Transactions",
+      "name": "Prevent Deletion of Core Default Categories While Allowing Custom Deletion",
+      "description": "Protects core system categories from accidental deletion while permitting custom category removal",
+      "status": "passed",
+      "duration": 0.57,
+      "expectedResult": "Default category protected; custom category deleted",
+      "error": null
+    },
+    {
+      "id": "TC-TX-012",
+      "suite": "Transactions",
+      "name": "Multi-Criteria Search and Filtering",
+      "description": "Performs multi-criteria filtering by search keyword and transaction type",
+      "status": "passed",
+      "duration": 0.35,
+      "expectedResult": "Matches accurate subsets of transactions",
+      "error": null
+    },
+    {
+      "id": "TC-TX-013",
+      "suite": "Transactions",
+      "name": "Receipt Attachment Metadata Handling",
+      "description": "Verifies receipt image attachment path is stored with the transaction",
+      "status": "passed",
+      "duration": 0.24,
+      "expectedResult": "Receipt metadata stored properly",
+      "error": null
+    },
+    {
+      "id": "TC-TX-014",
+      "suite": "Transactions",
+      "name": "Legacy Category Migration Mapping",
+      "description": "Tests automated schema migration from legacy category names to unified categories",
+      "status": "passed",
+      "duration": 0.18,
+      "expectedResult": "Food becomes Food & Dining, Medical becomes Healthcare & Medical",
+      "error": null
+    },
+    {
+      "id": "TC-SAL-001",
+      "suite": "Salary",
+      "name": "Gross Earnings Calculation with Allowances, Bonus & Overtime",
+      "description": "Calculates gross salary from basic salary and all additive components",
+      "status": "passed",
+      "duration": 0.07,
+      "expectedResult": "Gross Earnings is accurately calculated as 5550.00",
+      "error": null
+    },
+    {
+      "id": "TC-SAL-002",
+      "suite": "Salary",
+      "name": "Statutory Deductions (EPF Employee 8%, EPF Employer 12%, ETF Employer 3%)",
+      "description": "Calculates EPF and ETF statutory contributions from basic salary according to standard rates",
+      "status": "passed",
+      "duration": 0.07,
+      "expectedResult": "EPF Employee = 400, EPF Employer = 600, ETF Employer = 150",
+      "error": null
+    },
+    {
+      "id": "TC-SAL-003",
+      "suite": "Salary",
+      "name": "Dynamic Profile Contributions Computation Based on Custom Rates",
+      "description": "Evaluates custom statutory contribution rates configured in user profile",
+      "status": "passed",
+      "duration": 0.17,
+      "expectedResult": "Dynamic contributions computed accurately",
+      "error": null
+    },
+    {
+      "id": "TC-SAL-004",
+      "suite": "Salary",
+      "name": "Total Deductions Calculation (Taxes, Loans, Employee Deductions)",
+      "description": "Aggregates all subtractions from gross earnings into total deductions",
+      "status": "passed",
+      "duration": 0.07,
+      "expectedResult": "Total Deductions equals 1000.00",
+      "error": null
+    },
+    {
+      "id": "TC-SAL-005",
+      "suite": "Salary",
+      "name": "Net Salary Calculation (Gross Earnings - Total Deductions)",
+      "description": "Calculates final net take-home salary",
+      "status": "passed",
+      "duration": 0.06,
+      "expectedResult": "Net Salary is 4550.00",
+      "error": null
+    },
+    {
+      "id": "TC-SAL-006",
+      "suite": "Salary",
+      "name": "Automatic Synchronized Income Transaction Creation on Adding Salary Record",
+      "description": "Verifies that adding a salary slip automatically creates a corresponding Income transaction in the ledger",
+      "status": "passed",
+      "duration": 0.63,
+      "expectedResult": "Income transaction created and linked via salaryRecordId",
+      "error": null
+    },
+    {
+      "id": "TC-SAL-007",
+      "suite": "Salary",
+      "name": "Edit Salary Record Automatically Syncs Ledger Transaction",
+      "description": "Edits salary record and verifies corresponding ledger transaction amounts and dates are updated in sync",
+      "status": "passed",
+      "duration": 0.79,
+      "expectedResult": "Salary record and ledger transaction updated in lockstep",
+      "error": null
+    },
+    {
+      "id": "TC-SAL-008",
+      "suite": "Salary",
+      "name": "Delete Salary Record Automatically Unlinks / Removes Ledger Transaction",
+      "description": "Deletes salary slip and verifies cascading removal of its generated ledger transaction",
+      "status": "passed",
+      "duration": 0.55,
+      "expectedResult": "Salary record and linked transaction removed",
+      "error": null
+    },
+    {
+      "id": "TC-SAL-009",
+      "suite": "Salary",
+      "name": "Salary History Filtering by Year and Month",
+      "description": "Filters salary history slips by year",
+      "status": "passed",
+      "duration": 0.55,
+      "expectedResult": "Correct records returned per year filter",
+      "error": null
+    },
+    {
+      "id": "TC-SAL-010",
+      "suite": "Salary",
+      "name": "Month and Year Auto-Derivation from Payment Date",
+      "description": "Derives month name and year string from ISO payment date format YYYY-MM-DD",
+      "status": "passed",
+      "duration": 0.1,
+      "expectedResult": "Year is 2026 and Month is November",
+      "error": null
+    },
+    {
+      "id": "TC-BUD-001",
+      "suite": "Budgets",
+      "name": "Configure and Update Category Monthly Budget Limits",
+      "description": "Updates budget limits across standard expense categories and verifies persistence",
+      "status": "passed",
+      "duration": 0.42,
+      "expectedResult": "Budget limits saved in settings",
+      "error": null
+    },
+    {
+      "id": "TC-BUD-002",
+      "suite": "Budgets",
+      "name": "Monthly Expense Aggregation per Budget Category",
+      "description": "Aggregates all expense transactions for a specific category within the selected month",
+      "status": "passed",
+      "duration": 0.5,
+      "expectedResult": "Category monthly expense accurately summed as 500.00",
+      "error": null
+    },
+    {
+      "id": "TC-BUD-003",
+      "suite": "Budgets",
+      "name": "Budget Progress Percentage and Remaining Budget Calculation",
+      "description": "Calculates budget utilization percentage and remaining spendable allowance",
+      "status": "passed",
+      "duration": 0.09,
+      "expectedResult": "Progress is 75% and Remaining is 5000.00",
+      "error": null
+    },
+    {
+      "id": "TC-BUD-004",
+      "suite": "Budgets",
+      "name": "Budget Alert Status Triggers (Normal, Warning, Exceeded)",
+      "description": "Validates status thresholds: Normal under 80%, Warning at 80-99%, Exceeded at 100%+",
+      "status": "passed",
+      "duration": 0.15,
+      "expectedResult": "Returns \"normal\", \"warning\", and \"exceeded\" correctly",
+      "error": null
+    },
+    {
+      "id": "TC-BUD-005",
+      "suite": "Budgets",
+      "name": "Custom Category Budget Limits Configuration",
+      "description": "Allows users to configure and persist custom budget limits for non-standard categories",
+      "status": "passed",
+      "duration": 0.47,
+      "expectedResult": "Custom category budget limits saved properly",
+      "error": null
+    },
+    {
+      "id": "TC-BUD-006",
+      "suite": "Budgets",
+      "name": "Overall Monthly Budget vs Total Monthly Expenses Comparison",
+      "description": "Calculates total overall budget limit and aggregate monthly progress across all categories",
+      "status": "passed",
+      "duration": 0.14,
+      "expectedResult": "Total budget is 147000 and overall utilization is 31%",
+      "error": null
+    },
+    {
+      "id": "TC-BILL-001",
+      "suite": "BillAnalysis",
+      "name": "Group Bill & Payment Transactions by Utility Category",
+      "description": "Groups all Bill & Payment transactions by specific utility category for the month",
+      "status": "passed",
+      "duration": 0.45,
+      "expectedResult": "Electricity: 200, Water: 45, Internet: 60",
+      "error": null
+    },
+    {
+      "id": "TC-BILL-002",
+      "suite": "BillAnalysis",
+      "name": "Bill Spending vs Configured Bill Limits Evaluation",
+      "description": "Compares category bill spending against configured bill limits to identify overages",
+      "status": "passed",
+      "duration": 0.11,
+      "expectedResult": "Electricity is within limit; Water is flagged exceeded",
+      "error": null
+    },
+    {
+      "id": "TC-BILL-003",
+      "suite": "BillAnalysis",
+      "name": "Total Utility Bills Aggregation and Percentage Distribution",
+      "description": "Calculates total utility bills sum and individual category percentage shares",
+      "status": "passed",
+      "duration": 0.13,
+      "expectedResult": "Total bills sum is 1000 and Rent represents 65%",
+      "error": null
+    },
+    {
+      "id": "TC-SUB-001",
+      "suite": "Subscriptions",
+      "name": "Add New Recurring Subscription",
+      "description": "Adds a recurring subscription with monthly billing cycle",
+      "status": "passed",
+      "duration": 0.58,
+      "expectedResult": "Subscription successfully created",
+      "error": null
+    },
+    {
+      "id": "TC-SUB-002",
+      "suite": "Subscriptions",
+      "name": "Edit Subscription Details & Billing Cost",
+      "description": "Edits existing subscription attributes (cost, cycle, status)",
+      "status": "passed",
+      "duration": 0.5,
+      "expectedResult": "Subscription cost updated",
+      "error": null
+    },
+    {
+      "id": "TC-SUB-003",
+      "suite": "Subscriptions",
+      "name": "Delete Subscription",
+      "description": "Deletes a subscription from the subscriptions list",
+      "status": "passed",
+      "duration": 0.47,
+      "expectedResult": "Subscription removed",
+      "error": null
+    },
+    {
+      "id": "TC-SUB-004",
+      "suite": "Subscriptions",
+      "name": "Calculate Monthly and Annualized Subscription Costs",
+      "description": "Computes monthly and annualized cost across active subscriptions while ignoring cancelled ones",
+      "status": "passed",
+      "duration": 0.21,
+      "expectedResult": "Monthly cost is 40.00, Annual cost is 480.00",
+      "error": null
+    },
+    {
+      "id": "TC-SUB-005",
+      "suite": "Subscriptions",
+      "name": "Auto-Renewal Engine - Monthly Subscription Renewal & Date Advance",
+      "description": "Detects due monthly subscription and advances nextRenewalDate by 1 month",
+      "status": "passed",
+      "duration": 0.71,
+      "expectedResult": "nextRenewalDate advanced by 1 month to 2026-09-01",
+      "error": null
+    },
+    {
+      "id": "TC-SUB-006",
+      "suite": "Subscriptions",
+      "name": "Auto-Renewal Engine - Yearly Subscription Renewal & Date Advance",
+      "description": "Detects due yearly subscription and advances nextRenewalDate by 1 year",
+      "status": "passed",
+      "duration": 0.21,
+      "expectedResult": "nextRenewalDate advanced by 1 year to 2027-08-01",
+      "error": null
+    },
+    {
+      "id": "TC-SUB-007",
+      "suite": "Subscriptions",
+      "name": "Auto-Renewal Engine - Automatic Generation of Ledger Renewal Transaction",
+      "description": "Verifies auto-renewal engine automatically posts expense transaction into the ledger for renewed subscriptions",
+      "status": "passed",
+      "duration": 0.19,
+      "expectedResult": "Bill & Payment transaction created with category \"Subscriptions\" and amount 25.00",
+      "error": null
+    },
+    {
+      "id": "TC-SUB-008",
+      "suite": "Subscriptions",
+      "name": "Subscription Status Filtering (Active vs Cancelled)",
+      "description": "Filters subscriptions by status (Active vs Cancelled/Paused)",
+      "status": "passed",
+      "duration": 0.48,
+      "expectedResult": "Active and Cancelled subscriptions accurately segregated",
+      "error": null
+    },
+    {
+      "id": "TC-REP-001",
+      "suite": "Reports",
+      "name": "Monthly Financial Breakdown & Savings Rate Computation",
+      "description": "Calculates monthly total income, total expenses, net savings, and savings rate percentage",
+      "status": "passed",
+      "duration": 0.5,
+      "expectedResult": "Income: 5000, Expense: 235, Net Savings: 4765, Savings Rate: 95.3%",
+      "error": null
+    },
+    {
+      "id": "TC-REP-002",
+      "suite": "Reports",
+      "name": "Yearly Monthly-by-Month Financial Trend Matrix",
+      "description": "Generates 12-month summary matrix for yearly report graphs and table breakdowns",
+      "status": "passed",
+      "duration": 0.67,
+      "expectedResult": "Jan Savings: 3600, Feb Savings: 3900",
+      "error": null
+    },
+    {
+      "id": "TC-REP-003",
+      "suite": "Reports",
+      "name": "Expense Distribution by Category Calculation",
+      "description": "Calculates percentage share of each expense category against total expenses for pie chart rendering",
+      "status": "passed",
+      "duration": 0.43,
+      "expectedResult": "Food & Dining: 63.8%, Electricity: 36.2%",
+      "error": null
+    },
+    {
+      "id": "TC-REP-004",
+      "suite": "Reports",
+      "name": "Income Distribution by Category Calculation",
+      "description": "Groups income streams into categories (Salary, Interest, Bonus, etc.)",
+      "status": "passed",
+      "duration": 0.42,
+      "expectedResult": "Salary: 5000, Interest: 250",
+      "error": null
+    },
+    {
+      "id": "TC-REP-005",
+      "suite": "Reports",
+      "name": "Bank Account Net Cash Flow Tracking",
+      "description": "Verifies inflow, outflow, and net liquidity change for each individual bank account",
+      "status": "passed",
+      "duration": 0.55,
+      "expectedResult": "Account flows accurately matched",
+      "error": null
+    },
+    {
+      "id": "TC-REP-006",
+      "suite": "Reports",
+      "name": "Custom Date Range Financial Analytics Report",
+      "description": "Generates report dataset bounded by custom date filters",
+      "status": "passed",
+      "duration": 0.35,
+      "expectedResult": "Returns exactly 2 transactions",
+      "error": null
+    },
+    {
+      "id": "TC-REP-007",
+      "suite": "Reports",
+      "name": "Excel Export Data Structure Preparation",
+      "description": "Validates that data prepared for Excel/XLSX export includes all required column mappings",
+      "status": "passed",
+      "duration": 0.47,
+      "expectedResult": "Formatted correctly for XLSX sheet generator",
+      "error": null
+    },
+    {
+      "id": "TC-REP-008",
+      "suite": "Reports",
+      "name": "PDF Report AutoTable Rows Formatting",
+      "description": "Prepares formatted row arrays for jsPDF AutoTable report generation",
+      "status": "passed",
+      "duration": 0.21,
+      "expectedResult": "Compatible with jsPDF AutoTable structure",
+      "error": null
+    },
+    {
+      "id": "TC-BAK-001",
+      "suite": "Backup",
+      "name": "Full Database Payload Export Structure",
+      "description": "Verifies the complete backup payload includes all essential tables and collections",
+      "status": "passed",
+      "duration": 0.41,
+      "expectedResult": "All 7 main data models present in export payload",
+      "error": null
+    },
+    {
+      "id": "TC-BAK-002",
+      "suite": "Backup",
+      "name": "Local Backup Encryption Using XOR + Base64 with Encryption Key",
+      "description": "Encrypts payload using XOR cipher with key and encodes into Base64 string",
+      "status": "passed",
+      "duration": 0.38,
+      "expectedResult": "Payload successfully encrypted",
+      "error": null
+    },
+    {
+      "id": "TC-BAK-003",
+      "suite": "Backup",
+      "name": "Local Backup Decryption and Data Integrity Verification",
+      "description": "Decrypts encrypted backup string and verifies restored object exactly matches original payload",
+      "status": "passed",
+      "duration": 0.49,
+      "expectedResult": "Decrypted data is bit-for-bit identical to original payload",
+      "error": null
+    },
+    {
+      "id": "TC-BAK-004",
+      "suite": "Backup",
+      "name": "Decryption Failure Handling on Invalid Key or Corrupted Payload",
+      "description": "Throws error when attempting to decrypt with incorrect encryption key or malformed data",
+      "status": "passed",
+      "duration": 0.41,
+      "expectedResult": "Throws explicit decryption failure error",
+      "error": null
+    },
+    {
+      "id": "TC-BAK-005",
+      "suite": "Backup",
+      "name": "Database Restore Process & State Replacement",
+      "description": "Applies restored backup object into database and validates state overwriting",
+      "status": "passed",
+      "duration": 0.42,
+      "expectedResult": "Database state updated to match restored data",
+      "error": null
+    },
+    {
+      "id": "TC-BAK-006",
+      "suite": "Backup",
+      "name": "Automated Google Drive Backup File Naming Format",
+      "description": "Validates automated Google drive backup naming pattern (moneymate_vault_backup_gdrive_YYYY-MM-DD.enc)",
+      "status": "passed",
+      "duration": 0.16,
+      "expectedResult": "File name matches exact schema",
+      "error": null
+    },
+    {
+      "id": "TC-BAK-007",
+      "suite": "Backup",
+      "name": "Cloud Sync Direct Upload Payload Preparation",
+      "description": "Constructs upload descriptor for direct cloud storage API transfers",
+      "status": "passed",
+      "duration": 1.47,
+      "expectedResult": "Upload descriptor prepared with encrypted payload length",
+      "error": null
+    },
+    {
+      "id": "TC-BAK-008",
+      "suite": "Backup",
+      "name": "OAuth Token Masking and Encrypted Storage Representation",
+      "description": "Ensures cloud refresh tokens and access tokens can be securely encrypted and recovered",
+      "status": "passed",
+      "duration": 0.14,
+      "expectedResult": "Token securely recovered",
+      "error": null
+    },
+    {
+      "id": "TC-PROF-001",
+      "suite": "Profile",
+      "name": "Update Profile Personal and Employment Information",
+      "description": "Updates and saves all user profile details in state",
+      "status": "passed",
+      "duration": 0.33,
+      "expectedResult": "Profile fields saved in state",
+      "error": null
+    },
+    {
+      "id": "TC-PROF-002",
+      "suite": "Profile",
+      "name": "Configure Dynamic Statutory Contribution Schemes",
+      "description": "Adds custom contribution schemes to user profile with custom employee and employer percentage rates",
+      "status": "passed",
+      "duration": 0.52,
+      "expectedResult": "Custom contribution scheme added to profile",
+      "error": null
+    },
+    {
+      "id": "TC-PROF-003",
+      "suite": "Profile",
+      "name": "Edit and Remove Contribution Schemes from Profile",
+      "description": "Modifies contribution rates and removes selected schemes from profile",
+      "status": "passed",
+      "duration": 0.67,
+      "expectedResult": "Rates modified and ETF contribution removed",
+      "error": null
+    },
+    {
+      "id": "TC-PROF-004",
+      "suite": "Profile",
+      "name": "Profile Auto-Fill Prefill Logic into Salary Records",
+      "description": "Tests logic that auto-populates Salary modal inputs from user profile configuration",
+      "status": "passed",
+      "duration": 0.49,
+      "expectedResult": "Salary inputs successfully prefilled from profile",
+      "error": null
+    },
+    {
+      "id": "TC-SET-001",
+      "suite": "Settings",
+      "name": "Update Currency Preference & Symbol Resolution",
+      "description": "Changes default currency to EUR and verifies correct currency symbol resolution across app",
+      "status": "passed",
+      "duration": 0.83,
+      "expectedResult": "Currency changed to EUR and formats with € symbol",
+      "error": null
+    },
+    {
+      "id": "TC-SET-002",
+      "suite": "Settings",
+      "name": "Theme Configuration Switching (Dark vs Light)",
+      "description": "Switches application visual theme preference between dark and light modes",
+      "status": "passed",
+      "duration": 0.59,
+      "expectedResult": "Theme preference toggles properly",
+      "error": null
+    },
+    {
+      "id": "TC-SET-003",
+      "suite": "Settings",
+      "name": "Font Size Preferences (Small, Medium, Large, X-Large)",
+      "description": "Configures application font scale preference and checks CSS variable mapping",
+      "status": "passed",
+      "duration": 1.33,
+      "expectedResult": "Font size set to large with 18px mapping",
+      "error": null
+    },
+    {
+      "id": "TC-SET-004",
+      "suite": "Settings",
+      "name": "Security Mode Configuration (None, PIN, Password)",
+      "description": "Configures lock screen security mode with PIN and Password credentials",
+      "status": "passed",
+      "duration": 0.54,
+      "expectedResult": "Security modes configured and saved in settings",
+      "error": null
+    },
+    {
+      "id": "TC-SET-005",
+      "suite": "Settings",
+      "name": "Security PIN and Password Validation Rules",
+      "description": "Tests validation constraints for 4-8 digit numeric PINs and minimum 6-character passwords",
+      "status": "passed",
+      "duration": 0.38,
+      "expectedResult": "Valid credentials pass; invalid formats rejected",
+      "error": null
+    },
+    {
+      "id": "TC-SET-006",
+      "suite": "Settings",
+      "name": "Database Reset to Clean Initial State",
+      "description": "Resets database state back to initial default configuration",
+      "status": "passed",
+      "duration": 0.48,
+      "expectedResult": "Database restored to initial state",
+      "error": null
+    },
+    {
+      "id": "TC-HLP-001",
+      "suite": "Help",
+      "name": "Help Documentation Sections & Topic Retrieval",
+      "description": "Verifies the structure of all Help and User Guide knowledge base modules",
+      "status": "passed",
+      "duration": 0.24,
+      "expectedResult": "All 6 key documentation sections present",
+      "error": null
+    },
+    {
+      "id": "TC-HLP-002",
+      "suite": "Help",
+      "name": "Knowledge Base FAQ Keyword Search & Filtering",
+      "description": "Searches knowledge base questions and answers by search keywords",
+      "status": "passed",
+      "duration": 0.12,
+      "expectedResult": "Returns matched backup FAQ",
+      "error": null
+    },
+    {
+      "id": "TC-HLP-003",
+      "suite": "Help",
+      "name": "Keyboard Shortcuts Mapping Validation",
+      "description": "Validates keyboard shortcut key combinations and associated action handlers",
+      "status": "passed",
+      "duration": 0.08,
+      "expectedResult": "Key shortcuts defined and mapped",
+      "error": null
+    },
+    {
+      "id": "TC-HLP-004",
+      "suite": "Help",
+      "name": "Application Diagnostic and About Metadata",
+      "description": "Verifies About modal metadata and application diagnostic information",
+      "status": "passed",
+      "duration": 0.05,
+      "expectedResult": "App metadata matches version 1.6.0",
+      "error": null
+    },
+    {
+      "id": "TC-SEC-001",
+      "suite": "SecurityAndLock",
+      "name": "Lock Screen Trigger on Startup When Security Mode Is Active",
+      "description": "Checks that lock screen activates on launch if PIN or Password security is set",
+      "status": "passed",
+      "duration": 0.09,
+      "expectedResult": "Locks on PIN/Password when unlocked=false; bypasses when unlocked=true or security=none",
+      "error": null
+    },
+    {
+      "id": "TC-SEC-002",
+      "suite": "SecurityAndLock",
+      "name": "Unlocking Database with Valid PIN or Password",
+      "description": "Successfully decrypts and unlocks database when provided with correct PIN",
+      "status": "passed",
+      "duration": 1.91,
+      "expectedResult": "Database unlocked and schema intact",
+      "error": null
+    },
+    {
+      "id": "TC-SEC-003",
+      "suite": "SecurityAndLock",
+      "name": "Authentication Failure & Rejection on Incorrect Credentials",
+      "description": "Rejects unlock attempt and prevents data access when wrong credential is entered",
+      "status": "passed",
+      "duration": 2.42,
+      "expectedResult": "Decryption fails and database remains locked",
+      "error": null
+    },
+    {
+      "id": "TC-SEC-004",
+      "suite": "SecurityAndLock",
+      "name": "Encrypted Disk File Structure When Security Mode Is Active",
+      "description": "Verifies encrypted JSON wrapper written to disk hides sensitive financial data",
+      "status": "passed",
+      "duration": 1.3,
+      "expectedResult": "File contains ciphertext without plaintext transaction leak",
+      "error": null
+    },
+    {
+      "id": "TC-SEC-005",
+      "suite": "SecurityAndLock",
+      "name": "Unlocking Restores Full Database Schema and Categories",
+      "description": "Confirms that after unlocking, all accounts, categories, and settings are fully restored",
+      "status": "passed",
+      "duration": 2.43,
+      "expectedResult": "Complete operational schema restored",
+      "error": null
+    },
+    {
+      "id": "TC-DBE-001",
+      "suite": "DatabaseEngine",
+      "name": "Initial Database Schema Generation on Empty / New File",
+      "description": "Initializes and writes fresh default schema when database file does not exist",
+      "status": "passed",
+      "duration": 3.4,
+      "expectedResult": "Initial database created with default cash account",
+      "error": null
+    },
+    {
+      "id": "TC-DBE-002",
+      "suite": "DatabaseEngine",
+      "name": "Schema Migration Ensures All Required Payment Category Tables Exist",
+      "description": "Automatically patches missing category dictionaries and settings on load via ensureSchema",
+      "status": "passed",
+      "duration": 4.1,
+      "expectedResult": "All 7 category tables populated with defaults",
+      "error": null
+    },
+    {
+      "id": "TC-DBE-003",
+      "suite": "DatabaseEngine",
+      "name": "Corrupt Database Auto-Recovery & Schema Reset",
+      "description": "Detects corrupted JSON file and recovers gracefully by initializing fresh default state",
+      "status": "passed",
+      "duration": 3.18,
+      "expectedResult": "Corrupted file handled gracefully and state restored to default",
+      "error": null
+    },
+    {
+      "id": "TC-DBE-004",
+      "suite": "DatabaseEngine",
+      "name": "State Persistence and Reload Consistency",
+      "description": "Saves data modifications to disk and verifies exact state is loaded by subsequent instances",
+      "status": "passed",
+      "duration": 4.55,
+      "expectedResult": "State persisted and recovered identically",
+      "error": null
+    },
+    {
+      "id": "TC-DBE-005",
+      "suite": "DatabaseEngine",
+      "name": "Payment Type Category Migration (Online Transfer, Debit Card Fees, Alerts)",
+      "description": "Migrates category definitions and ensures new system utility categories are dynamically added",
+      "status": "passed",
+      "duration": 0.19,
+      "expectedResult": "New bill categories migrated into category list",
+      "error": null
+    }
+  ]
+}

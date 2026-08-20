@@ -10,6 +10,7 @@
     "package": "electron-forge package",
     "make": "electron-forge make",
     "publish": "electron-forge publish",
+    "test": "node Test/runner.js",
     "lint": "echo \"No linting configured\"",
     "build-installer": "npm run package && electron-builder --win"
   },
