@@ -5,6 +5,7 @@ import started from 'electron-squirrel-startup';
 import Database from './database/db.js';
 import {
   startOAuthFlow,
+  cancelOAuthFlow,
   refreshAccessToken,
   verifyAccountIdentity,
   testStorageAccess,
@@ -618,6 +619,10 @@ app.whenReady().then(() => {
       console.error(`[OAuth] Authentication error for ${providerKey}:`, err);
       return { success: false, error: err.message };
     }
+  });
+
+  ipcMain.handle('auth:cancel-oauth', () => {
+    return cancelOAuthFlow();
   });
 
   ipcMain.handle('auth:verify-token', async (event, providerKey) => {

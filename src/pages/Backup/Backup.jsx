@@ -120,6 +120,18 @@ export default function Backup() {
     }
   }, [activeTab, activeConn.connected]);
 
+  const handleCloseAuthModal = async () => {
+    setIsAuthenticating(false);
+    setIsAuthModalOpen(false);
+    setAuthStatusMessage('');
+    setAuthErrorMessage('');
+    try {
+      if (api.cancelOAuth) {
+        await api.cancelOAuth();
+      }
+    } catch (e) {}
+  };
+
   const handleOpenAuthModal = () => {
     setIsAuthenticating(false);
     setAuthStatusMessage('');
@@ -773,9 +785,7 @@ export default function Backup() {
       {/* Simplified, Consumer-Friendly Connect Modal */}
       <Modal 
         isOpen={isAuthModalOpen} 
-        onClose={() => {
-          if (!isAuthenticating) setIsAuthModalOpen(false);
-        }} 
+        onClose={handleCloseAuthModal} 
         title={`Connect ${activeConn.providerName}`}
       >
         <div style={{ padding: '6px 0' }}>
@@ -811,7 +821,7 @@ export default function Backup() {
               )}
 
               <div className="modal-footer" style={{ borderTop: 'none', padding: '0', display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
-                <button type="button" className="btn btn-secondary" onClick={() => setIsAuthModalOpen(false)}>
+                <button type="button" className="btn btn-secondary" onClick={handleCloseAuthModal}>
                   Cancel
                 </button>
                 <button type="button" className="btn btn-primary" onClick={handleStartOAuth}>
@@ -820,7 +830,7 @@ export default function Backup() {
               </div>
             </div>
           ) : (
-            <div style={{ textAlign: 'center', padding: '24px 8px' }}>
+            <div style={{ textAlign: 'center', padding: '24px 8px 12px' }}>
               <span className="spinner" style={{ border: '3px solid rgba(255,255,255,0.1)', borderTop: '3px solid #6366f1', width: '40px', height: '40px', borderRadius: '50%', display: 'inline-block', marginBottom: '16px' }}></span>
               <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '6px' }}>
                 Connecting to {activeConn.providerName}
@@ -828,9 +838,17 @@ export default function Backup() {
               <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', maxWidth: '380px', margin: '0 auto 16px' }}>
                 {authStatusMessage || 'Please select your account and click Allow in the browser window.'}
               </p>
-              <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+              <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: '24px' }}>
                 You can return to MoneyMate once the browser confirmation appears.
               </div>
+              <button 
+                type="button" 
+                className="btn btn-secondary" 
+                onClick={handleCloseAuthModal}
+                style={{ fontSize: '0.85rem', padding: '8px 24px' }}
+              >
+                Cancel Connection
+              </button>
             </div>
           )}
         </div>

@@ -20,6 +20,7 @@ contextBridge.exposeInMainWorld('api', {
 
   // Cloud OAuth 2.0 PKCE Bridge
   startOAuth: (providerKey) => ipcRenderer.invoke('auth:start-oauth', providerKey),
+  cancelOAuth: () => ipcRenderer.invoke('auth:cancel-oauth'),
   verifyOAuthToken: (providerKey) => ipcRenderer.invoke('auth:verify-token', providerKey),
   disconnectOAuth: (providerKey) => ipcRenderer.invoke('auth:disconnect', providerKey),
   directCloudUpload: (providerKey, encryptedPayload, defaultName) => ipcRenderer.invoke('cloud:direct-upload', providerKey, encryptedPayload, defaultName),
