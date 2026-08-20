@@ -268,7 +268,14 @@ export default class Database {
       const securityType = this.data?.settings?.securityType || 'none';
 
       if (securityType === 'pin' || securityType === 'password') {
-        const key = this.encryptionKey || (securityType === 'pin' ? this.data.settings.securityPin : this.data.settings.securityPassword);
+        const configuredKey = securityType === 'pin' 
+          ? this.data?.settings?.securityPin 
+          : this.data?.settings?.securityPassword;
+
+        const key = (typeof configuredKey === 'string' && configuredKey.length > 0)
+          ? configuredKey
+          : (typeof this.encryptionKey === 'string' && this.encryptionKey.length > 0 ? this.encryptionKey : null);
+
         if (key) {
           this.encryptionKey = key;
           const encryptedPayload = encryptData(this.data, key);
@@ -278,6 +285,7 @@ export default class Database {
             data: encryptedPayload
           }, null, 2);
         } else {
+          this.encryptionKey = null;
           contentToWrite = JSON.stringify(this.data, null, 2);
         }
       } else {
@@ -295,6 +303,13 @@ export default class Database {
 
   unlock(pinOrPassword) {
     if (!this.isEncrypted) {
+      const secType = this.data?.settings?.securityType || 'none';
+      if (secType === 'pin') {
+        return pinOrPassword === this.data?.settings?.securityPin;
+      }
+      if (secType === 'password') {
+        return pinOrPassword === this.data?.settings?.securityPassword;
+      }
       return true;
     }
     const decrypted = decryptData(this.encryptedData, pinOrPassword);
