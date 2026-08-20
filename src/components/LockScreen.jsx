@@ -9,6 +9,8 @@ export default function LockScreen({ settings, onUnlock, unlockDatabase }) {
   const [error, setError] = useState(false);
   const [shake, setShake] = useState(false);
 
+  const [isVerifying, setIsVerifying] = useState(false);
+
   const correctPin = settings.securityPin || '';
   const correctPassword = settings.securityPassword || '';
 
@@ -34,10 +36,10 @@ export default function LockScreen({ settings, onUnlock, unlockDatabase }) {
 
   // Auto-submit PIN when it reaches 4 digits
   useEffect(() => {
-    if (securityType === 'pin' && pin.length === 4) {
+    if (securityType === 'pin' && pin.length === 4 && !isVerifying) {
       handlePinVerify();
     }
-  }, [pin, securityType]);
+  }, [pin, securityType, isVerifying]);
 
   const triggerShake = () => {
     setShake(true);
@@ -48,43 +50,55 @@ export default function LockScreen({ settings, onUnlock, unlockDatabase }) {
   };
 
   const handlePinVerify = async () => {
-    if (unlockDatabase) {
-      setError(false);
-      const res = await unlockDatabase(pin);
-      if (res.success) {
-        onUnlock();
+    if (isVerifying) return;
+    setIsVerifying(true);
+    try {
+      if (unlockDatabase) {
+        setError(false);
+        const res = await unlockDatabase(pin);
+        if (res.success) {
+          onUnlock();
+        } else {
+          triggerShake();
+          setPin('');
+        }
       } else {
-        triggerShake();
-        setPin('');
+        if (pin === correctPin) {
+          onUnlock();
+        } else {
+          triggerShake();
+          setPin('');
+        }
       }
-    } else {
-      if (pin === correctPin) {
-        onUnlock();
-      } else {
-        triggerShake();
-        setPin('');
-      }
+    } finally {
+      setIsVerifying(false);
     }
   };
 
   const handlePasswordSubmit = async (e) => {
     e.preventDefault();
-    if (unlockDatabase) {
-      setError(false);
-      const res = await unlockDatabase(password);
-      if (res.success) {
-        onUnlock();
+    if (isVerifying) return;
+    setIsVerifying(true);
+    try {
+      if (unlockDatabase) {
+        setError(false);
+        const res = await unlockDatabase(password);
+        if (res.success) {
+          onUnlock();
+        } else {
+          triggerShake();
+          setPassword('');
+        }
       } else {
-        triggerShake();
-        setPassword('');
+        if (password === correctPassword) {
+          onUnlock();
+        } else {
+          triggerShake();
+          setPassword('');
+        }
       }
-    } else {
-      if (password === correctPassword) {
-        onUnlock();
-      } else {
-        triggerShake();
-        setPassword('');
-      }
+    } finally {
+      setIsVerifying(false);
     }
   };
 

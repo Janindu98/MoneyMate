@@ -32,6 +32,7 @@
     "vite": "^5.4.21"
   },
   "dependencies": {
+    "author-regex": "^1.0.0",
     "chart.js": "^4.5.1",
     "electron-squirrel-startup": "^1.0.1",
     "jspdf": "^4.2.1",
