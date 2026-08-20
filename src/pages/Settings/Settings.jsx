@@ -107,12 +107,12 @@ export default function Settings({ onOpenAbout, onNavigate }) {
           securityPassword: ''
         });
         showToast('App security successfully disabled.');
-      } else if (pendingType === 'pin') {
+      } else if (pendingType === 'pin' || pendingType === 'change_pin') {
         setSecurityModalType('pin');
         setSetupPin('');
         setConfirmSetupPin('');
         setSecurityModalOpen(true);
-      } else if (pendingType === 'password') {
+      } else if (pendingType === 'password' || pendingType === 'change_password') {
         setSecurityModalType('password');
         setSetupPassword('');
         setConfirmSetupPassword('');
@@ -278,12 +278,40 @@ export default function Settings({ onOpenAbout, onNavigate }) {
               <div className="settings-row-title">Lock Mode</div>
               <div className="settings-row-desc">Currently active lock mechanism: <strong>{settings.securityType === 'pin' ? 'PIN Lock Enabled' : settings.securityType === 'password' ? 'Password Enabled' : 'None (No Security)'}</strong></div>
             </div>
-            <div>
+            <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
               <select className="input-ctrl" value={settings.securityType || 'none'} onChange={handleSecurityChange} style={{ width: '150px' }}>
                 <option value="none">None (No Lock)</option>
                 <option value="pin">PIN Lock</option>
                 <option value="password">Password</option>
               </select>
+              {settings.securityType === 'pin' && (
+                <button 
+                  type="button" 
+                  className="btn btn-secondary" 
+                  onClick={() => {
+                    setPendingType('change_pin');
+                    setVerifyValue('');
+                    setVerifyModalOpen(true);
+                  }}
+                  style={{ padding: '8px 14px', fontSize: '0.82rem', whiteSpace: 'nowrap' }}
+                >
+                  Change PIN
+                </button>
+              )}
+              {settings.securityType === 'password' && (
+                <button 
+                  type="button" 
+                  className="btn btn-secondary" 
+                  onClick={() => {
+                    setPendingType('change_password');
+                    setVerifyValue('');
+                    setVerifyModalOpen(true);
+                  }}
+                  style={{ padding: '8px 14px', fontSize: '0.82rem', whiteSpace: 'nowrap' }}
+                >
+                  Change Password
+                </button>
+              )}
             </div>
           </div>
         </div>
