@@ -63,6 +63,9 @@ export const api = {
   startOAuth: async (providerKey) => {
     return await window.api.startOAuth(providerKey);
   },
+  cancelOAuth: async () => {
+    return await window.api.cancelOAuth();
+  },
   verifyOAuthToken: async (providerKey) => {
     return await window.api.verifyOAuthToken(providerKey);
   },
